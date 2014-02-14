@@ -1,6 +1,8 @@
 #include <vector>
 #include <cassert>
 #include <iostream>
+#include <utility>
+
 using std::cerr;
 
 #include "utils.h"
@@ -14,7 +16,7 @@ using Constants::INF;
 
 #define DEBUG 1
 
-double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts) {
+inline double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts) {
   /* TODO: This can be baked into the dynamic programming routine */
   double delta = query_size - ref_size;
   double sd = 0.1*ref_size;
@@ -87,15 +89,11 @@ void fill_score_matrix(AlignTask& align_task) {
 
   for (int j = 1; j < n; j++) {
     
-    bool is_query_boundary = (j==1) || (j==n-1);
     int l0 = (j > align_opts.ref_max_misses + 1) ? j - align_opts.ref_max_misses - 1 : 0;
     
     const int offset = num_rows*j;
-
     
     for (int i = 1; i < m; i++) {
-    
-      
 
       ScoreCell* pCell = mat.getCell(offset + i);
 
@@ -107,7 +105,8 @@ void fill_score_matrix(AlignTask& align_task) {
       int ref_size = 0;
       for(int l = j-1; l >= l0; l--) {
 
-        bool is_ref_boundary = (l == 0) || (j == n);
+        const bool is_ref_boundary = l == 0 || j == n - 1;
+
         int ref_miss = j - l - 1;
         ref_size += ref[l];
         double ref_miss_score = ref_miss * align_opts.ref_miss_penalty;
@@ -116,6 +115,8 @@ void fill_score_matrix(AlignTask& align_task) {
         const int offset_back = num_rows*l;
 
         for(int k = i-1; k >= k0; k--) {
+
+          const bool is_query_boundary =  k == 0 || k == m - 1;
 
           #if DEBUG > 0
           cerr << "i: " << i
@@ -133,8 +134,18 @@ void fill_score_matrix(AlignTask& align_task) {
           int query_miss = i - k - 1;
           double query_miss_score = query_miss * align_opts.query_miss_penalty;
 
-          // Score the extension
-          double chunk_score = -sizing_penalty(query_size, ref_size, align_opts) - query_miss_score - ref_miss_score;
+          // Add sizing penalty only if this is not a boundary fragment.
+          double size_penalty = 0.0;
+          if (!is_ref_boundary && !is_query_boundary) {
+            size_penalty = sizing_penalty(query_size, ref_size, align_opts);
+          }
+
+          // If the sizing penalty is too large, continue.
+          if (size_penalty > align_opts.max_chunk_sizing_error) {
+            continue;
+          }
+
+          double chunk_score = -size_penalty - query_miss_score - ref_miss_score;
 
           if (chunk_score + pTarget->score_ > best_score) {
             backPointer = pTarget;
@@ -279,6 +290,51 @@ void print_chunk_trail(const ChunkVec& query_chunks, const ChunkVec& ref_chunks)
 
 }
 
+// Make and return an alignment from the trail through the
+// score matrix.
+Alignment alignment_from_trail(AlignTask& task, ScoreCellPVec& trail) {
+
+    const AlignOpts& align_opts = task.align_opts;
+    ChunkVec query_chunks, ref_chunks;
+    MatchedChunkVec matched_chunks;
+
+    query_chunks.reserve(trail.size()-1);
+    ref_chunks.reserve(trail.size()-1);
+    matched_chunks.reserve(trail.size()-1);
+
+    build_chunk_trail(task, trail, query_chunks, ref_chunks);
+
+    // The trail and the chunks are oriented from the end of the alignment.
+    // Build MatchChunk's in the forward direction.
+    assert(query_chunks.size() == ref_chunks.size());
+
+    const size_t n = query_chunks.size();
+
+
+    for (int i = n-1; i >= 0; i--) {
+        Chunk& qc = query_chunks[i];
+        Chunk& rc = ref_chunks[i];
+        int query_misses = qc.end - qc.start - 1;
+        int ref_misses = rc.end - rc.start - 1;
+
+        double query_miss_score = task.align_opts.query_miss_penalty * query_misses;
+        double ref_miss_score = task.align_opts.ref_miss_penalty * ref_misses;
+        double sizing_score = sizing_penalty(qc.size, rc.size, task.align_opts);
+        Score score(query_miss_score, ref_miss_score, sizing_score);
+
+        // MatchedChunk mc(query_chunks[i], ref_chunks[i], score);
+        // Try fancy C++11:
+        matched_chunks.emplace_back(query_chunks[i], ref_chunks[i], score);
+        
+    }
+
+    std::cerr << "Creating alignment..\n";
+    Alignment a(std::move(matched_chunks));
+
+    std::cerr << "Returning alignment.." << &a << " \n";
+    return a;
+}
+
 
 
 std::ostream& operator<<(std::ostream& os, const Chunk& chunk) {
@@ -288,4 +344,28 @@ std::ostream& operator<<(std::ostream& os, const Chunk& chunk) {
 
   return os;
 
+}
+
+std::ostream& operator<<(std::ostream& os, const MatchedChunk& chunk) {
+
+  os << "q: " << chunk.query_chunk
+     << " r: " << chunk.ref_chunk
+     << " score: " << chunk.score << "\n";
+
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Score& score) {
+
+  os << "(" << score.query_miss_score
+     << ", " << score.ref_miss_score
+     << ", " << score.sizing_score
+     << ")";
+
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Alignment& aln) {
+  os << "Alignment: " << aln.matched_chunks << "\n";
+  return os;
 }

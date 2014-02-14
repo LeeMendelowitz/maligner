@@ -49,7 +49,7 @@ class AlignTest : public testing::Test {
 
 
 TEST_F(AlignTest, align) {
-    AlignOpts align_opts = AlignOpts(3.0, 5.0, 3, 3);
+    AlignOpts align_opts = AlignOpts(3.0, 5.0, 3, 3, 25);
     AlignTask align_task(query_, ref_, mat_, align_opts);
     fill_score_matrix(align_task);
     cerr << "Done filling score matrix!";
@@ -59,7 +59,7 @@ TEST_F(AlignTest, align) {
 TEST_F(AlignTest, align_extra_rows) {
 
     // Align using a score matrix with extra rows.
-    AlignOpts align_opts = AlignOpts(3.0, 5.0, 3, 3);
+    AlignOpts align_opts = AlignOpts(3.0, 5.0, 3, 3, 25);
     int m = query_.size() + 1;
     int n = ref_.size() + 1;
 
@@ -93,8 +93,28 @@ TEST_F(AlignTest, align_extra_rows) {
     ofstream fout("score_matrix.txt");
     fout << mat << "\n";
     fout.close();
-
 }
 
+
+TEST_F(AlignTest, make_align) {
+
+    // Align using a score matrix with extra rows.
+    AlignOpts align_opts = AlignOpts(3.0, 5.0, 3, 3, 25);
+    int m = query_.size() + 1;
+    int n = ref_.size() + 1;
+
+    ScoreMatrix mat = ScoreMatrix(m, n);
+    AlignTask align_task(query_, ref_, mat, align_opts);
+
+    fill_score_matrix(align_task);
+
+    // Now build the best alignment
+    ScoreCellPVec trail;
+    bool result = get_best_alignment(align_task, trail);
+    ASSERT_TRUE(result);
+    
+    Alignment a(alignment_from_trail(align_task, trail));
+    std::cerr << "Made alignment: " << a;
+}
 
 

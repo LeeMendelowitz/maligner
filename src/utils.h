@@ -10,7 +10,7 @@ T sum(const std::vector<T>& v, int start, int end) {
   T s = 0;
 
   assert(start <= end);
-  if (start >= v.size()) {
+  if (start >= (int) v.size()) {
     return 0;
   }
   
@@ -33,6 +33,20 @@ T sum(const std::vector<T>& v) {
   }
 
   return s;
+}
+
+template< typename T>
+std::ostream& operator<<(std::ostream& os, std::vector<T> vec) {
+  size_t n = vec.size();
+  os << "[ ";
+  for (size_t i = 0; i < n; i++) {
+    os << vec[i];
+    if (i != n-1) {
+      os << ", ";
+    }
+  }
+  os << " ]";
+  return os;
 }
 
 
