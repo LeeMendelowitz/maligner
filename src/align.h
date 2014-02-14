@@ -14,8 +14,8 @@ public:
 
   AlignOpts(double p1, double p2, int p3, int p4,
             double p5) : 
-    query_miss_penalty(p1),
-    ref_miss_penalty(p2),
+    query_miss_penalty(p1), // penalty for having a site in query unaligned to reference
+    ref_miss_penalty(p2), // penalty for having a site in reference unaligned to query
     query_max_misses(p3),
     ref_max_misses(p4),
     max_chunk_sizing_error(p5)
@@ -130,7 +130,7 @@ public:
   }
 
   MatchedChunkVec matched_chunks;
-  
+
 };
 
 std::ostream& operator<<(std::ostream& os, const Alignment& aln);

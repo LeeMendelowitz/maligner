@@ -49,7 +49,7 @@ class AlignTest : public testing::Test {
 
 
 TEST_F(AlignTest, align) {
-    AlignOpts align_opts = AlignOpts(3.0, 5.0, 3, 3, 25);
+    AlignOpts align_opts = AlignOpts(5.0, 3.0, 3, 3, 25);
     AlignTask align_task(query_, ref_, mat_, align_opts);
     fill_score_matrix(align_task);
     cerr << "Done filling score matrix!";
@@ -59,7 +59,7 @@ TEST_F(AlignTest, align) {
 TEST_F(AlignTest, align_extra_rows) {
 
     // Align using a score matrix with extra rows.
-    AlignOpts align_opts = AlignOpts(3.0, 5.0, 3, 3, 25);
+    AlignOpts align_opts = AlignOpts(5.0, 3.0, 3, 3, 25);
     int m = query_.size() + 1;
     int n = ref_.size() + 1;
 
@@ -99,12 +99,15 @@ TEST_F(AlignTest, align_extra_rows) {
 TEST_F(AlignTest, make_align) {
 
     // Align using a score matrix with extra rows.
-    AlignOpts align_opts = AlignOpts(3.0, 5.0, 3, 3, 25);
-    int m = query_.size() + 1;
-    int n = ref_.size() + 1;
+    AlignOpts align_opts = AlignOpts(5.0, 3.0, 3, 3, 25);
+    IntVec query = {1, 3, 5 ,9, 17, 7, 5, 4, 1};
+    IntVec ref = {4, 1, 3, 5 ,9, 7, 9, 7, 5, 4, 1, 9};
+
+    int m = query.size() + 1;
+    int n = ref.size() + 1;
 
     ScoreMatrix mat = ScoreMatrix(m, n);
-    AlignTask align_task(query_, ref_, mat, align_opts);
+    AlignTask align_task(query, ref, mat, align_opts);
 
     fill_score_matrix(align_task);
 

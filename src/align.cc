@@ -106,9 +106,10 @@ void fill_score_matrix(AlignTask& align_task) {
       for(int l = j-1; l >= l0; l--) {
 
         const bool is_ref_boundary = l == 0 || j == n - 1;
-
-        int ref_miss = j - l - 1;
+        
         ref_size += ref[l];
+
+        int ref_miss = j - l - 1; // sites in reference unaligned to query
         double ref_miss_score = ref_miss * align_opts.ref_miss_penalty;
 
         int query_size = 0;
@@ -131,7 +132,7 @@ void fill_score_matrix(AlignTask& align_task) {
           ScoreCell* pTarget = mat.getCell(offset_back + k);
           if (pTarget->score_ == -INF) continue;
 
-          int query_miss = i - k - 1;
+          int query_miss = i - k - 1; // sites in query unaligned to reference
           double query_miss_score = query_miss * align_opts.query_miss_penalty;
 
           // Add sizing penalty only if this is not a boundary fragment.
@@ -314,8 +315,8 @@ Alignment alignment_from_trail(AlignTask& task, ScoreCellPVec& trail) {
     for (int i = n-1; i >= 0; i--) {
         Chunk& qc = query_chunks[i];
         Chunk& rc = ref_chunks[i];
-        int query_misses = qc.end - qc.start - 1;
-        int ref_misses = rc.end - rc.start - 1;
+        int ref_misses = rc.end - rc.start - 1; // sites in reference that are unaligned to query
+        int query_misses = qc.end - qc.start - 1; // sites in query that are unaligned to reference
 
         double query_miss_score = task.align_opts.query_miss_penalty * query_misses;
         double ref_miss_score = task.align_opts.ref_miss_penalty * ref_misses;
@@ -328,10 +329,7 @@ Alignment alignment_from_trail(AlignTask& task, ScoreCellPVec& trail) {
         
     }
 
-    std::cerr << "Creating alignment..\n";
     Alignment a(std::move(matched_chunks));
-
-    std::cerr << "Returning alignment.." << &a << " \n";
     return a;
 }
 
