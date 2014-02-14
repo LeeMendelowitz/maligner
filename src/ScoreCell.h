@@ -12,6 +12,9 @@
 #include <unordered_set>
 #include <ostream>
 
+#include "globals.h"
+using Constants::INF;
+
 class ScoreCell;
 typedef std::vector<ScoreCell *> ScoreCellPVec;
 typedef std::unordered_set<ScoreCell *> ScoreCellSet;
@@ -36,7 +39,6 @@ class ScoreCell
     double score_;
     ScoreCell * backPointer_; // back pointer for DP solution path
 };
-
 
 
 inline void ScoreCell::reset()

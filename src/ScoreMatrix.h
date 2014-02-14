@@ -18,7 +18,8 @@ it will see.
 
 class ScoreMatrix
 {
-    public:
+public:
+
     ScoreMatrix(size_t numRows = 0, size_t numCols = 0);
     void resize(size_t numRows, size_t numCols);
     size_t getSize() const { return size_; }
@@ -27,10 +28,10 @@ class ScoreMatrix
     size_t getNumCols() const { return numCols_; }
     ScoreCell * getCell(size_t row, size_t col);
     ScoreCell * getCell(const IntPair& coord);
-    ScoreCell * getCell(size_t coord);
+    ScoreCell * getCell(size_t n);
     const ScoreCell * getCell(size_t row, size_t col) const;
     const ScoreCell * getCell(const IntPair& coord) const;
-    const ScoreCell * getCell(size_t coord) const;
+    const ScoreCell * getCell(size_t n) const;
     void resetCells();
 
     // Summary Functions
@@ -38,11 +39,12 @@ class ScoreMatrix
     double getMaxScore();
     double getMaxScoreByRow(size_t row);
 
-    private:
+private:
     size_t numRows_;
     size_t numCols_;
     size_t size_;
     ScoreCellVec data_;
+    
 };
 
 

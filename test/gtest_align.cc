@@ -1,0 +1,100 @@
+/*
+Test the align.cc methods
+*/
+
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+
+using namespace std;
+
+// Test the ChunkDatabase
+#include "gtest/gtest.h"
+#include "types.h"
+
+#include "ScoreMatrix.h"
+#include "align.h"
+
+// To use a test fixture, derive a class from testing::Test.
+class AlignTest : public testing::Test {
+ protected:  // You should make the members protected s.t. they can be
+             // accessed from sub-classes.
+
+  // virtual void SetUp() will be called before each test is run.  You
+  // should define it if you need to initialize the varaibles.
+  // Otherwise, this can be skipped.
+  virtual void SetUp()
+  {
+    query_ = {1, 3, 5 ,9, 7, 9, 7, 5, 4, 1};
+    ref_ = {4, 1, 3, 5 ,9, 7, 9, 7, 5, 4, 1, 9};
+    size_t m = query_.size();
+    size_t n = ref_.size();
+    mat_ = ScoreMatrix(m+1, n+1);
+  }
+
+  // virtual void TearDown() will be called after each test is run.
+  // You should define it if there is cleanup work to do.  Otherwise,
+  // you don't have to provide it.
+  //
+  virtual void TearDown() {
+  }
+
+  // Declares the variables your tests want to use.
+  ScoreMatrix mat_;
+  IntVec query_;
+  IntVec ref_;
+
+};
+
+
+TEST_F(AlignTest, align) {
+    AlignOpts align_opts = AlignOpts(3.0, 5.0, 3, 3);
+    AlignTask align_task(query_, ref_, mat_, align_opts);
+    fill_score_matrix(align_task);
+    cerr << "Done filling score matrix!";
+    ASSERT_TRUE(true);
+}
+
+TEST_F(AlignTest, align_extra_rows) {
+
+    // Align using a score matrix with extra rows.
+    AlignOpts align_opts = AlignOpts(3.0, 5.0, 3, 3);
+    int m = query_.size() + 1;
+    int n = ref_.size() + 1;
+
+    ScoreMatrix mat = ScoreMatrix(m, n);
+    ScoreMatrix mat2 = ScoreMatrix(m+100, n);
+
+    AlignTask align_task(query_, ref_, mat, align_opts);
+    AlignTask align_task2(query_, ref_, mat2, align_opts);
+
+    fill_score_matrix(align_task);
+    fill_score_matrix(align_task2);
+
+
+    // Now build the best alignment
+    ScoreCellPVec trail, trail2;
+    bool result = get_best_alignment(align_task, trail);
+    bool result2 = get_best_alignment(align_task2, trail2);
+
+    ASSERT_TRUE(result);
+    ASSERT_TRUE(result2);
+
+    ChunkVec query_chunks, query_chunks2, ref_chunks, ref_chunks2;
+
+    build_chunk_trail(align_task, trail, query_chunks, ref_chunks);
+    build_chunk_trail(align_task2, trail2, query_chunks2, ref_chunks2);
+
+    ASSERT_TRUE(query_chunks == query_chunks2);
+    ASSERT_TRUE(ref_chunks == ref_chunks2);
+
+    // Open output file for outputing score matrix
+    ofstream fout("score_matrix.txt");
+    fout << mat << "\n";
+    fout.close();
+
+}
+
+
+
