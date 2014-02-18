@@ -8,7 +8,7 @@ BOOST_LIB = /fs/szattic-asmg7/lmendelo/packages/distribution/lib
 
 maligner_lib: ../lib/maligner.a
 
-all: boost_wrapper.so ../lib/maligner.a
+all: ../lib/maligner.a ../lib/malignpy/malignpy.so
 	
 boost_wrapper.so: boost_wrapper.o ScoreCell.o ScoreMatrix.o globals.o align.o
 	$(CXX) $(CXXFLAGS) -shared -Wl,--export-dynamic $^ -L$(BOOST_LIB) -lboost_python  -o $@
@@ -18,7 +18,10 @@ boost_wrapper.o: boost_wrapper.cc
 
 malignpy.so: malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o
 	$(CXX) $(CXXFLAGS) -shared -Wl,--export-dynamic $^ -L$(BOOST_LIB) -lboost_python  -o $@
-	cp malignpy.so ../lib/malignpy.so
+	
+../lib/malignpy/malignpy.so: malignpy.so
+	cp malignpy.so ../lib/malignpy/malignpy.so
+
 	
 malignpy.o: malignpy.cc
 	$(CXX) $(CXXFLAGS) -I$(PYTHON_INC) -I$(BOOST_INC) -c -fPIC $<

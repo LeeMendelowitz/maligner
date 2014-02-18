@@ -31,7 +31,12 @@ def run1():
 
 
   sm = mp.ScoreMatrix(len(q2) + 1, len(r2) + 1)
-  align_opts = mp.AlignOpts(3, 5, 2, 2)
+  align_opts = mp.AlignOpts(3, 5, 2, 2, 25)
   align_task = mp.AlignTask(q2, r2, sm, align_opts)
   res = run_task(align_task)
+
+  print 'Num Cells: ', sm.getSize()
+  print 'Num Cells Filled: ', sm.countFilledCells()
+  print 'Max Score: ', sm.getMaxScore()
+  
   return res

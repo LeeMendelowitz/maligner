@@ -35,9 +35,10 @@ public:
     void resetCells();
 
     // Summary Functions
-    size_t countFilledCells();
-    double getMaxScore();
-    double getMaxScoreByRow(size_t row);
+    size_t countFilledCells() const;
+    double percentFilled() const;
+    double getMaxScore() const;
+    double getMaxScoreByRow(size_t row) const;
 
 private:
     size_t numRows_;

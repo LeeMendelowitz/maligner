@@ -14,7 +14,7 @@ using std::cerr;
 
 using Constants::INF;
 
-#define DEBUG 1
+#define DEBUG 0
 
 inline double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts) {
   /* TODO: This can be baked into the dynamic programming routine */
@@ -261,13 +261,21 @@ void build_chunk_trail(AlignTask& task, ScoreCellPVec& trail, ChunkVec& query_ch
     assert(m < ml);
     assert(n < nl);
 
+    bool is_query_boundary = (m == 0) || (ml == query.size());
+    bool is_ref_boundary = (n == 0) || (nl == ref.size());
+
     // Build chunks
     int q_size = sum(query, m, ml);
     int r_size = sum(ref, n, nl);
-    Chunk q_chunk(m, ml, q_size); 
-    Chunk r_chunk(n, nl, r_size);
+    /* USE C++11 instead
+    Chunk q_chunk(m, ml, q_size, is_query_boundary); 
+    Chunk r_chunk(n, nl, r_size, is_ref_boundary);
     query_chunks.push_back(q_chunk);
     ref_chunks.push_back(r_chunk);
+    */
+    query_chunks.emplace_back(m, ml, q_size, is_query_boundary);
+    ref_chunks.emplace_back(n, nl, r_size, is_ref_boundary);
+
     ml = m;
     nl = n;
   }
@@ -298,6 +306,7 @@ Alignment alignment_from_trail(AlignTask& task, ScoreCellPVec& trail) {
     const AlignOpts& align_opts = task.align_opts;
     ChunkVec query_chunks, ref_chunks;
     MatchedChunkVec matched_chunks;
+    const IntVec& query = task.query;
 
     query_chunks.reserve(trail.size()-1);
     ref_chunks.reserve(trail.size()-1);
@@ -311,8 +320,10 @@ Alignment alignment_from_trail(AlignTask& task, ScoreCellPVec& trail) {
 
     const size_t n = query_chunks.size();
 
+    Score total_score(0.0, 0.0, 0.0);
 
     for (int i = n-1; i >= 0; i--) {
+      
         Chunk& qc = query_chunks[i];
         Chunk& rc = ref_chunks[i];
         int ref_misses = rc.end - rc.start - 1; // sites in reference that are unaligned to query
@@ -320,8 +331,18 @@ Alignment alignment_from_trail(AlignTask& task, ScoreCellPVec& trail) {
 
         double query_miss_score = task.align_opts.query_miss_penalty * query_misses;
         double ref_miss_score = task.align_opts.ref_miss_penalty * ref_misses;
-        double sizing_score = sizing_penalty(qc.size, rc.size, task.align_opts);
+        double sizing_score = 0.0;
+        const bool query_is_boundary = (qc.start == 0) || (qc.end == (int) query.size());
+
+        if (!query_is_boundary) {
+          sizing_score = sizing_penalty(qc.size, rc.size, task.align_opts);
+        }
+
         Score score(query_miss_score, ref_miss_score, sizing_score);
+
+        total_score.query_miss_score += query_miss_score;
+        total_score.ref_miss_score += ref_miss_score;
+        total_score.sizing_score += sizing_score;
 
         // MatchedChunk mc(query_chunks[i], ref_chunks[i], score);
         // Try fancy C++11:
@@ -329,7 +350,7 @@ Alignment alignment_from_trail(AlignTask& task, ScoreCellPVec& trail) {
         
     }
 
-    Alignment a(std::move(matched_chunks));
+    Alignment a(std::move(matched_chunks), total_score);
     return a;
 }
 
