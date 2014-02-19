@@ -15,13 +15,16 @@ using std::cerr;
 using Constants::INF;
 
 #define DEBUG 0
+#define BREAKS_DEBUG 1
 
 inline double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts) {
+
   /* TODO: This can be baked into the dynamic programming routine */
   double delta = query_size - ref_size;
   double sd = 0.1*ref_size;
   double penalty = delta*delta/(sd*sd);
   return penalty;
+
 }
 
 /*
@@ -32,13 +35,13 @@ inline double sizing_penalty(int query_size, int ref_size, const AlignOpts& alig
   The ScoreMatrix should already have the same nubmer of columns as the reference,
   and should have enough rows to accomodate the query.
 */
-void fill_score_matrix(AlignTask& align_task) {
+void fill_score_matrix(const AlignTask& align_task) {
 
   // Unpack the alignment task
-  const IntVec& query = align_task.query;
-  const IntVec& ref = align_task.ref;
-  ScoreMatrix& mat = align_task.mat;
-  AlignOpts& align_opts = align_task.align_opts;
+  const IntVec& query = *align_task.query;
+  const IntVec& ref = *align_task.ref;
+  ScoreMatrix& mat = *align_task.mat;
+  AlignOpts& align_opts = *align_task.align_opts;
 
 
   const int m = query.size() + 1;
@@ -85,6 +88,10 @@ void fill_score_matrix(AlignTask& align_task) {
     }
 
   }
+
+  #if BREAKS_DEBUG > 0
+  int num_breaks = 0;
+  #endif
 
 
   for (int j = 1; j < n; j++) {
@@ -141,7 +148,15 @@ void fill_score_matrix(AlignTask& align_task) {
             size_penalty = sizing_penalty(query_size, ref_size, align_opts);
           }
 
-          // If the sizing penalty is too large, continue.
+          if (query_size > ref_size && size_penalty > align_opts.max_chunk_sizing_error) {
+            // The query chunk is already too big for the reference chunk.
+              #if BREAKS_DEBUG > 0
+                num_breaks++;
+              #endif
+            break;
+          }
+
+          // If the sizing penalty is too large, continue and do not populate matrix.
           if (size_penalty > align_opts.max_chunk_sizing_error) {
             continue;
           }
@@ -165,17 +180,25 @@ void fill_score_matrix(AlignTask& align_task) {
     } // for int i
   } // for int j
   
+  #if BREAKS_DEBUG > 0
+    std::cout << "num breaks: " << num_breaks << "\n";
+  #endif
+
 } // fill_score_matrix
 
 
 
-bool get_best_alignment(AlignTask& task, ScoreCellPVec& trail) {
+bool get_best_alignment(const AlignTask& task, ScoreCellPVec& trail) {
 
   // Go to the last row of the ScoreMatrix and identify the best score.
-  const int m = task.query.size() + 1;
-  const int n = task.ref.size() + 1;
-  const int num_rows = task.mat.getNumRows();
-  const int num_cols = task.mat.getNumCols();
+  IntVec& query = *task.query;
+  IntVec& ref = *task.ref;
+  ScoreMatrix& mat = *task.mat;
+
+  const int m = query.size() + 1;
+  const int n = ref.size() + 1;
+  const int num_rows = mat.getNumRows();
+  const int num_cols = mat.getNumCols();
   const int last_row = m - 1;
 
   double best_score = -INF;
@@ -185,7 +208,7 @@ bool get_best_alignment(AlignTask& task, ScoreCellPVec& trail) {
   // Get the cell with the best score in the last row.
   for (int i = 0; i < n; i++, index += num_rows) {
     
-    ScoreCell * pCell = task.mat.getCell(index);
+    ScoreCell * pCell = mat.getCell(index);
 
     #if DEBUG > 0
     cerr << "index: " << index << ", ";
@@ -208,6 +231,7 @@ bool get_best_alignment(AlignTask& task, ScoreCellPVec& trail) {
  
   if (p_best_cell && p_best_cell->score_ > -INF) {
     // Get the traceback
+    trail.clear();
     trail.reserve(m);
     build_trail(p_best_cell, trail);
     return true;
@@ -227,31 +251,40 @@ void build_trail(ScoreCell* pCell, ScoreCellPVec& trail) {
 
 
 // trail: starts from end of alignment
-void build_chunk_trail(AlignTask& task, ScoreCellPVec& trail, ChunkVec& query_chunks, ChunkVec& ref_chunks) {
+void build_chunk_trail(const AlignTask& task, ScoreCellPVec& trail, ChunkVec& query_chunks, ChunkVec& ref_chunks) {
 
-  const size_t ts = trail.size();
+  const int ts = trail.size();
   if (ts == 0) { return; }
 
-  query_chunks.clear();
-  ref_chunks.clear();
-  query_chunks.reserve(trail.size());
-  ref_chunks.reserve(trail.size());
+  const IntVec& query = *task.query;
+  const IntVec& ref = *task.ref;
 
-  const IntVec& query = task.query;
-  const IntVec& ref = task.ref;
+  query_chunks.clear();
+  query_chunks.reserve(ts-1);
+  ref_chunks.clear();
+  ref_chunks.reserve(ts-1);
+  //assert(query_chunks.size() == ts - 1);
+  //assert(ref_chunks.size() == ts - 1);
 
   ScoreCell* pLast = trail[0];
   int ml = pLast->q_;
+
+  #if DEBUG > 0
+  std::cerr << "build_chunk_trail for: " << trail << std::endl;
+  #endif
+
   int nl = pLast->r_;
 
-  for(size_t i = 1; i < ts; i++) {
+  auto qi(query_chunks.begin());
+  auto ri(ref_chunks.begin());
+  for(int i = 1; i < ts; i++, qi++, ri++) {
     
-    ScoreCell* pCell = trail[i];
+    const ScoreCell* pCell = trail[i];
     int m = pCell->q_; // index of query site, one based
     int n = pCell->r_; // index of ref size, one based
 
     #if DEBUG > 0
-    cerr << "cell: " << *pCell << "\n"
+    cerr << "cell: " << pCell << " " << *pCell << "\n"
          << " i: " << i 
          << " m: " << m << " ml: " << ml
          << " n: " << n << " nl: " << nl
@@ -273,6 +306,8 @@ void build_chunk_trail(AlignTask& task, ScoreCellPVec& trail, ChunkVec& query_ch
     query_chunks.push_back(q_chunk);
     ref_chunks.push_back(r_chunk);
     */
+    //query_chunks.emplace(qi, m, ml, q_size, is_query_boundary);
+    //ref_chunks.emplace(ri, n, nl, r_size, is_ref_boundary);
     query_chunks.emplace_back(m, ml, q_size, is_query_boundary);
     ref_chunks.emplace_back(n, nl, r_size, is_ref_boundary);
 
@@ -301,16 +336,15 @@ void print_chunk_trail(const ChunkVec& query_chunks, const ChunkVec& ref_chunks)
 
 // Make and return an alignment from the trail through the
 // score matrix.
-Alignment alignment_from_trail(AlignTask& task, ScoreCellPVec& trail) {
+Alignment * alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail) {
 
-    const AlignOpts& align_opts = task.align_opts;
+    const AlignOpts& align_opts = *task.align_opts;
+    const IntVec& query = *task.query;
+
+    const size_t chunk_vec_size = trail.size() - 1;
+
     ChunkVec query_chunks, ref_chunks;
     MatchedChunkVec matched_chunks;
-    const IntVec& query = task.query;
-
-    query_chunks.reserve(trail.size()-1);
-    ref_chunks.reserve(trail.size()-1);
-    matched_chunks.reserve(trail.size()-1);
 
     build_chunk_trail(task, trail, query_chunks, ref_chunks);
 
@@ -321,7 +355,7 @@ Alignment alignment_from_trail(AlignTask& task, ScoreCellPVec& trail) {
     const size_t n = query_chunks.size();
 
     Score total_score(0.0, 0.0, 0.0);
-
+    matched_chunks.reserve(n);
     for (int i = n-1; i >= 0; i--) {
       
         Chunk& qc = query_chunks[i];
@@ -329,13 +363,14 @@ Alignment alignment_from_trail(AlignTask& task, ScoreCellPVec& trail) {
         int ref_misses = rc.end - rc.start - 1; // sites in reference that are unaligned to query
         int query_misses = qc.end - qc.start - 1; // sites in query that are unaligned to reference
 
-        double query_miss_score = task.align_opts.query_miss_penalty * query_misses;
-        double ref_miss_score = task.align_opts.ref_miss_penalty * ref_misses;
+        double query_miss_score = align_opts.query_miss_penalty * query_misses;
+        double ref_miss_score = align_opts.ref_miss_penalty * ref_misses;
         double sizing_score = 0.0;
+
         const bool query_is_boundary = (qc.start == 0) || (qc.end == (int) query.size());
 
         if (!query_is_boundary) {
-          sizing_score = sizing_penalty(qc.size, rc.size, task.align_opts);
+          sizing_score = sizing_penalty(qc.size, rc.size, align_opts);
         }
 
         Score score(query_miss_score, ref_miss_score, sizing_score);
@@ -350,10 +385,24 @@ Alignment alignment_from_trail(AlignTask& task, ScoreCellPVec& trail) {
         
     }
 
-    Alignment a(std::move(matched_chunks), total_score);
-    return a;
+    return new Alignment(std::move(matched_chunks), total_score);
 }
 
+// Fill score matrix, find best alignment, and return it.
+Alignment * make_best_alignment(const AlignTask& task) {
+
+  // populate the score matrix
+  fill_score_matrix(task);
+
+  // get the best alignment.
+  ScoreCellPVec trail;
+  bool have_alignment = get_best_alignment(task, trail);
+  if (!have_alignment) {
+    return nullptr;
+  }
+
+  return alignment_from_trail(task, trail);
+}
 
 
 std::ostream& operator<<(std::ostream& os, const Chunk& chunk) {
@@ -385,6 +434,18 @@ std::ostream& operator<<(std::ostream& os, const Score& score) {
 }
 
 std::ostream& operator<<(std::ostream& os, const Alignment& aln) {
+
   os << "Alignment: " << aln.matched_chunks << "\n";
+  return os;
+
+}
+
+std::ostream& print_align_task(std::ostream& os, const AlignTask& task) {
+
+  os << "align_task:\n"
+     << "\tquery: " << task.query << "\n"
+     << "\tref: " << task.ref << "\n"
+     << std::endl;
+
   return os;
 }

@@ -1,4 +1,4 @@
-CXXFLAGS=-Wall -pedantic -std=c++0x
+CXXFLAGS=-Wall -pedantic -std=c++0x -O3
 
 PYTHON_INC = /fs/szattic-asmg7/lmendelo/packages/distribution/include/python2.7
 PYTHON_LIB = /fs/szattic-asmg7/lmendelo/packages/distribution/lib/python2.7/config
@@ -9,21 +9,14 @@ BOOST_LIB = /fs/szattic-asmg7/lmendelo/packages/distribution/lib
 maligner_lib: ../lib/maligner.a
 
 all: ../lib/maligner.a ../lib/malignpy/malignpy.so
-	
-boost_wrapper.so: boost_wrapper.o ScoreCell.o ScoreMatrix.o globals.o align.o
-	$(CXX) $(CXXFLAGS) -shared -Wl,--export-dynamic $^ -L$(BOOST_LIB) -lboost_python  -o $@
-
-boost_wrapper.o: boost_wrapper.cc
-	$(CXX) $(CXXFLAGS) -I$(PYTHON_INC) -I$(BOOST_INC) -c -fPIC $<
 
 malignpy.so: malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o
 	$(CXX) $(CXXFLAGS) -shared -Wl,--export-dynamic $^ -L$(BOOST_LIB) -lboost_python  -o $@
 	
 ../lib/malignpy/malignpy.so: malignpy.so
 	cp malignpy.so ../lib/malignpy/malignpy.so
-
 	
-malignpy.o: malignpy.cc
+malignpy.o: malignpy.cc align.h ScoreCell.h ScoreMatrix.h ScoreCell.h globals.h
 	$(CXX) $(CXXFLAGS) -I$(PYTHON_INC) -I$(BOOST_INC) -c -fPIC $<
 
 ../lib/maligner.a: ScoreCell.o ScoreMatrix.o globals.o align.o

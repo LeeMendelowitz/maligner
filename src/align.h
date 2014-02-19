@@ -35,17 +35,33 @@ public:
 class AlignTask {
   
 public:
-  AlignTask(IntVec& q, IntVec& r, ScoreMatrix& m, AlignOpts& ao) :
-    query(q), ref(r), mat(m), align_opts(ao) {};
 
-  IntVec& query;
-  IntVec& ref;
-  ScoreMatrix& mat;
-  AlignOpts& align_opts;
+  AlignTask(IntVec& q, IntVec& r, ScoreMatrix * m, AlignOpts& ao) :
+    query(&q), ref(&r), mat(m), align_opts(&ao) {
+  }
+
+  AlignTask(const AlignTask& other) :
+    query(other.query),
+    ref(other.ref),
+    mat(other.mat),
+    align_opts(other.align_opts) {
+  }
+
+  IntVec * query;
+  IntVec * ref;
+  ScoreMatrix * mat;
+  AlignOpts * align_opts;
+
 };
+
+std::ostream& print_align_task(std::ostream& os, const AlignTask& task);
+
 
 class Chunk {
 public:
+  
+  Chunk() : start(0), end(0), size(0), is_boundary(false) {};
+
   Chunk(int s, int e, int sz, bool isb) :
     start(s), end(e), size(sz), is_boundary(isb) {};
   int start; // start coordinate, inclusive
@@ -95,6 +111,8 @@ std::ostream& operator<<(std::ostream& os, const Score& score);
 class MatchedChunk {
 public:
 
+  MatchedChunk() {};
+
   MatchedChunk(Chunk& qc, Chunk& rc, Score& s) :
     query_chunk(qc), ref_chunk(rc), score(s) {};
 
@@ -123,7 +141,7 @@ public:
     reset_stats();
   }
 
-  Alignment(MatchedChunkVec&& mc, Score& s) : matched_chunks(mc), score(s) {
+  Alignment(MatchedChunkVec&& mc, Score& s) : matched_chunks(std::move(mc)), score(s) {
     std::cerr << "Alignment constructor from matched_chunks\n";
     summarize();
   }
@@ -133,7 +151,7 @@ public:
     summarize();
   }
 
-  Alignment(Alignment&& a) : matched_chunks(a.matched_chunks), score(a.score) {
+  Alignment(Alignment&& a) : matched_chunks(std::move(a.matched_chunks)), score(a.score) {
     std::cerr << "Alignment move constructor!\n";
     summarize();
   }
@@ -173,7 +191,7 @@ public:
 
     ref_miss_rate = ((double) ref_misses)/((double) num_matched_sites + ref_misses);
     query_miss_rate = ((double) query_misses)/((double) num_matched_sites + query_misses);
-    total_miss_rate = ((double) ref_misses + query_misses) / ((double) ref_misses + query_misses + num_matched_sites);
+    total_miss_rate = ((double) ref_misses + query_misses) / ((double) ref_misses + query_misses + 2.0*num_matched_sites);
     interior_size_ratio = ((double) query_interior_size) / ref_interior_size;
 
   }
@@ -207,12 +225,9 @@ public:
   int query_interior_size; // total size of non-boundary fragments
   int ref_interior_size; // total size of non-boundary fragments
   double interior_size_ratio;
-
 };
 
 std::ostream& operator<<(std::ostream& os, const Alignment& aln);
-
-
 
 double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts);
 
@@ -224,23 +239,26 @@ double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts)
   The ScoreMatrix should already have the same nubmer of columns as the reference,
   and should have enough rows to accomodate the query.
 */
-void fill_score_matrix(AlignTask& task);
+void fill_score_matrix(const AlignTask& task);
 
 // Build the trail which starts at pCell by following its backpointers.
 void build_trail(ScoreCell* pCell, ScoreCellPVec& trail);
 
 // Create a vector of query chunks and reference chunks for the given trail.
-void build_chunk_trail(AlignTask& task, ScoreCellPVec& trail, ChunkVec& query_chunks, ChunkVec& ref_chunks);
+void build_chunk_trail(const AlignTask& task, ScoreCellPVec& trail, ChunkVec& query_chunks, ChunkVec& ref_chunks);
 
 // Print the vector of query chunks and reference chunks.
 void print_chunk_trail(const ChunkVec& query_chunks, const ChunkVec& ref_chunks);
 
 // Build the trail for the best alignment.
-bool get_best_alignment(AlignTask& task, ScoreCellPVec& trail);
+bool get_best_alignment(const AlignTask& task, ScoreCellPVec& trail);
 
 // Make and return an alignment from the trail through the
 // score matrix.
-Alignment alignment_from_trail(AlignTask& task, ScoreCellPVec& trail);
+Alignment * alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail);
+
+// Fill score matrix, find best alignment, and return it.
+Alignment * make_best_alignment(const AlignTask& task);
 
 
 

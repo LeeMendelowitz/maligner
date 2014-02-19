@@ -41,6 +41,14 @@ ScoreMatrix* make_score_matrix(size_t m, size_t n) {
     return new ScoreMatrix(m, n);
 }
 
+IntVec* make_int_vec() {
+    return new IntVec();
+}
+
+void ptask(AlignTask& task) {
+    print_align_task(std::cout, task) << std::endl;
+}
+
 
 BOOST_PYTHON_MODULE(malignpy)
 {
@@ -68,7 +76,7 @@ BOOST_PYTHON_MODULE(malignpy)
         .def_readwrite("query_max_misses", &AlignOpts::query_max_misses)
         .def_readwrite("ref_max_misses", &AlignOpts::ref_max_misses);
         
-    class_<AlignTask>("AlignTask", init<IntVec&, IntVec&, ScoreMatrix&, AlignOpts&>());
+    class_<AlignTask>("AlignTask", init<IntVec&, IntVec&, ScoreMatrix *, AlignOpts&>());
 
     class_< Chunk >("Chunk", no_init)
                    .def_readwrite("start", &Chunk::start)
@@ -87,12 +95,13 @@ BOOST_PYTHON_MODULE(malignpy)
         .def("sum", &sum_all<int>)
         .def(vector_indexing_suite< std::vector<int> >());
 
+    def("make_int_vec", make_int_vec, return_value_policy<manage_new_object>() );
+
     class_< Score >("Score")
         .def("total", &Score::total)
         .def_readonly("query_miss_score", &Score::query_miss_score)
         .def_readonly("ref_miss_score", &Score::ref_miss_score)
         .def_readonly("sizing_score", &Score::sizing_score);
-
 
     class_< Alignment >("Alignment")
         .def_readonly("matched_chunks", &Alignment::matched_chunks)
@@ -113,6 +122,8 @@ BOOST_PYTHON_MODULE(malignpy)
     def("build_trail", build_trail);
     def("build_chunk_trail", build_chunk_trail);
     def("get_best_alignment", get_best_alignment);
-    def("alignment_from_trail", alignment_from_trail);
+    def("alignment_from_trail", alignment_from_trail, return_value_policy<manage_new_object>());
+    def("print_align_task", ptask);
+    def("make_best_alignment", make_best_alignment, return_value_policy<manage_new_object>());
 
 }

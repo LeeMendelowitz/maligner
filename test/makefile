@@ -76,3 +76,6 @@ gtest_align.o : $(USER_DIR)/gtest_align.cc $(GTEST_HEADERS)
 
 gtest_align: gtest_align.o gtest_main.a ../lib/maligner.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
+get_sizes: get_sizes.cc ../lib/maligner.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -I$(USER_INC_DIR) $^ -o $@
