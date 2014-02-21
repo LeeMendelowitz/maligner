@@ -15,14 +15,23 @@ using std::cerr;
 using Constants::INF;
 
 #define DEBUG 0
-#define BREAKS_DEBUG 1
+#define BREAKS_DEBUG 0
 
 inline double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts) {
 
   /* TODO: This can be baked into the dynamic programming routine */
+  /* For each reference fragment, compute the standard deviation ahead of time */
+  
   double delta = query_size - ref_size;
-  double sd = 0.1*ref_size;
-  double penalty = delta*delta/(sd*sd);
+  double sd = align_opts.sd_rate * ref_size;
+
+  if (sd < align_opts.min_sd) {
+    sd = align_opts.min_sd;
+  }
+
+  double sd_1 = 1.0 / sd;
+  double penalty = delta * sd_1;
+  penalty = penalty * penalty;
   return penalty;
 
 }
@@ -185,6 +194,175 @@ void fill_score_matrix(const AlignTask& align_task) {
   #endif
 
 } // fill_score_matrix
+
+void fill_score_matrix_using_partials(const AlignTask& align_task) {
+
+  // Unpack the alignment task
+  const IntVec& query = *align_task.query;
+  const IntVec& ref = *align_task.ref;
+  const PartialSums& query_partial_sums = *align_task.query_partial_sums;
+  const PartialSums& ref_partial_sums = *align_task.ref_partial_sums;
+
+  ScoreMatrix& mat = *align_task.mat;
+  AlignOpts& align_opts = *align_task.align_opts;
+
+  // Compute the miss penalties
+  IntVec query_miss_penalties(align_opts.query_max_misses+1, align_opts.query_miss_penalty);
+  for (int i = 0; i < align_opts.query_max_misses+1; i++) {
+    query_miss_penalties[i] *= (double) i;
+  }
+
+  IntVec ref_miss_penalties(align_opts.ref_max_misses+1, align_opts.ref_miss_penalty);
+  for (int i = 0; i < align_opts.ref_max_misses+1; i++) {
+    ref_miss_penalties[i] *= (double) i;
+  }
+
+  const int m = query.size() + 1;
+  const int n = ref.size() + 1;
+
+  // Note: Number of rows may be different from m if matrix is padded with extra rows.
+  const int num_rows = mat.getNumRows();
+
+  assert((int) mat.getNumCols() == n);
+  assert((int) mat.getNumRows() >= m);
+
+  #if DEBUG > 0
+  cerr << "m: " << m
+       << " n: " << n
+       << " num_rows: " << num_rows
+       << " num_cols: " << mat.getNumCols()
+       << "\n";
+  #endif
+
+  // Initialize the first row
+  for (int j = 0; j < n; j++) {
+    ScoreCell* pCell = mat.getCell(0,j);
+    pCell->score_ = 0.0;
+    pCell->backPointer_ = nullptr;
+  }
+
+  // Initialize the first column
+  for (int i = 1; i < m; i++ ) {
+    ScoreCell* pCell = mat.getCell(i,0);
+    pCell->score_ = -INF;
+    pCell->backPointer_ = nullptr;
+  }
+
+  // Initialize the body of the matrix.
+  for (int j = 1; j < n; j++) {
+    
+    // Matrix is column major ordered.
+    int offset = j*num_rows;
+
+    for (int i = 1; i < m; i++) {
+      ScoreCell* pCell = mat.getCell(offset + i);
+      pCell->score_ = -INF;
+      pCell->backPointer_ = nullptr;
+    }
+
+  }
+
+  #if BREAKS_DEBUG > 0
+  int num_breaks = 0;
+  #endif
+
+  
+  for (int j = 1; j < n; j++) {
+
+    const IntVec& ref_ps = ref_partial_sums[j-1]; // reference partial sum
+
+    int l0 = (j > align_opts.ref_max_misses + 1) ? j - align_opts.ref_max_misses - 1 : 0;
+    const int offset = num_rows*j;
+    
+    for (int i = 1; i < m; i++) {
+
+      const IntVec& query_ps = query_partial_sums[i-1]; // query partial sum
+
+      ScoreCell* pCell = mat.getCell(offset + i);
+
+      // Try all allowable extensions
+
+      ScoreCell* backPointer = nullptr;
+      double best_score = -INF;
+      int k0 = (i > align_opts.query_max_misses) ? i - align_opts.query_max_misses - 1 : 0;
+
+      for(int l = j-1; l >= l0; l--) {
+
+        const bool is_ref_boundary = l == 0 || j == n - 1;
+
+        int ref_miss = j - l - 1; // sites in reference unaligned to query
+        double ref_miss_score = ref_miss_penalties[ref_miss];
+        int ref_size = ref_ps[ref_miss];
+
+        const int offset_back = num_rows*l;
+
+        for(int k = i-1; k >= k0; k--) {
+
+          const bool is_query_boundary =  k == 0 || k == m - 1;
+
+          #if DEBUG > 0
+          cerr << "i: " << i
+               << " j: " << j
+               << " k: " << k
+               << " l: " << l
+               << "\n";
+          #endif
+
+          ScoreCell* pTarget = mat.getCell(offset_back + k);
+          if (pTarget->score_ == -INF) continue;
+
+          int query_miss = i - k - 1; // sites in query unaligned to reference
+          double query_miss_score = query_miss_penalties[query_miss];
+          //double query_miss_score = query_miss * align_opts.query_miss_penalty;
+          int query_size = query_ps[query_miss];
+
+          // Add sizing penalty only if this is not a boundary fragment.
+          double size_penalty = 0.0;
+          if (!is_ref_boundary && !is_query_boundary) {
+
+            size_penalty = sizing_penalty(query_size, ref_size, align_opts);
+        
+
+          }
+
+          // Break if the query chunk is already too big for the reference
+          if (query_size > ref_size && size_penalty > align_opts.max_chunk_sizing_error) {
+              #if BREAKS_DEBUG > 0
+                num_breaks++;
+              #endif
+            break;
+          }
+
+          // If the sizing penalty is too large, continue and do not populate matrix.
+          if (size_penalty > align_opts.max_chunk_sizing_error) {
+            continue;
+          }
+
+          double chunk_score = -size_penalty - query_miss_score - ref_miss_score;
+
+          if (chunk_score + pTarget->score_ > best_score) {
+            backPointer = pTarget;
+            best_score = chunk_score + pTarget->score_;
+          }
+
+        } // for int k
+      } // for int l
+
+      // Assign the backpointer and score to pCell
+      if (backPointer) {
+        pCell->backPointer_ = backPointer;
+        pCell->score_ = best_score;
+      }
+
+    } // for int i
+  } // for int j
+  
+  #if BREAKS_DEBUG > 0
+    std::cout << "num breaks: " << num_breaks << "\n";
+  #endif
+
+} // fill_score_matrix
+
 
 
 
@@ -388,11 +566,65 @@ Alignment * alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail) {
     return new Alignment(std::move(matched_chunks), total_score);
 }
 
+
+// Make partial sums of the preceeding fragment sizes, up to (missed_sites + 1) fragments.
+vector<IntVec> make_partial_sums(const IntVec& frags, const int missed_sites) {
+/*
+
+  Consider fragments with indices i and fragment sizes f
+  ...|---------|----------|--------|...
+       i-2        i-1        i
+       f_(i-2)    f_(i-1)   f_(i)
+
+  The partial sums fragment i for the case missed_sites = 2 will be:
+   [ f_i, f_i + f_(i-1), f_i + f_(i-1) + f(i-2)] 
+
+ */
+  const IntVec zero_sums(missed_sites + 1, 0);
+  const int num_frags = frags.size();
+
+  vector<IntVec> partial_sums(num_frags, zero_sums);
+
+  for (int i = 0; i < num_frags; i++) {
+    IntVec& ps = partial_sums[i];
+    const int lower_index = i - missed_sites; // inclusive
+    int ind = 0;
+    int cur_sum = 0;
+    for (int j = i, ind = 0; j >= lower_index; j--, ind++) {
+      if (j < 0) break;
+      cur_sum += frags[j];
+      ps[ind] = cur_sum;
+    }
+  }
+
+  return partial_sums;
+}
+
+
+
+
+
 // Fill score matrix, find best alignment, and return it.
 Alignment * make_best_alignment(const AlignTask& task) {
 
   // populate the score matrix
   fill_score_matrix(task);
+
+  // get the best alignment.
+  ScoreCellPVec trail;
+  bool have_alignment = get_best_alignment(task, trail);
+  if (!have_alignment) {
+    return nullptr;
+  }
+
+  return alignment_from_trail(task, trail);
+}
+
+// Fill score matrix, find best alignment, and return it.
+Alignment * make_best_alignment_using_partials(const AlignTask& task) {
+
+  // populate the score matrix
+  fill_score_matrix_using_partials(task);
 
   // get the best alignment.
   ScoreCellPVec trail;

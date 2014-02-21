@@ -8,47 +8,67 @@
 // Forward Declarations
 class ScoreMatrix;
 
+typedef vector<IntVec> PartialSums;
+
 
 class AlignOpts {
 
 public:
 
   AlignOpts(double p1, double p2, int p3, int p4,
-            double p5) : 
+            double p5, double p6) : 
     query_miss_penalty(p1), // penalty for having a site in query unaligned to reference
     ref_miss_penalty(p2), // penalty for having a site in reference unaligned to query
     query_max_misses(p3),
     ref_max_misses(p4),
-    max_chunk_sizing_error(p5)
+    sd_rate(0.1), // Fraction of reference fragment to use as standard deviation
+    min_sd(p5), // minimum standard deviation imposed in sizing error model, bp
+    max_chunk_sizing_error(p6)
   {};
 
   double query_miss_penalty;
   double ref_miss_penalty;
   int query_max_misses;
   int ref_max_misses;
+  double sd_rate;
+  double min_sd;
   double max_chunk_sizing_error;
 
 };
 
 // Bundle the alignment options into a single object that
-// can be passed around.
+// can be passed around. Note this just collects pointers
+// to external objects into a single object.
 class AlignTask {
   
 public:
 
-  AlignTask(IntVec& q, IntVec& r, ScoreMatrix * m, AlignOpts& ao) :
-    query(&q), ref(&r), mat(m), align_opts(&ao) {
+  AlignTask(IntVec& q, IntVec& r, PartialSums& qps, PartialSums& rps, ScoreMatrix * m, AlignOpts& ao) :
+    query(&q),
+    ref(&r),
+    query_partial_sums(&qps),
+    ref_partial_sums(&rps),
+    mat(m),
+    align_opts(&ao)
+  {
+
   }
 
   AlignTask(const AlignTask& other) :
     query(other.query),
     ref(other.ref),
+    query_partial_sums(other.query_partial_sums),
+    ref_partial_sums(other.ref_partial_sums),
     mat(other.mat),
-    align_opts(other.align_opts) {
+    align_opts(other.align_opts)
+  {
+
   }
 
   IntVec * query;
   IntVec * ref;
+  PartialSums * query_partial_sums;
+  PartialSums * ref_partial_sums;
   ScoreMatrix * mat;
   AlignOpts * align_opts;
 
@@ -100,6 +120,13 @@ public:
     return query_miss_score + ref_miss_score + sizing_score;
   }
 
+  bool operator==(const Score& other ) const {
+
+    return (query_miss_score == other.query_miss_score &&
+            ref_miss_score == other.ref_miss_score &&
+            sizing_score == other.sizing_score );
+  }
+
   double query_miss_score;
   double ref_miss_score;
   double sizing_score;
@@ -124,6 +151,12 @@ public:
     return (query_chunk.is_boundary || ref_chunk.is_boundary);
   }
 
+  bool operator==(const MatchedChunk& other) const {
+    return (query_chunk == other.query_chunk &&
+            ref_chunk == other.ref_chunk &&
+            score == other.score);
+  }
+
 };
 
 
@@ -137,22 +170,22 @@ public:
 
   //Alignment(MatchedChunkVec& mc) : matched_chunks(mc) {};
   Alignment() {
-    std::cerr <<"Default constructor\n";
+    //std::cerr <<"Default constructor\n";
     reset_stats();
   }
 
   Alignment(MatchedChunkVec&& mc, Score& s) : matched_chunks(std::move(mc)), score(s) {
-    std::cerr << "Alignment constructor from matched_chunks\n";
+    //std::cerr << "Alignment constructor from matched_chunks\n";
     summarize();
   }
 
   Alignment(const Alignment& a) : matched_chunks(a.matched_chunks), score(a.score) {
-    std::cerr << "Alignment copy constructor\n";
+    //std::cerr << "Alignment copy constructor\n";
     summarize();
   }
 
   Alignment(Alignment&& a) : matched_chunks(std::move(a.matched_chunks)), score(a.score) {
-    std::cerr << "Alignment move constructor!\n";
+    //std::cerr << "Alignment move constructor!\n";
     summarize();
   }
 
@@ -260,5 +293,8 @@ Alignment * alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail);
 // Fill score matrix, find best alignment, and return it.
 Alignment * make_best_alignment(const AlignTask& task);
 
+PartialSums make_partial_sums(const IntVec& frags, const int missed_sites);
 
+void fill_score_matrix_using_partials(const AlignTask& align_task);
+Alignment * make_best_alignment_using_partials(const AlignTask& task);
 

@@ -17,6 +17,8 @@ using namespace std;
 #include "align.h"
 #include "utils.h"
 
+PartialSums dummy_partial_sums;
+
 // To use a test fixture, derive a class from testing::Test.
 class AlignTest : public testing::Test {
  protected:  // You should make the members protected s.t. they can be
@@ -51,7 +53,7 @@ class AlignTest : public testing::Test {
 
 TEST_F(AlignTest, align) {
     AlignOpts align_opts = AlignOpts(5.0, 3.0, 3, 3, 25);
-    AlignTask align_task(query_, ref_, &mat_, align_opts);
+    AlignTask align_task(query_, ref_, dummy_partial_sums, dummy_partial_sums, &mat_, align_opts);
     fill_score_matrix(align_task);
     cerr << "Done filling score matrix!";
     ASSERT_TRUE(true);
@@ -68,7 +70,7 @@ TEST_F(AlignTest, align_extra_rows) {
     ScoreMatrix * mat = new ScoreMatrix(m, n);
     ScoreMatrix * mat2 = new ScoreMatrix(m+100, n);
 
-    AlignTask align_task(query_, ref_, mat, align_opts);
+    AlignTask align_task(query_, ref_, dummy_partial_sums, dummy_partial_sums, mat, align_opts);
     //AlignTask align_task2(query_, ref_, mat2, align_opts);
 
     fill_score_matrix(align_task);
@@ -88,13 +90,15 @@ TEST_F(AlignTest, align_extra_rows) {
 
     ChunkVec query_chunks, query_chunks2, ref_chunks, ref_chunks2;
 
-    Alignment a = alignment_from_trail(align_task, trail);
+    Alignment * a = alignment_from_trail(align_task, trail);
     //Alignment a2 = alignment_from_trail(align_task2, trail2);
 
     // Open output file for outputing score matrix
     ofstream fout("score_matrix.txt");
     fout << *mat << "\n";
     fout.close();
+
+    delete a;
 
 }
 
@@ -110,7 +114,7 @@ TEST_F(AlignTest, make_align) {
     int n = ref.size() + 1;
 
     ScoreMatrix mat = ScoreMatrix(m, n);
-    AlignTask align_task(query, ref, &mat, align_opts);
+    AlignTask align_task(query, ref, dummy_partial_sums, dummy_partial_sums, &mat, align_opts);
 
     fill_score_matrix(align_task);
 
@@ -119,8 +123,51 @@ TEST_F(AlignTest, make_align) {
     bool result = get_best_alignment(align_task, trail);
     ASSERT_TRUE(result);
     
-    Alignment a(alignment_from_trail(align_task, trail));
-    std::cerr << "Made alignment: " << a;
+    Alignment * a(alignment_from_trail(align_task, trail));
+    std::cerr << "Made alignment: " << *a;
+    delete a;
+}
+
+TEST_F(AlignTest, partial_sum_test) {
+  IntVec q = {1,2,3,4,5};
+  const int missed_sites = 2;
+  vector<IntVec> partial_sum = make_partial_sums(q, missed_sites);
+
+  ASSERT_TRUE(partial_sum.size() == q.size());
+
+  for (size_t i = 0; i < partial_sum.size(); i++) {
+    ASSERT_TRUE(partial_sum[i].size() == missed_sites+1);
+    cout << "i: " << i << ", partial_sum: " << partial_sum[i] << "\n";
+  }
 }
 
 
+TEST_F(AlignTest, partial_sum_align_test) {
+  
+  // Align using a score matrix with extra rows.
+  const int missed_sites = 3;
+  AlignOpts align_opts = AlignOpts(5.0, 3.0, missed_sites, missed_sites, 25);
+
+  IntVec query = {1, 3, 5 ,9, 17, 7, 5, 4, 1};
+  IntVec ref = {4, 1, 3, 5 ,9, 7, 9, 7, 5, 4, 1, 9};
+
+  PartialSums query_partial_sum = make_partial_sums(query, missed_sites);
+  PartialSums ref_partial_sum = make_partial_sums(ref, missed_sites);
+
+  int m = query.size() + 1;
+  int n = ref.size() + 1;
+
+  ScoreMatrix mat = ScoreMatrix(m, n);
+  AlignTask align_task(query, ref, query_partial_sum, ref_partial_sum, &mat, align_opts);
+
+  fill_score_matrix_using_partials(align_task);
+
+  // Now build the best alignment
+  ScoreCellPVec trail;
+  bool result = get_best_alignment(align_task, trail);
+  ASSERT_TRUE(result);
+  
+  Alignment * a(alignment_from_trail(align_task, trail));
+  std::cerr << "Made alignment: " << *a;
+  delete a;
+}
