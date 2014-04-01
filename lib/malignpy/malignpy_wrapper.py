@@ -80,8 +80,28 @@ def _alignment_get_data(self):
   data.update((k, get_data_from_obj(self, k)) for k in keys)
   data['matched_chunks'] = [m.get_data() for m in self.matched_chunks]
   data['total_score'] = self.score.total
+  data['max_chunk_sizing_score'] = max(c['score']['sizing_score'] for c in data['matched_chunks'])
+
   return data
+
+def _AlignOpts__str__(self):
+  attrs = ['query_miss_penalty',
+           'ref_miss_penalty',
+           'query_max_misses',
+           'ref_max_misses',
+           'max_chunk_sizing_error',
+           'min_sd'
+          ]
+
+  outs = ''
+  for a in attrs:
+    outs += '%s: %s\n'%(a, getattr(self, a, 'N/A'))
+  return outs
+
+
 
 Alignment.set_data = _alignment_set_data
 Alignment.get_data = _alignment_get_data
+
+AlignOpts.__str__ = _AlignOpts__str__
 
