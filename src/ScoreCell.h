@@ -30,13 +30,13 @@ class ScoreCell
         backPointer_(nullptr)
     { };
 
-    ScoreCell(int q, int r, bool inPlay = false) :
+    ScoreCell(int q, int r) :
         q_(q),
         r_(r),
         backPointer_(nullptr)
     { };
 
-    ScoreCell(IntPair ip, bool inPlay = false) :
+    ScoreCell(IntPair ip) :
         q_(ip.first),
         r_(ip.second),
         backPointer_(nullptr)
@@ -80,6 +80,8 @@ namespace std {
     };
 }
 */
+
+bool ScoreCellPointerCmp(const ScoreCell* p1, const ScoreCell* p2);
 
 typedef std::vector<ScoreCell> ScoreCellVec;
 std::ostream& operator<<(std::ostream&, const ScoreCell& cell);

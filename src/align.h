@@ -3,27 +3,31 @@
 #include "types.h"
 
 #include <iostream>
+#include <vector>
 #include <utility>
 
 // Forward Declarations
 class ScoreMatrix;
+class Alignment;
 
-typedef vector<IntVec> PartialSums;
-
+typedef std::vector<IntVec> PartialSums;
+typedef std::vector<Alignment *> AlignmentPVec;
 
 class AlignOpts {
 
 public:
 
   AlignOpts(double p1, double p2, int p3, int p4,
-            double p5, double p6) : 
+            double p5, double p6, int p7 = 1, int p8 = 1) : 
     query_miss_penalty(p1), // penalty for having a site in query unaligned to reference
     ref_miss_penalty(p2), // penalty for having a site in reference unaligned to query
     query_max_misses(p3),
     ref_max_misses(p4),
     sd_rate(0.1), // Fraction of reference fragment to use as standard deviation
     min_sd(p5), // minimum standard deviation imposed in sizing error model, bp
-    max_chunk_sizing_error(p6)
+    max_chunk_sizing_error(p6),
+    alignments_per_reference(p7),
+    min_alignment_spacing(p8)
   {};
 
   double query_miss_penalty;
@@ -34,35 +38,54 @@ public:
   double min_sd;
   double max_chunk_sizing_error;
 
+  int alignments_per_reference; // max number of alignments per reference
+  int num_alignments;
+  int min_alignment_spacing; // minimum amount of spacing between multiple accepted
+                            // alignments to the same reference.
+
 };
 
-// Bundle the alignment options into a single object that
-// can be passed around. Note this just collects pointers
-// to external objects into a single object.
+
+//////////////// ///////////////////////////////////////////////////////////////////////
+// Bundle the alignment options and data structures
+// into a single object that
+// can be passed around.
+// These structures are for a single alignment task (i.e. one query to one reference)
+// Note this just collects non-const pointers
+// to external objects into a single object
 class AlignTask {
   
 public:
 
-  AlignTask(IntVec& q, IntVec& r, PartialSums& qps, PartialSums& rps, ScoreMatrix * m, AlignOpts& ao) :
+  AlignTask(IntVec& q, IntVec& r, PartialSums& qps,
+            PartialSums& rps, ScoreMatrix * m,
+            BoolVec& cip, AlignmentPVec& alns,
+            AlignOpts& ao) :
     query(&q),
     ref(&r),
     query_partial_sums(&qps),
     ref_partial_sums(&rps),
     mat(m),
+    cells_in_play(&cip),
+    alignments(&alns),
     align_opts(&ao)
   {
-
   }
 
+  // Do we need this copy constructor??
   AlignTask(const AlignTask& other) :
     query(other.query),
     ref(other.ref),
     query_partial_sums(other.query_partial_sums),
     ref_partial_sums(other.ref_partial_sums),
     mat(other.mat),
+    cells_in_play(other.cells_in_play),
+    alignments(other.alignments),
     align_opts(other.align_opts)
   {
+  }
 
+  ~AlignTask() {
   }
 
   IntVec * query;
@@ -70,8 +93,9 @@ public:
   PartialSums * query_partial_sums;
   PartialSums * ref_partial_sums;
   ScoreMatrix * mat;
+  BoolVec * cells_in_play; // Tracks which cells in last row are in play.
+  AlignmentPVec * alignments;
   AlignOpts * align_opts;
-
 };
 
 std::ostream& print_align_task(std::ostream& os, const AlignTask& task);
@@ -260,9 +284,16 @@ public:
   double interior_size_ratio;
 };
 
+
+
 std::ostream& operator<<(std::ostream& os, const Alignment& aln);
 
 double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts);
+
+
+////////////////////////////////
+// Lower Level functions
+////////////////////////////////
 
 /*
   Populate a score matrix using dynamic programming for ungapped alignment.
@@ -286,15 +317,30 @@ void print_chunk_trail(const ChunkVec& query_chunks, const ChunkVec& ref_chunks)
 // Build the trail for the best alignment.
 bool get_best_alignment(const AlignTask& task, ScoreCellPVec& trail);
 
+// Get the best alignments and store them in the task.
+int get_best_alignments(const AlignTask& task);
+
 // Make and return an alignment from the trail through the
 // score matrix.
 Alignment * alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail);
 
-// Fill score matrix, find best alignment, and return it.
-Alignment * make_best_alignment(const AlignTask& task);
+// Build an alignment by tracing back from ScoreCell.
+Alignment * alignment_from_cell(const AlignTask& task, ScoreCell* p_cell);
 
 PartialSums make_partial_sums(const IntVec& frags, const int missed_sites);
+PartialSums* make_partial_sums_new(const IntVec& frags, const int missed_sites);
 
 void fill_score_matrix_using_partials(const AlignTask& align_task);
+
+
+/////////////////////////////////////////
+// Friendly functions
+/////////////////////////////////////////
+
+
+// Fill score matrix, find best alignment, and return it.
+Alignment * make_best_alignment(const AlignTask& task);
 Alignment * make_best_alignment_using_partials(const AlignTask& task);
+int make_best_alignments_using_partials(const AlignTask& task);
+
 

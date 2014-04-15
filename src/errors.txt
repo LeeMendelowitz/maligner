@@ -1,0 +1,3 @@
+g++ -Wall -pedantic -std=c++0x -O3 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include/python2.7 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include -c -fPIC malignpy.cc
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so

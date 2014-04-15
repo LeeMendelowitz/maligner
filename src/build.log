@@ -1,0 +1,510 @@
+
+
+-----------------------------------------
+
+
+Tue Apr 15 09:51:22 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -c -g -fPIC align.cc
+align.cc: In function ‘bool get_best_alignment(const AlignTask&, ScoreCellPVec&)’:
+align.cc:380:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘int get_best_alignments(const AlignTask&)’:
+align.cc:449:30: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:452:25: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:443:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘void build_chunk_trail(const AlignTask&, ScoreCellPVec&, ChunkVec&, ChunkVec&)’:
+align.cc:568:60: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:569:56: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc: In function ‘void print_chunk_trail(const ChunkVec&, const ChunkVec&)’:
+align.cc:597:18: warning: unused variable ‘qc’ [-Wunused-variable]
+align.cc:598:18: warning: unused variable ‘rc’ [-Wunused-variable]
+align.cc: In function ‘Alignment* alignment_from_trail(const AlignTask&, ScoreCellPVec&)’:
+align.cc:615:18: warning: unused variable ‘chunk_vec_size’ [-Wunused-variable]
+align.cc: In function ‘PartialSums make_partial_sums(const IntVec&, int)’:
+align.cc:696:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘PartialSums* make_partial_sums_new(const IntVec&, int)’:
+align.cc:729:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘int make_best_alignments_using_partials(const AlignTask&)’:
+align.cc:780:17: warning: unused variable ‘query’ [-Wunused-variable]
+align.cc:781:17: warning: unused variable ‘ref’ [-Wunused-variable]
+align.cc:782:20: warning: unused variable ‘align_opts’ [-Wunused-variable]
+ar rvs maligner.a ScoreCell.o ScoreMatrix.o globals.o align.o
+ar: creating maligner.a
+a - ScoreCell.o
+a - ScoreMatrix.o
+a - globals.o
+a - align.o
+mv maligner.a ../lib/maligner.a
+g++ -Wall -pedantic -std=c++0x -O3 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include/python2.7 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include -c -fPIC malignpy.cc
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 09:56:18 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include/python2.7 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include -c -fPIC malignpy.cc
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 10:39:40 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include/python2.7 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include -c -fPIC malignpy.cc
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 11:01:06 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -c -g -fPIC align.cc
+align.cc: In function ‘bool get_best_alignment(const AlignTask&, ScoreCellPVec&)’:
+align.cc:380:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘int get_best_alignments(const AlignTask&)’:
+align.cc:449:30: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:452:25: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:443:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘void build_chunk_trail(const AlignTask&, ScoreCellPVec&, ChunkVec&, ChunkVec&)’:
+align.cc:568:60: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:569:56: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc: In function ‘void print_chunk_trail(const ChunkVec&, const ChunkVec&)’:
+align.cc:597:18: warning: unused variable ‘qc’ [-Wunused-variable]
+align.cc:598:18: warning: unused variable ‘rc’ [-Wunused-variable]
+align.cc: In function ‘Alignment* alignment_from_trail(const AlignTask&, ScoreCellPVec&)’:
+align.cc:615:18: warning: unused variable ‘chunk_vec_size’ [-Wunused-variable]
+align.cc: In function ‘PartialSums make_partial_sums(const IntVec&, int)’:
+align.cc:696:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘PartialSums* make_partial_sums_new(const IntVec&, int)’:
+align.cc:729:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘int make_best_alignments_using_partials(const AlignTask&)’:
+align.cc:780:17: warning: unused variable ‘query’ [-Wunused-variable]
+align.cc:781:17: warning: unused variable ‘ref’ [-Wunused-variable]
+align.cc:782:20: warning: unused variable ‘align_opts’ [-Wunused-variable]
+ar rvs maligner.a ScoreCell.o ScoreMatrix.o globals.o align.o
+ar: creating maligner.a
+a - ScoreCell.o
+a - ScoreMatrix.o
+a - globals.o
+a - align.o
+mv maligner.a ../lib/maligner.a
+g++ -Wall -pedantic -std=c++0x -O3 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include/python2.7 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include -c -fPIC malignpy.cc
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 11:15:27 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include/python2.7 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include -c -fPIC malignpy.cc
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 11:19:15 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -c -g -fPIC align.cc
+align.cc: In function ‘bool get_best_alignment(const AlignTask&, ScoreCellPVec&)’:
+align.cc:380:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘int get_best_alignments(const AlignTask&)’:
+align.cc:449:30: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:452:25: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:443:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘void build_chunk_trail(const AlignTask&, ScoreCellPVec&, ChunkVec&, ChunkVec&)’:
+align.cc:568:60: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:569:56: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc: In function ‘void print_chunk_trail(const ChunkVec&, const ChunkVec&)’:
+align.cc:597:18: warning: unused variable ‘qc’ [-Wunused-variable]
+align.cc:598:18: warning: unused variable ‘rc’ [-Wunused-variable]
+align.cc: In function ‘Alignment* alignment_from_trail(const AlignTask&, ScoreCellPVec&)’:
+align.cc:615:18: warning: unused variable ‘chunk_vec_size’ [-Wunused-variable]
+align.cc: In function ‘PartialSums make_partial_sums(const IntVec&, int)’:
+align.cc:696:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘PartialSums* make_partial_sums_new(const IntVec&, int)’:
+align.cc:729:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘int make_best_alignments_using_partials(const AlignTask&)’:
+align.cc:780:17: warning: unused variable ‘query’ [-Wunused-variable]
+align.cc:781:17: warning: unused variable ‘ref’ [-Wunused-variable]
+align.cc:782:20: warning: unused variable ‘align_opts’ [-Wunused-variable]
+ar rvs maligner.a ScoreCell.o ScoreMatrix.o globals.o align.o
+ar: creating maligner.a
+a - ScoreCell.o
+a - ScoreMatrix.o
+a - globals.o
+a - align.o
+mv maligner.a ../lib/maligner.a
+g++ -Wall -pedantic -std=c++0x -O3 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include/python2.7 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include -c -fPIC malignpy.cc
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 11:20:54 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include/python2.7 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include -c -fPIC malignpy.cc
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 11:25:05 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -c -g -fPIC align.cc
+align.cc: In function ‘bool get_best_alignment(const AlignTask&, ScoreCellPVec&)’:
+align.cc:380:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘int get_best_alignments(const AlignTask&)’:
+align.cc:449:30: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:452:25: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:443:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘void build_chunk_trail(const AlignTask&, ScoreCellPVec&, ChunkVec&, ChunkVec&)’:
+align.cc:568:60: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:569:56: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc: In function ‘void print_chunk_trail(const ChunkVec&, const ChunkVec&)’:
+align.cc:597:18: warning: unused variable ‘qc’ [-Wunused-variable]
+align.cc:598:18: warning: unused variable ‘rc’ [-Wunused-variable]
+align.cc: In function ‘Alignment* alignment_from_trail(const AlignTask&, ScoreCellPVec&)’:
+align.cc:615:18: warning: unused variable ‘chunk_vec_size’ [-Wunused-variable]
+align.cc: In function ‘PartialSums make_partial_sums(const IntVec&, int)’:
+align.cc:701:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘PartialSums* make_partial_sums_new(const IntVec&, int)’:
+align.cc:734:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘int make_best_alignments_using_partials(const AlignTask&)’:
+align.cc:785:17: warning: unused variable ‘query’ [-Wunused-variable]
+align.cc:786:17: warning: unused variable ‘ref’ [-Wunused-variable]
+align.cc:787:20: warning: unused variable ‘align_opts’ [-Wunused-variable]
+ar rvs maligner.a ScoreCell.o ScoreMatrix.o globals.o align.o
+ar: creating maligner.a
+a - ScoreCell.o
+a - ScoreMatrix.o
+a - globals.o
+a - align.o
+mv maligner.a ../lib/maligner.a
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 11:26:31 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -c -g -fPIC align.cc
+align.cc: In function ‘bool get_best_alignment(const AlignTask&, ScoreCellPVec&)’:
+align.cc:380:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘int get_best_alignments(const AlignTask&)’:
+align.cc:449:30: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:452:25: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:443:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘void build_chunk_trail(const AlignTask&, ScoreCellPVec&, ChunkVec&, ChunkVec&)’:
+align.cc:572:60: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:573:56: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc: In function ‘void print_chunk_trail(const ChunkVec&, const ChunkVec&)’:
+align.cc:601:18: warning: unused variable ‘qc’ [-Wunused-variable]
+align.cc:602:18: warning: unused variable ‘rc’ [-Wunused-variable]
+align.cc: In function ‘Alignment* alignment_from_trail(const AlignTask&, ScoreCellPVec&)’:
+align.cc:619:18: warning: unused variable ‘chunk_vec_size’ [-Wunused-variable]
+align.cc: In function ‘PartialSums make_partial_sums(const IntVec&, int)’:
+align.cc:705:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘PartialSums* make_partial_sums_new(const IntVec&, int)’:
+align.cc:738:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘int make_best_alignments_using_partials(const AlignTask&)’:
+align.cc:789:17: warning: unused variable ‘query’ [-Wunused-variable]
+align.cc:790:17: warning: unused variable ‘ref’ [-Wunused-variable]
+align.cc:791:20: warning: unused variable ‘align_opts’ [-Wunused-variable]
+ar rvs maligner.a ScoreCell.o ScoreMatrix.o globals.o align.o
+ar: creating maligner.a
+a - ScoreCell.o
+a - ScoreMatrix.o
+a - globals.o
+a - align.o
+mv maligner.a ../lib/maligner.a
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 11:42:53 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -c -g -fPIC ScoreMatrix.cc
+ScoreMatrix.cc: In member function ‘double ScoreMatrix::percentFilled() const’:
+ScoreMatrix.cc:24:36: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+ScoreMatrix.cc:25:40: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+g++ -Wall -pedantic -std=c++0x -O3 -c -g -fPIC align.cc
+align.cc: In function ‘bool get_best_alignment(const AlignTask&, ScoreCellPVec&)’:
+align.cc:382:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘int get_best_alignments(const AlignTask&)’:
+align.cc:451:30: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:454:25: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:445:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘void build_chunk_trail(const AlignTask&, ScoreCellPVec&, ChunkVec&, ChunkVec&)’:
+align.cc:574:60: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:575:56: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc: In function ‘void print_chunk_trail(const ChunkVec&, const ChunkVec&)’:
+align.cc:603:18: warning: unused variable ‘qc’ [-Wunused-variable]
+align.cc:604:18: warning: unused variable ‘rc’ [-Wunused-variable]
+align.cc: In function ‘Alignment* alignment_from_trail(const AlignTask&, ScoreCellPVec&)’:
+align.cc:621:18: warning: unused variable ‘chunk_vec_size’ [-Wunused-variable]
+align.cc: In function ‘PartialSums make_partial_sums(const IntVec&, int)’:
+align.cc:707:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘PartialSums* make_partial_sums_new(const IntVec&, int)’:
+align.cc:740:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘int make_best_alignments_using_partials(const AlignTask&)’:
+align.cc:791:17: warning: unused variable ‘query’ [-Wunused-variable]
+align.cc:792:17: warning: unused variable ‘ref’ [-Wunused-variable]
+align.cc:793:20: warning: unused variable ‘align_opts’ [-Wunused-variable]
+ar rvs maligner.a ScoreCell.o ScoreMatrix.o globals.o align.o
+ar: creating maligner.a
+a - ScoreCell.o
+a - ScoreMatrix.o
+a - globals.o
+a - align.o
+mv maligner.a ../lib/maligner.a
+g++ -Wall -pedantic -std=c++0x -O3 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include/python2.7 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include -c -fPIC malignpy.cc
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 11:43:23 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -c -g -fPIC align.cc
+align.cc: In function ‘bool get_best_alignment(const AlignTask&, ScoreCellPVec&)’:
+align.cc:382:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘int get_best_alignments(const AlignTask&)’:
+align.cc:451:30: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:454:25: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:445:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘void build_chunk_trail(const AlignTask&, ScoreCellPVec&, ChunkVec&, ChunkVec&)’:
+align.cc:574:60: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:575:56: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc: In function ‘Alignment* alignment_from_trail(const AlignTask&, ScoreCellPVec&)’:
+align.cc:621:18: warning: unused variable ‘chunk_vec_size’ [-Wunused-variable]
+align.cc: In function ‘PartialSums make_partial_sums(const IntVec&, int)’:
+align.cc:707:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘PartialSums* make_partial_sums_new(const IntVec&, int)’:
+align.cc:740:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘int make_best_alignments_using_partials(const AlignTask&)’:
+align.cc:791:17: warning: unused variable ‘query’ [-Wunused-variable]
+align.cc:792:17: warning: unused variable ‘ref’ [-Wunused-variable]
+align.cc:793:20: warning: unused variable ‘align_opts’ [-Wunused-variable]
+ar rvs maligner.a ScoreCell.o ScoreMatrix.o globals.o align.o
+ar: creating maligner.a
+a - ScoreCell.o
+a - ScoreMatrix.o
+a - globals.o
+a - align.o
+mv maligner.a ../lib/maligner.a
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 11:50:32 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -c -g -fPIC align.cc
+align.cc: In function ‘bool get_best_alignment(const AlignTask&, ScoreCellPVec&)’:
+align.cc:382:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘int get_best_alignments(const AlignTask&)’:
+align.cc:451:30: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:454:25: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:445:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘void build_chunk_trail(const AlignTask&, ScoreCellPVec&, ChunkVec&, ChunkVec&)’:
+align.cc:574:60: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:575:56: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc: In function ‘Alignment* alignment_from_trail(const AlignTask&, ScoreCellPVec&)’:
+align.cc:621:18: warning: unused variable ‘chunk_vec_size’ [-Wunused-variable]
+align.cc: In function ‘PartialSums make_partial_sums(const IntVec&, int)’:
+align.cc:707:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘PartialSums* make_partial_sums_new(const IntVec&, int)’:
+align.cc:740:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘int make_best_alignments_using_partials(const AlignTask&)’:
+align.cc:791:17: warning: unused variable ‘query’ [-Wunused-variable]
+align.cc:792:17: warning: unused variable ‘ref’ [-Wunused-variable]
+align.cc:793:20: warning: unused variable ‘align_opts’ [-Wunused-variable]
+ar rvs maligner.a ScoreCell.o ScoreMatrix.o globals.o align.o
+ar: creating maligner.a
+a - ScoreCell.o
+a - ScoreMatrix.o
+a - globals.o
+a - align.o
+mv maligner.a ../lib/maligner.a
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 11:53:12 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -c -g -fPIC align.cc
+align.cc: In function ‘bool get_best_alignment(const AlignTask&, ScoreCellPVec&)’:
+align.cc:384:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘int get_best_alignments(const AlignTask&)’:
+align.cc:453:30: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:456:25: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:447:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘void build_chunk_trail(const AlignTask&, ScoreCellPVec&, ChunkVec&, ChunkVec&)’:
+align.cc:576:60: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:577:56: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc: In function ‘void print_chunk_trail(const ChunkVec&, const ChunkVec&)’:
+align.cc:605:18: warning: unused variable ‘qc’ [-Wunused-variable]
+align.cc:606:18: warning: unused variable ‘rc’ [-Wunused-variable]
+align.cc: In function ‘Alignment* alignment_from_trail(const AlignTask&, ScoreCellPVec&)’:
+align.cc:623:18: warning: unused variable ‘chunk_vec_size’ [-Wunused-variable]
+align.cc: In function ‘PartialSums make_partial_sums(const IntVec&, int)’:
+align.cc:709:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘PartialSums* make_partial_sums_new(const IntVec&, int)’:
+align.cc:742:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘int make_best_alignments_using_partials(const AlignTask&)’:
+align.cc:793:17: warning: unused variable ‘query’ [-Wunused-variable]
+align.cc:794:17: warning: unused variable ‘ref’ [-Wunused-variable]
+align.cc:795:20: warning: unused variable ‘align_opts’ [-Wunused-variable]
+ar rvs maligner.a ScoreCell.o ScoreMatrix.o globals.o align.o
+ar: creating maligner.a
+a - ScoreCell.o
+a - ScoreMatrix.o
+a - globals.o
+a - align.o
+mv maligner.a ../lib/maligner.a
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 11:53:18 EDT 2014\n
+make: Nothing to be done for `all'.
+
+
+-----------------------------------------
+
+
+Tue Apr 15 11:54:51 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -c -g -fPIC align.cc
+align.cc: In function ‘bool get_best_alignment(const AlignTask&, ScoreCellPVec&)’:
+align.cc:384:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘int get_best_alignments(const AlignTask&)’:
+align.cc:453:30: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:456:25: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:447:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘void build_chunk_trail(const AlignTask&, ScoreCellPVec&, ChunkVec&, ChunkVec&)’:
+align.cc:577:60: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:578:56: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc: In function ‘void print_chunk_trail(const ChunkVec&, const ChunkVec&)’:
+align.cc:606:18: warning: unused variable ‘qc’ [-Wunused-variable]
+align.cc:607:18: warning: unused variable ‘rc’ [-Wunused-variable]
+align.cc: In function ‘Alignment* alignment_from_trail(const AlignTask&, ScoreCellPVec&)’:
+align.cc:624:18: warning: unused variable ‘chunk_vec_size’ [-Wunused-variable]
+align.cc: In function ‘PartialSums make_partial_sums(const IntVec&, int)’:
+align.cc:710:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘PartialSums* make_partial_sums_new(const IntVec&, int)’:
+align.cc:743:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘int make_best_alignments_using_partials(const AlignTask&)’:
+align.cc:794:17: warning: unused variable ‘query’ [-Wunused-variable]
+align.cc:795:17: warning: unused variable ‘ref’ [-Wunused-variable]
+align.cc:796:20: warning: unused variable ‘align_opts’ [-Wunused-variable]
+ar rvs maligner.a ScoreCell.o ScoreMatrix.o globals.o align.o
+ar: creating maligner.a
+a - ScoreCell.o
+a - ScoreMatrix.o
+a - globals.o
+a - align.o
+mv maligner.a ../lib/maligner.a
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 11:57:47 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -c -g -fPIC align.cc
+align.cc: In function ‘bool get_best_alignment(const AlignTask&, ScoreCellPVec&)’:
+align.cc:385:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘int get_best_alignments(const AlignTask&)’:
+align.cc:454:30: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:457:25: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:448:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘void build_chunk_trail(const AlignTask&, ScoreCellPVec&, ChunkVec&, ChunkVec&)’:
+align.cc:582:60: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:583:56: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc: In function ‘void print_chunk_trail(const ChunkVec&, const ChunkVec&)’:
+align.cc:611:18: warning: unused variable ‘qc’ [-Wunused-variable]
+align.cc:612:18: warning: unused variable ‘rc’ [-Wunused-variable]
+align.cc: In function ‘Alignment* alignment_from_trail(const AlignTask&, ScoreCellPVec&)’:
+align.cc:629:18: warning: unused variable ‘chunk_vec_size’ [-Wunused-variable]
+align.cc: In function ‘PartialSums make_partial_sums(const IntVec&, int)’:
+align.cc:715:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘PartialSums* make_partial_sums_new(const IntVec&, int)’:
+align.cc:748:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘int make_best_alignments_using_partials(const AlignTask&)’:
+align.cc:799:17: warning: unused variable ‘query’ [-Wunused-variable]
+align.cc:800:17: warning: unused variable ‘ref’ [-Wunused-variable]
+align.cc:801:20: warning: unused variable ‘align_opts’ [-Wunused-variable]
+ar rvs maligner.a ScoreCell.o ScoreMatrix.o globals.o align.o
+ar: creating maligner.a
+a - ScoreCell.o
+a - ScoreMatrix.o
+a - globals.o
+a - align.o
+mv maligner.a ../lib/maligner.a
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 11:58:20 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -c -g -fPIC align.cc
+align.cc: In function ‘bool get_best_alignment(const AlignTask&, ScoreCellPVec&)’:
+align.cc:385:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘int get_best_alignments(const AlignTask&)’:
+align.cc:454:30: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:457:25: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:448:13: warning: unused variable ‘num_cols’ [-Wunused-variable]
+align.cc: In function ‘void build_chunk_trail(const AlignTask&, ScoreCellPVec&, ChunkVec&, ChunkVec&)’:
+align.cc:582:60: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc:583:56: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+align.cc: In function ‘void print_chunk_trail(const ChunkVec&, const ChunkVec&)’:
+align.cc:611:18: warning: unused variable ‘qc’ [-Wunused-variable]
+align.cc:612:18: warning: unused variable ‘rc’ [-Wunused-variable]
+align.cc: In function ‘Alignment* alignment_from_trail(const AlignTask&, ScoreCellPVec&)’:
+align.cc:629:18: warning: unused variable ‘chunk_vec_size’ [-Wunused-variable]
+align.cc: In function ‘PartialSums make_partial_sums(const IntVec&, int)’:
+align.cc:710:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘PartialSums* make_partial_sums_new(const IntVec&, int)’:
+align.cc:743:9: warning: unused variable ‘ind’ [-Wunused-variable]
+align.cc: In function ‘int make_best_alignments_using_partials(const AlignTask&)’:
+align.cc:794:17: warning: unused variable ‘query’ [-Wunused-variable]
+align.cc:795:17: warning: unused variable ‘ref’ [-Wunused-variable]
+align.cc:796:20: warning: unused variable ‘align_opts’ [-Wunused-variable]
+ar rvs maligner.a ScoreCell.o ScoreMatrix.o globals.o align.o
+ar: creating maligner.a
+a - ScoreCell.o
+a - ScoreMatrix.o
+a - globals.o
+a - align.o
+mv maligner.a ../lib/maligner.a
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so
+
+
+-----------------------------------------
+
+
+Tue Apr 15 12:14:16 EDT 2014\n
+g++ -Wall -pedantic -std=c++0x -O3 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include/python2.7 -I/fs/szattic-asmg7/lmendelo/packages/distribution/include -c -fPIC malignpy.cc
+g++ -Wall -pedantic -std=c++0x -O3 -shared -Wl,--export-dynamic malignpy.o ScoreCell.o ScoreMatrix.o globals.o align.o -L/fs/szattic-asmg7/lmendelo/packages/distribution/lib -lboost_python  -o malignpy.so
+cp malignpy.so ../lib/malignpy/malignpy.so

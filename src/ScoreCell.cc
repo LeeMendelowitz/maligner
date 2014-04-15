@@ -12,3 +12,6 @@ std::ostream& operator<<(std::ostream& os, const ScoreCell& cell)
     return os;
 }
 
+bool ScoreCellPointerCmp(const ScoreCell* p1, const ScoreCell* p2) {
+  return (p1->score_ > p2->score_);
+}

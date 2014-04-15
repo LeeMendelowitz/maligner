@@ -2,6 +2,7 @@
 #include <cassert>
 #include <iostream>
 #include <utility>
+#include <algorithm>
 
 using std::cerr;
 
@@ -15,6 +16,9 @@ using std::cerr;
 using Constants::INF;
 
 #define DEBUG 0
+#define GET_BEST_DEBUG 0
+#define BUILD_TRAIL_DEBUG 0
+#define FILL_DEBUG 0
 #define BREAKS_DEBUG 0
 
 inline double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts) {
@@ -52,6 +56,7 @@ void fill_score_matrix(const AlignTask& align_task) {
   ScoreMatrix& mat = *align_task.mat;
   AlignOpts& align_opts = *align_task.align_opts;
 
+  mat.reset();
 
   const int m = query.size() + 1;
   const int n = ref.size() + 1;
@@ -62,7 +67,7 @@ void fill_score_matrix(const AlignTask& align_task) {
   assert((int) mat.getNumCols() == n);
   assert((int) mat.getNumRows() >= m);
 
-  #if DEBUG > 0
+  #if FILL_DEBUG > 0
   cerr << "m: " << m
        << " n: " << n
        << " num_rows: " << num_rows
@@ -135,7 +140,7 @@ void fill_score_matrix(const AlignTask& align_task) {
 
           const bool is_query_boundary =  k == 0 || k == m - 1;
 
-          #if DEBUG > 0
+          #if FILL_DEBUG > 0
           cerr << "i: " << i
                << " j: " << j
                << " k: " << k
@@ -196,6 +201,9 @@ void fill_score_matrix(const AlignTask& align_task) {
 } // fill_score_matrix
 
 void fill_score_matrix_using_partials(const AlignTask& align_task) {
+  /*
+  Fill score matrix using partial sums
+  */
 
   // Unpack the alignment task
   const IntVec& query = *align_task.query;
@@ -204,6 +212,7 @@ void fill_score_matrix_using_partials(const AlignTask& align_task) {
   const PartialSums& ref_partial_sums = *align_task.ref_partial_sums;
 
   ScoreMatrix& mat = *align_task.mat;
+  mat.reset();
   AlignOpts& align_opts = *align_task.align_opts;
 
   // Compute the miss penalties
@@ -226,7 +235,7 @@ void fill_score_matrix_using_partials(const AlignTask& align_task) {
   assert((int) mat.getNumCols() == n);
   assert((int) mat.getNumRows() >= m);
 
-  #if DEBUG > 0
+  #if FILL_DEBUG > 0
   cerr << "m: " << m
        << " n: " << n
        << " num_rows: " << num_rows
@@ -300,7 +309,7 @@ void fill_score_matrix_using_partials(const AlignTask& align_task) {
 
           const bool is_query_boundary =  k == 0 || k == m - 1;
 
-          #if DEBUG > 0
+          #if FILL_DEBUG > 0
           cerr << "i: " << i
                << " j: " << j
                << " k: " << k
@@ -321,8 +330,7 @@ void fill_score_matrix_using_partials(const AlignTask& align_task) {
           if (!is_ref_boundary && !is_query_boundary) {
 
             size_penalty = sizing_penalty(query_size, ref_size, align_opts);
-        
-
+      
           }
 
           // Break if the query chunk is already too big for the reference
@@ -364,8 +372,6 @@ void fill_score_matrix_using_partials(const AlignTask& align_task) {
 } // fill_score_matrix
 
 
-
-
 bool get_best_alignment(const AlignTask& task, ScoreCellPVec& trail) {
 
   // Go to the last row of the ScoreMatrix and identify the best score.
@@ -388,7 +394,7 @@ bool get_best_alignment(const AlignTask& task, ScoreCellPVec& trail) {
     
     ScoreCell * pCell = mat.getCell(index);
 
-    #if DEBUG > 0
+    #if GET_BEST_DEBUG > 0
     cerr << "index: " << index << ", ";
     cerr << "cell: " << *pCell << "\n";
     #endif
@@ -399,7 +405,7 @@ bool get_best_alignment(const AlignTask& task, ScoreCellPVec& trail) {
     }
   }
 
-  #if DEBUG > 0
+  #if GET_BEST_DEBUG > 0
     if (p_best_cell) {
         cerr << "\np_best_cell: " << *p_best_cell <<  "\n";
     } else {
@@ -419,9 +425,110 @@ bool get_best_alignment(const AlignTask& task, ScoreCellPVec& trail) {
 
 }
 
+/////////////////////////////////////////////////////////////////////
+// Get the best n alignments in the task.
+// The score matrix should already be filled out.
+//
+// Append trail seeds to the trail_seeds in the alignment task.
+// Return True if alignments were found.
+int get_best_alignments(const AlignTask& task) {
+
+  // Go to the last row of the ScoreMatrix and identify the best score.
+  AlignOpts& align_opts = *task.align_opts;
+  IntVec& query = *task.query;
+  IntVec& ref = *task.ref;
+  ScoreMatrix& mat = *task.mat;
+  BoolVec& cells_in_play = *task.cells_in_play;
+  AlignmentPVec& alignments = *task.alignments;
+
+
+  const int m = query.size() + 1;
+  const int n = ref.size() + 1;
+  const int num_rows = mat.getNumRows();
+  const int num_cols = mat.getNumCols();
+  const int last_row = m - 1;
+
+  
+
+  // Reset the cells_in_play vector
+  if (cells_in_play.size() < n) {
+    cells_in_play.resize(n, true);
+  }
+  for(size_t i = 0; i < n; i++) {
+    cells_in_play[i] = true;
+  }
+
+  int num_alignments_found = 0;
+  alignments.reserve(align_opts.alignments_per_reference);
+  for (int r = 0; r < align_opts.alignments_per_reference; r++) {
+
+    double best_score = -INF;
+    int best_cell_col = -1;
+    ScoreCell * p_best_cell = nullptr;
+
+    // Get the cell with the best score in the last row that is
+    // still in play.
+    int index = last_row;
+    for (int i = 0; i < n; i++, index += num_rows) {
+      
+      if (!mat.cell_in_play(i)) continue;
+
+      ScoreCell * pCell = mat.getCell(index);
+
+      #if GET_BEST_DEBUG > 0
+      cerr << "index: " << index << ", ";
+      cerr << "cell: " << pCell << "\n";
+      #endif
+
+      if (pCell->backPointer_ && pCell->score_ > best_score ) {
+        p_best_cell = pCell;
+        best_score = pCell->score_;
+        best_cell_col = i;
+      } 
+    }
+
+    #if GET_BEST_DEBUG > 0
+      if (p_best_cell) {
+          cerr << "\np_best_cell: " << *p_best_cell <<  "\n";
+      } else {
+          cerr << "\np_best_cell: " << p_best_cell <<  "\n";
+      }
+    #endif
+   
+    bool have_alignment = p_best_cell && p_best_cell->score_ > -INF && p_best_cell->backPointer_;
+    if (!have_alignment) break;
+
+    // Build the alignment
+    alignments.push_back(alignment_from_cell(task, p_best_cell));
+
+    num_alignments_found++;
+
+    // Mark neighboring cells as out of play.
+    cells_in_play[best_cell_col] = false;
+    int lb = best_cell_col - align_opts.min_alignment_spacing + 1;
+    int ub = best_cell_col + align_opts.min_alignment_spacing;
+    if (lb < 0) lb = 0;
+    if (ub > n) ub = n;
+    for (int col = lb; col < ub; col++) {
+      mat.mark_cell_in_play(col, false);
+    }
+  }
+
+  return num_alignments_found;
+}
+
+
 void build_trail(ScoreCell* pCell, ScoreCellPVec& trail) {
+
+  #if BUILD_TRAIL_DEBUG > 0
+  std::cerr << "Building trail from " << pCell << std::endl;
+  #endif
+
   ScoreCell* pCur = pCell;
   while (pCur != nullptr) {
+    #if BUILD_TRAIL_DEBUG > 0
+    std::cerr << "pushing back: " << pCur << std::endl;
+    #endif
     trail.push_back(pCur);
     pCur = pCur->backPointer_;
   }
@@ -566,9 +673,21 @@ Alignment * alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail) {
     return new Alignment(std::move(matched_chunks), total_score);
 }
 
+Alignment * alignment_from_cell(const AlignTask& task, ScoreCell* p_cell) {
+  
+  const size_t m = task.query->size() + 1;
+
+  ScoreCellPVec trail;
+  trail.reserve(m);
+  build_trail(p_cell, trail);
+
+  Alignment * aln = alignment_from_trail(task, trail);
+  return aln;
+}
+
 
 // Make partial sums of the preceeding fragment sizes, up to (missed_sites + 1) fragments.
-vector<IntVec> make_partial_sums(const IntVec& frags, const int missed_sites) {
+PartialSums make_partial_sums(const IntVec& frags, const int missed_sites) {
 /*
 
   Consider fragments with indices i and fragment sizes f
@@ -583,7 +702,7 @@ vector<IntVec> make_partial_sums(const IntVec& frags, const int missed_sites) {
   const IntVec zero_sums(missed_sites + 1, 0);
   const int num_frags = frags.size();
 
-  vector<IntVec> partial_sums(num_frags, zero_sums);
+  PartialSums partial_sums(num_frags, zero_sums);
 
   for (int i = 0; i < num_frags; i++) {
     IntVec& ps = partial_sums[i];
@@ -600,10 +719,41 @@ vector<IntVec> make_partial_sums(const IntVec& frags, const int missed_sites) {
   return partial_sums;
 }
 
+// Make partial sums of the preceeding fragment sizes, up to (missed_sites + 1) fragments.
+PartialSums* make_partial_sums_new(const IntVec& frags, const int missed_sites) {
+/*
+
+  Consider fragments with indices i and fragment sizes f
+  ...|---------|----------|--------|...
+       i-2        i-1        i
+       f_(i-2)    f_(i-1)   f_(i)
+
+  The partial sums fragment i for the case missed_sites = 2 will be:
+   [ f_i, f_i + f_(i-1), f_i + f_(i-1) + f(i-2)] 
+
+ */
+  const IntVec zero_sums(missed_sites + 1, 0);
+  const int num_frags = frags.size();
+
+  PartialSums* p_partial_sums = new PartialSums(num_frags, zero_sums);
+
+  for (int i = 0; i < num_frags; i++) {
+    IntVec& ps = (*p_partial_sums)[i];
+    const int lower_index = i - missed_sites; // inclusive
+    int ind = 0;
+    int cur_sum = 0;
+    for (int j = i, ind = 0; j >= lower_index; j--, ind++) {
+      if (j < 0) break;
+      cur_sum += frags[j];
+      ps[ind] = cur_sum;
+    }
+  }
+
+  return p_partial_sums;
+}
 
 
-
-
+//////////////////////////////////////////////////////////
 // Fill score matrix, find best alignment, and return it.
 Alignment * make_best_alignment(const AlignTask& task) {
 
@@ -634,6 +784,23 @@ Alignment * make_best_alignment_using_partials(const AlignTask& task) {
   }
 
   return alignment_from_trail(task, trail);
+}
+
+//////////////////////////////////////////////////////////
+// Fill score matrix, find best n alignments, and return them in a vector..
+int make_best_alignments_using_partials(const AlignTask& task) {
+
+  // Unpack the alignment task
+  const IntVec& query = *task.query;
+  const IntVec& ref = *task.ref;
+  const AlignOpts& align_opts = *task.align_opts;
+
+  // populate the score matrix
+  fill_score_matrix_using_partials(task);
+
+  // get the best alignments and store the results in the task.
+  int num_alignments = get_best_alignments(task);
+  return num_alignments;
 }
 
 

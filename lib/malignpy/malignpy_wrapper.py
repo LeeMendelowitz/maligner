@@ -60,6 +60,9 @@ MatchedChunk.get_data = _matched_chunk_data
 
 
 def _alignment_set_data(self, query_id, ref_id, query_num_frags, query_num_sites, ref_is_forward=True, **kwargs):
+  """
+  Set alignment metadata.
+  """
   self.query_id = query_id
   self.ref_id = ref_id
   self.ref_is_forward = ref_is_forward
@@ -90,7 +93,10 @@ def _AlignOpts__str__(self):
            'query_max_misses',
            'ref_max_misses',
            'max_chunk_sizing_error',
-           'min_sd'
+           'min_sd',
+           'alignments_per_reference',
+           'num_alignments',
+           'min_alignment_spacing'
           ]
 
   outs = ''
@@ -104,4 +110,7 @@ Alignment.set_data = _alignment_set_data
 Alignment.get_data = _alignment_get_data
 
 AlignOpts.__str__ = _AlignOpts__str__
+
+
+
 

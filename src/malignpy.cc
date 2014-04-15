@@ -41,16 +41,22 @@ ScoreMatrix* make_score_matrix(size_t m, size_t n) {
     return new ScoreMatrix(m, n);
 }
 
-PartialSums* make_partial_sum_new(IntVec& frags, const int missed_sites)
-{   
-    return new PartialSums(make_partial_sums(frags, missed_sites));
-}
-
 IntVec* make_int_vec() {
-    return new IntVec();
+    IntVec * p = new IntVec();
+    return p;
 }
 
-void ptask(AlignTask& task) {
+BoolVec* make_bool_vec() {
+    BoolVec * p = new BoolVec();
+    return p;
+}
+
+AlignmentPVec* make_alignment_vec() {
+    AlignmentPVec * p = new AlignmentPVec();
+    return p;
+}
+
+void print_align_task2(AlignTask& task) {
     print_align_task(std::cout, task) << std::endl;
 }
 
@@ -75,15 +81,23 @@ BOOST_PYTHON_MODULE(malignpy)
         .def_readonly("r", &ScoreCell::r_)
         .def_readonly("score", &ScoreCell::score_);
 
-    class_<AlignOpts>("AlignOpts", init< double, double, int, int, double, double >())
+    class_<AlignOpts>("AlignOpts", init< double, double, int, int, double, double, int, int >())
         .def_readwrite("query_miss_penalty", &AlignOpts::query_miss_penalty)
         .def_readwrite("ref_miss_penalty", &AlignOpts::ref_miss_penalty)
         .def_readwrite("query_max_misses", &AlignOpts::query_max_misses)
         .def_readwrite("ref_max_misses", &AlignOpts::ref_max_misses)
         .def_readwrite("max_chunk_sizing_error", &AlignOpts::max_chunk_sizing_error)
-        .def_readwrite("min_sd", &AlignOpts::min_sd);
+        .def_readwrite("min_sd", &AlignOpts::min_sd)
+        .def_readwrite("alignments_per_reference", &AlignOpts::alignments_per_reference)
+        .def_readwrite("num_alignments", &AlignOpts::num_alignments)
+        .def_readwrite("min_alignment_spacing", &AlignOpts::min_alignment_spacing);
         
-    class_<AlignTask>("AlignTask", init<IntVec&, IntVec&, PartialSums&, PartialSums& , ScoreMatrix *, AlignOpts&>());
+    class_<AlignTask>("AlignTask",
+                      init<IntVec&, IntVec&, PartialSums&,
+                           PartialSums& , ScoreMatrix *,    
+                           BoolVec&, AlignmentPVec&,
+                           AlignOpts&>()
+                      );
 
     class_< Chunk >("Chunk", no_init)
                    .def_readwrite("start", &Chunk::start)
@@ -102,11 +116,17 @@ BOOST_PYTHON_MODULE(malignpy)
         .def("sum", &sum_all<int>)
         .def(vector_indexing_suite< std::vector<int> >());
 
+    class_< AlignmentPVec >("AlignmentPVec")
+        .def(vector_indexing_suite< AlignmentPVec >());
+
     class_< PartialSums >("PartialSums")
         .def(vector_indexing_suite< PartialSums >());
 
     class_< MatchedChunkVec >("MatchedChunkVec")
         .def(vector_indexing_suite< MatchedChunkVec >());
+
+    class_< BoolVec >("BoolVec")
+        .def(vector_indexing_suite< BoolVec >());
 
     def("make_int_vec", make_int_vec, return_value_policy<manage_new_object>() );
 
@@ -116,7 +136,7 @@ BOOST_PYTHON_MODULE(malignpy)
         .def_readonly("ref_miss_score", &Score::ref_miss_score)
         .def_readonly("sizing_score", &Score::sizing_score);
 
-    class_< Alignment >("Alignment")
+    class_< Alignment, Alignment* >("Alignment")
         .def_readonly("matched_chunks", &Alignment::matched_chunks)
         .def_readonly("score", &Alignment::score)
         .def_readonly("num_matched_sites", &Alignment::num_matched_sites)
@@ -141,10 +161,12 @@ BOOST_PYTHON_MODULE(malignpy)
     def("build_chunk_trail", build_chunk_trail);
     def("get_best_alignment", get_best_alignment);
     def("alignment_from_trail", alignment_from_trail, return_value_policy<manage_new_object>());
-    def("print_align_task", ptask);
+    def("print_align_task", print_align_task2);
     def("make_best_alignment", make_best_alignment, return_value_policy<manage_new_object>());
-    def("make_partial_sums", make_partial_sum_new, return_value_policy<manage_new_object>());
+    def("make_partial_sums", make_partial_sums_new, return_value_policy<manage_new_object>());
+    def("make_bool_vec", make_bool_vec, return_value_policy<manage_new_object>());
+    def("make_alignment_vec", make_alignment_vec, return_value_policy<manage_new_object>());
     def("fill_score_matrix_using_partials", fill_score_matrix_using_partials);
     def("make_best_alignment_using_partials", make_best_alignment_using_partials, return_value_policy<manage_new_object>());
-
+    def("make_best_alignments_using_partials", make_best_alignments_using_partials);
 }
