@@ -18,7 +18,8 @@ class AlignOpts {
 public:
 
   AlignOpts(double p1, double p2, int p3, int p4,
-            double p5, double p6, int p7 = 1, int p8 = 1) : 
+            double p5, double p6, int p7 = 1, int p8 = 1,
+            bool p9 = true) : 
     query_miss_penalty(p1), // penalty for having a site in query unaligned to reference
     ref_miss_penalty(p2), // penalty for having a site in reference unaligned to query
     query_max_misses(p3),
@@ -27,7 +28,8 @@ public:
     min_sd(p5), // minimum standard deviation imposed in sizing error model, bp
     max_chunk_sizing_error(p6),
     alignments_per_reference(p7),
-    min_alignment_spacing(p8)
+    min_alignment_spacing(p8),
+    query_is_bounded(p9)
   {};
 
   double query_miss_penalty;
@@ -39,12 +41,12 @@ public:
   double max_chunk_sizing_error;
 
   int alignments_per_reference; // max number of alignments per reference
-  int num_alignments;
   int min_alignment_spacing; // minimum amount of spacing between multiple accepted
                             // alignments to the same reference.
-
+  bool query_is_bounded; // true if the first/last fragments in query map are bounded by restriction sites.
 };
 
+double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts);
 
 //////////////// ///////////////////////////////////////////////////////////////////////
 // Bundle the alignment options and data structures
@@ -198,20 +200,39 @@ public:
     reset_stats();
   }
 
-  Alignment(MatchedChunkVec&& mc, Score& s) : matched_chunks(std::move(mc)), score(s) {
+  Alignment(MatchedChunkVec&& mc, Score& s) :
+    matched_chunks(std::move(mc)),
+    rescaled_matched_chunks(matched_chunks),
+    score(s),
+    query_scaling_factor(1.0)
+  {
     //std::cerr << "Alignment constructor from matched_chunks\n";
     summarize();
   }
 
-  Alignment(const Alignment& a) : matched_chunks(a.matched_chunks), score(a.score) {
+  Alignment(const Alignment& a) :
+    matched_chunks(a.matched_chunks),
+    rescaled_matched_chunks(matched_chunks),
+    score(a.score),
+    query_scaling_factor(1.0)
+  {
     //std::cerr << "Alignment copy constructor\n";
     summarize();
   }
 
-  Alignment(Alignment&& a) : matched_chunks(std::move(a.matched_chunks)), score(a.score) {
+  Alignment(Alignment&& a) :
+    matched_chunks(std::move(a.matched_chunks)),
+    rescaled_matched_chunks(matched_chunks),
+    score(a.score),
+    query_scaling_factor(1.0) {
     //std::cerr << "Alignment move constructor!\n";
     summarize();
   }
+
+
+  // rescale the query chunks using the query_scaling_factor, and
+  // recompute the sizing error for those chunks.
+  void rescale_matched_chunks(AlignOpts& align_opts);
 
   // Compute summary statistics from matched chunks.
   void summarize() {
@@ -232,6 +253,8 @@ public:
         ref_interior_size += mc.ref_chunk.size;
       }
     }
+
+    query_scaling_factor = ((double) ref_interior_size) / query_interior_size;
 
     // Count the number of matched sites.
     //  - each non-boundary chunk begins/ends with a matched site.
@@ -263,13 +286,16 @@ public:
     ref_interior_size = 0;
     num_matched_sites = 0;
     interior_size_ratio = 0;
+    query_scaling_factor = 0;
 
   }
 
   // Attributes
 
   MatchedChunkVec matched_chunks;
+  MatchedChunkVec rescaled_matched_chunks;
   Score score;
+  Score rescaled_score;
 
   // summary statistics of an alignment.
   // These are computable from the matched_chunks
@@ -282,13 +308,14 @@ public:
   int query_interior_size; // total size of non-boundary fragments
   int ref_interior_size; // total size of non-boundary fragments
   double interior_size_ratio;
+  double query_scaling_factor;
 };
 
 
 
 std::ostream& operator<<(std::ostream& os, const Alignment& aln);
 
-double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts);
+
 
 
 ////////////////////////////////

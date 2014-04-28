@@ -81,7 +81,7 @@ BOOST_PYTHON_MODULE(malignpy)
         .def_readonly("r", &ScoreCell::r_)
         .def_readonly("score", &ScoreCell::score_);
 
-    class_<AlignOpts>("AlignOpts", init< double, double, int, int, double, double, int, int >())
+    class_<AlignOpts>("AlignOpts", init< double, double, int, int, double, double, int, int, bool>())
         .def_readwrite("query_miss_penalty", &AlignOpts::query_miss_penalty)
         .def_readwrite("ref_miss_penalty", &AlignOpts::ref_miss_penalty)
         .def_readwrite("query_max_misses", &AlignOpts::query_max_misses)
@@ -89,8 +89,8 @@ BOOST_PYTHON_MODULE(malignpy)
         .def_readwrite("max_chunk_sizing_error", &AlignOpts::max_chunk_sizing_error)
         .def_readwrite("min_sd", &AlignOpts::min_sd)
         .def_readwrite("alignments_per_reference", &AlignOpts::alignments_per_reference)
-        .def_readwrite("num_alignments", &AlignOpts::num_alignments)
-        .def_readwrite("min_alignment_spacing", &AlignOpts::min_alignment_spacing);
+        .def_readwrite("min_alignment_spacing", &AlignOpts::min_alignment_spacing)
+        .def_readwrite("query_is_bounded", &AlignOpts::query_is_bounded);
         
     class_<AlignTask>("AlignTask",
                       init<IntVec&, IntVec&, PartialSums&,
@@ -103,6 +103,7 @@ BOOST_PYTHON_MODULE(malignpy)
                    .def_readwrite("start", &Chunk::start)
                    .def_readwrite("end", &Chunk::end)
                    .def_readwrite("size", &Chunk::size)
+                   .def_readonly("is_boundary", &Chunk::is_boundary)
                    .def(self_ns::str(self_ns::self));
 
     class_< std::vector<Chunk> >("ChunkVec")
@@ -138,7 +139,9 @@ BOOST_PYTHON_MODULE(malignpy)
 
     class_< Alignment, Alignment* >("Alignment")
         .def_readonly("matched_chunks", &Alignment::matched_chunks)
+        .def_readonly("rescaled_matched_chunks", &Alignment::rescaled_matched_chunks)
         .def_readonly("score", &Alignment::score)
+        .def_readonly("rescaled_score", &Alignment::rescaled_score)
         .def_readonly("num_matched_sites", &Alignment::num_matched_sites)
         .def_readonly("query_misses", &Alignment::query_misses)
         .def_readonly("ref_misses", &Alignment::ref_misses)
@@ -147,7 +150,9 @@ BOOST_PYTHON_MODULE(malignpy)
         .def_readonly("total_miss_rate", &Alignment::total_miss_rate)
         .def_readonly("query_interior_size", &Alignment::query_interior_size)
         .def_readonly("ref_interior_size", &Alignment::ref_interior_size)
-        .def_readonly("interior_size_ratio", &Alignment::interior_size_ratio)                
+        .def_readonly("interior_size_ratio", &Alignment::interior_size_ratio)
+        .def_readonly("query_scaling_factor", &Alignment::query_scaling_factor)
+        .def("rescale_matched_chunks", &Alignment::rescale_matched_chunks)                
         .def(self_ns::str(self_ns::self));
 
     class_< MatchedChunk >("MatchedChunk")

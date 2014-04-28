@@ -40,6 +40,29 @@ inline double sizing_penalty(int query_size, int ref_size, const AlignOpts& alig
 
 }
 
+// rescale the query chunks using the query_scaling_factor, and
+// recompute the sizing error for those chunks.
+void Alignment::rescale_matched_chunks(AlignOpts& align_opts) {
+  rescaled_score = score;
+  rescaled_score.sizing_score = 0.0;
+  const size_t l = rescaled_matched_chunks.size();
+  for (size_t i = 0; i < l; i++) {
+    MatchedChunk& mc = rescaled_matched_chunks[i];
+    int old_query_size = mc.query_chunk.size;
+    int new_query_size = query_scaling_factor*old_query_size;
+    double old_sizing_score = mc.score.sizing_score;
+    double new_sizing_score = sizing_penalty(new_query_size, mc.ref_chunk.size, align_opts);
+    mc.query_chunk.size = new_query_size;
+    if (!mc.query_chunk.is_boundary && !mc.ref_chunk.is_boundary) {
+      mc.score.sizing_score = new_sizing_score;
+      rescaled_score.sizing_score += new_sizing_score;
+      std::cerr << "old_q: " << old_query_size << " new_q: " << new_query_size
+              << " old_sizing_score: " << old_sizing_score << " new: " << new_sizing_score << "\n";
+    }
+  }
+}
+
+
 /*
   Populate a score matrix using dynamic programming for ungapped alignment.
 
@@ -307,7 +330,7 @@ void fill_score_matrix_using_partials(const AlignTask& align_task) {
 
         for(int k = i-1; k >= k0; k--) {
 
-          const bool is_query_boundary =  k == 0 || k == m - 1;
+          const bool is_query_boundary =  (k == 0 || k == m - 1) && !align_opts.query_is_bounded;
 
           #if FILL_DEBUG > 0
           cerr << "i: " << i
@@ -543,6 +566,7 @@ void build_chunk_trail(const AlignTask& task, ScoreCellPVec& trail, ChunkVec& qu
 
   const IntVec& query = *task.query;
   const IntVec& ref = *task.ref;
+  const AlignOpts& align_opts = *task.align_opts;
 
   query_chunks.clear();
   query_chunks.reserve(ts-1);
@@ -579,7 +603,7 @@ void build_chunk_trail(const AlignTask& task, ScoreCellPVec& trail, ChunkVec& qu
     assert(m < ml);
     assert(n < nl);
 
-    bool is_query_boundary = (m == 0) || (ml == query.size());
+    bool is_query_boundary = (m == 0 || ml == query.size()) && !align_opts.query_is_bounded;
     bool is_ref_boundary = (n == 0) || (nl == ref.size());
 
     // Build chunks
@@ -638,6 +662,7 @@ Alignment * alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail) {
     assert(query_chunks.size() == ref_chunks.size());
 
     const size_t n = query_chunks.size();
+    const int num_query_frags = query.size();
 
     Score total_score(0.0, 0.0, 0.0);
     matched_chunks.reserve(n);
@@ -652,7 +677,7 @@ Alignment * alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail) {
         double ref_miss_score = align_opts.ref_miss_penalty * ref_misses;
         double sizing_score = 0.0;
 
-        const bool query_is_boundary = (qc.start == 0) || (qc.end == (int) query.size());
+        const bool query_is_boundary = (qc.start == 0 || qc.end == num_query_frags) && !align_opts.query_is_bounded;
 
         if (!query_is_boundary) {
           sizing_score = sizing_penalty(qc.size, rc.size, align_opts);
