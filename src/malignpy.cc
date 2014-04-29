@@ -69,8 +69,13 @@ BOOST_PYTHON_MODULE(malignpy)
         .def("getSize", &ScoreMatrix::getSize)
         .def("getCapacity", &ScoreMatrix::getCapacity)
         .def("countFilledCells", &ScoreMatrix::countFilledCells)
+        .def("countFilledByRow", &ScoreMatrix::countFilledByRow)
         .def("percentFilled", &ScoreMatrix::percentFilled)
-        .def("getMaxScore", &ScoreMatrix::getMaxScore);
+        .def("getMaxScore", &ScoreMatrix::getMaxScore)
+        .add_property("nrows", &ScoreMatrix::getNumRows)
+        .add_property("m", &ScoreMatrix::getNumRows)
+        .add_property("ncols", &ScoreMatrix::getNumCols)
+        .add_property("n", &ScoreMatrix::getNumCols);
 
     // C++ promises to never delete the ScoreMatrix. This is done by Python garbage
     // collector at shutdown or when matrix is explicitly deleted with del.
@@ -95,7 +100,7 @@ BOOST_PYTHON_MODULE(malignpy)
     class_<AlignTask>("AlignTask",
                       init<IntVec&, IntVec&, PartialSums&,
                            PartialSums& , ScoreMatrix *,    
-                           BoolVec&, AlignmentPVec&,
+                           AlignmentPVec&,
                            AlignOpts&>()
                       );
 

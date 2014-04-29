@@ -61,14 +61,13 @@ public:
 
   AlignTask(IntVec& q, IntVec& r, PartialSums& qps,
             PartialSums& rps, ScoreMatrix * m,
-            BoolVec& cip, AlignmentPVec& alns,
+            AlignmentPVec& alns,
             AlignOpts& ao) :
     query(&q),
     ref(&r),
     query_partial_sums(&qps),
     ref_partial_sums(&rps),
     mat(m),
-    cells_in_play(&cip),
     alignments(&alns),
     align_opts(&ao)
   {
@@ -81,7 +80,6 @@ public:
     query_partial_sums(other.query_partial_sums),
     ref_partial_sums(other.ref_partial_sums),
     mat(other.mat),
-    cells_in_play(other.cells_in_play),
     alignments(other.alignments),
     align_opts(other.align_opts)
   {
@@ -95,7 +93,6 @@ public:
   PartialSums * query_partial_sums;
   PartialSums * ref_partial_sums;
   ScoreMatrix * mat;
-  BoolVec * cells_in_play; // Tracks which cells in last row are in play.
   AlignmentPVec * alignments;
   AlignOpts * align_opts;
 };

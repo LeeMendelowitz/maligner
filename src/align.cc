@@ -20,6 +20,7 @@ using Constants::INF;
 #define BUILD_TRAIL_DEBUG 0
 #define FILL_DEBUG 0
 #define BREAKS_DEBUG 0
+#define RESCALE_DEBUG 0 
 
 inline double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts) {
 
@@ -56,8 +57,10 @@ void Alignment::rescale_matched_chunks(AlignOpts& align_opts) {
     if (!mc.query_chunk.is_boundary && !mc.ref_chunk.is_boundary) {
       mc.score.sizing_score = new_sizing_score;
       rescaled_score.sizing_score += new_sizing_score;
+      #if RESCALE_DEBUG > 0
       std::cerr << "old_q: " << old_query_size << " new_q: " << new_query_size
               << " old_sizing_score: " << old_sizing_score << " new: " << new_sizing_score << "\n";
+      #endif
     }
   }
 }
@@ -461,7 +464,6 @@ int get_best_alignments(const AlignTask& task) {
   IntVec& query = *task.query;
   IntVec& ref = *task.ref;
   ScoreMatrix& mat = *task.mat;
-  BoolVec& cells_in_play = *task.cells_in_play;
   AlignmentPVec& alignments = *task.alignments;
 
 
@@ -470,16 +472,6 @@ int get_best_alignments(const AlignTask& task) {
   const int num_rows = mat.getNumRows();
   const int num_cols = mat.getNumCols();
   const int last_row = m - 1;
-
-  
-
-  // Reset the cells_in_play vector
-  if (cells_in_play.size() < n) {
-    cells_in_play.resize(n, true);
-  }
-  for(size_t i = 0; i < n; i++) {
-    cells_in_play[i] = true;
-  }
 
   int num_alignments_found = 0;
   alignments.reserve(align_opts.alignments_per_reference);
@@ -527,7 +519,6 @@ int get_best_alignments(const AlignTask& task) {
     num_alignments_found++;
 
     // Mark neighboring cells as out of play.
-    cells_in_play[best_cell_col] = false;
     int lb = best_cell_col - align_opts.min_alignment_spacing + 1;
     int ub = best_cell_col + align_opts.min_alignment_spacing;
     if (lb < 0) lb = 0;

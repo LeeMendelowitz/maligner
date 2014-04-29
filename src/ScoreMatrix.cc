@@ -18,6 +18,23 @@ size_t ScoreMatrix::countFilledCells() const {
     return count;
 }
 
+size_t ScoreMatrix::countFilledByRow(size_t row) const {
+    
+    if (row >= numRows_) {
+        return 0;
+    }
+
+    size_t count = 0;
+    size_t index = row - 1;
+
+    for (size_t j = 0; j < numCols_; j++, index += numRows_) {
+
+        if ( data_[ index ].score_ > -INF)
+            count++;
+    }
+    return count;
+}
+
 double ScoreMatrix::percentFilled() const {
     double size = (double) getSize();
     int filled = 0;
@@ -29,7 +46,7 @@ double ScoreMatrix::percentFilled() const {
             }
         }
     }
-    return ((double) filled)/size;
+    return ((double) filled)/size*100.0;
 }
 
 double ScoreMatrix::getMaxScore() const {

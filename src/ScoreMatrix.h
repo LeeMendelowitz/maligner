@@ -44,6 +44,7 @@ public:
 
     // Summary Functions
     size_t countFilledCells() const;
+    size_t countFilledByRow(size_t row) const;
     double percentFilled() const;
     double getMaxScore() const;
     double getMaxScoreByRow(size_t row) const;

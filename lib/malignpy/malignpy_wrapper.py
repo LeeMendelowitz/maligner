@@ -98,7 +98,8 @@ def _AlignOpts__str__(self):
            'max_chunk_sizing_error',
            'min_sd',
            'alignments_per_reference',
-           'min_alignment_spacing'
+           'min_alignment_spacing',
+           'query_is_bounded'
           ]
 
   outs = ''
@@ -110,6 +111,33 @@ def _AlignOpts__str__(self):
 
 Alignment.set_data = _alignment_set_data
 Alignment.get_data = _alignment_get_data
+
+
+# Add docstrings
+AlignOpts.__doc__ = "Alignment Options"
+AlignOpts.__init__.__func__.__doc__ = \
+"""Initialize a set of alignment options.
+  
+   Args:
+
+      query_miss_penalty: Cost of missing have an extra unmatched
+         site in query
+      ref_miss_penalty: Cost of having an extra unmatched site
+        in reference.
+      query_max_misses: Maximum consecutive unmatched sites in query. 
+      ref_max_misses: Maximum consecutive unmatched sites in reference.
+      min_sd: Minimum standard deviation imposed by sizing error model, in bp.
+      max_chunk_sizing_error: Maximum sizing error score allowed
+       for a reference chunk.
+      alignments_per_reference: Number of alignments to store per reference.
+      min_alignment_spacing: Minimum number of fragments between rightmost reference
+        fragment to accept a secondary alignment. Alignments are selecting in descending
+        order of score, so the best alignment is selected first, then the second best alignment
+        provided it is min_alignment_spacing fragments away in reference.
+      query_is_bounded: True if query leftmost/rightmost fragment is bounded on both
+        ends by a nick site.
+
+"""
 
 AlignOpts.__str__ = _AlignOpts__str__
 
