@@ -14,10 +14,11 @@ it will see.
 **************************************************************/
 
 #include "ScoreCell.h"
-
+#include "types.h"
 #include <vector>
-typedef std::vector<bool> BoolVec;
+#include <boost/shared_ptr.hpp>
 
+using boost::shared_ptr;
 
 class ScoreMatrix
 {
@@ -57,6 +58,8 @@ private:
     BoolVec last_row_in_play_; // Indicate which cells in last row are in play.
     
 };
+
+typedef boost::shared_ptr< ScoreMatrix> ScoreMatrixPtr;
 
 
 std::ostream& operator<<(std::ostream& os, ScoreMatrix& mat);

@@ -1,17 +1,24 @@
 
+#include "ScoreMatrix.h"
 #include "ScoreCell.h"
 #include "types.h"
 
 #include <iostream>
 #include <vector>
 #include <utility>
+#include <memory>
+#include <boost/shared_ptr.hpp>
 
 // Forward Declarations
 class ScoreMatrix;
 class Alignment;
 
 typedef std::vector<IntVec> PartialSums;
-typedef std::vector<Alignment *> AlignmentPVec;
+typedef boost::shared_ptr< PartialSums > PartialSumsPtr;
+
+typedef boost::shared_ptr< Alignment > AlignmentPtr;
+typedef std::vector< AlignmentPtr > AlignmentPVec;
+typedef boost::shared_ptr< AlignmentPVec > AlignmentPVecPtr;
 
 class AlignOpts {
 
@@ -59,16 +66,16 @@ class AlignTask {
   
 public:
 
-  AlignTask(IntVec& q, IntVec& r, PartialSums& qps,
-            PartialSums& rps, ScoreMatrix * m,
-            AlignmentPVec& alns,
+  AlignTask(IntVecPtr q, IntVecPtr r, PartialSumsPtr qps,
+            PartialSumsPtr rps, ScoreMatrixPtr m,
+            AlignmentPVecPtr alns,
             AlignOpts& ao) :
-    query(&q),
-    ref(&r),
-    query_partial_sums(&qps),
-    ref_partial_sums(&rps),
+    query(q),
+    ref(r),
+    query_partial_sums(qps),
+    ref_partial_sums(rps),
     mat(m),
-    alignments(&alns),
+    alignments(alns),
     align_opts(&ao)
   {
   }
@@ -88,12 +95,12 @@ public:
   ~AlignTask() {
   }
 
-  IntVec * query;
-  IntVec * ref;
-  PartialSums * query_partial_sums;
-  PartialSums * ref_partial_sums;
-  ScoreMatrix * mat;
-  AlignmentPVec * alignments;
+  IntVecPtr query;
+  IntVecPtr ref;
+  PartialSumsPtr query_partial_sums;
+  PartialSumsPtr ref_partial_sums;
+  ScoreMatrixPtr mat;
+  AlignmentPVecPtr alignments;
   AlignOpts * align_opts;
 };
 
@@ -346,13 +353,13 @@ int get_best_alignments(const AlignTask& task);
 
 // Make and return an alignment from the trail through the
 // score matrix.
-Alignment * alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail);
+AlignmentPtr alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail);
 
 // Build an alignment by tracing back from ScoreCell.
-Alignment * alignment_from_cell(const AlignTask& task, ScoreCell* p_cell);
+AlignmentPtr alignment_from_cell(const AlignTask& task, ScoreCell* p_cell);
 
 PartialSums make_partial_sums(const IntVec& frags, const int missed_sites);
-PartialSums* make_partial_sums_new(const IntVec& frags, const int missed_sites);
+PartialSumsPtr make_partial_sums_new(const IntVec& frags, const int missed_sites);
 
 void fill_score_matrix_using_partials(const AlignTask& align_task);
 
@@ -363,8 +370,8 @@ void fill_score_matrix_using_partials(const AlignTask& align_task);
 
 
 // Fill score matrix, find best alignment, and return it.
-Alignment * make_best_alignment(const AlignTask& task);
-Alignment * make_best_alignment_using_partials(const AlignTask& task);
+AlignmentPtr make_best_alignment(const AlignTask& task);
+AlignmentPtr make_best_alignment_using_partials(const AlignTask& task);
 int make_best_alignments_using_partials(const AlignTask& task);
 
 

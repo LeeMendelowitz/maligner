@@ -514,17 +514,22 @@ int get_best_alignments(const AlignTask& task) {
     if (!have_alignment) break;
 
     // Build the alignment
-    alignments.push_back(alignment_from_cell(task, p_best_cell));
+    AlignmentPtr a = alignment_from_cell(task, p_best_cell);
+    if (a) { 
 
-    num_alignments_found++;
+      alignments.push_back(a); 
 
-    // Mark neighboring cells as out of play.
-    int lb = best_cell_col - align_opts.min_alignment_spacing + 1;
-    int ub = best_cell_col + align_opts.min_alignment_spacing;
-    if (lb < 0) lb = 0;
-    if (ub > n) ub = n;
-    for (int col = lb; col < ub; col++) {
-      mat.mark_cell_in_play(col, false);
+      num_alignments_found++;
+
+      // Mark neighboring cells as out of play.
+      int lb = best_cell_col - align_opts.min_alignment_spacing + 1;
+      int ub = best_cell_col + align_opts.min_alignment_spacing;
+      if (lb < 0) lb = 0;
+      if (ub > n) ub = n;
+      for (int col = lb; col < ub; col++) {
+        mat.mark_cell_in_play(col, false);
+      }
+
     }
   }
 
@@ -636,7 +641,7 @@ void print_chunk_trail(const ChunkVec& query_chunks, const ChunkVec& ref_chunks)
 
 // Make and return an alignment from the trail through the
 // score matrix.
-Alignment * alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail) {
+AlignmentPtr alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail) {
 
     const AlignOpts& align_opts = *task.align_opts;
     const IntVec& query = *task.query;
@@ -686,10 +691,10 @@ Alignment * alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail) {
         
     }
 
-    return new Alignment(std::move(matched_chunks), total_score);
+    return AlignmentPtr(new Alignment(std::move(matched_chunks), total_score));
 }
 
-Alignment * alignment_from_cell(const AlignTask& task, ScoreCell* p_cell) {
+AlignmentPtr alignment_from_cell(const AlignTask& task, ScoreCell* p_cell) {
   
   const size_t m = task.query->size() + 1;
 
@@ -697,7 +702,7 @@ Alignment * alignment_from_cell(const AlignTask& task, ScoreCell* p_cell) {
   trail.reserve(m);
   build_trail(p_cell, trail);
 
-  Alignment * aln = alignment_from_trail(task, trail);
+  AlignmentPtr aln = alignment_from_trail(task, trail);
   return aln;
 }
 
@@ -736,7 +741,7 @@ PartialSums make_partial_sums(const IntVec& frags, const int missed_sites) {
 }
 
 // Make partial sums of the preceeding fragment sizes, up to (missed_sites + 1) fragments.
-PartialSums* make_partial_sums_new(const IntVec& frags, const int missed_sites) {
+PartialSumsPtr make_partial_sums_new(const IntVec& frags, const int missed_sites) {
 /*
 
   Consider fragments with indices i and fragment sizes f
@@ -751,7 +756,7 @@ PartialSums* make_partial_sums_new(const IntVec& frags, const int missed_sites) 
   const IntVec zero_sums(missed_sites + 1, 0);
   const int num_frags = frags.size();
 
-  PartialSums* p_partial_sums = new PartialSums(num_frags, zero_sums);
+  PartialSumsPtr p_partial_sums = PartialSumsPtr( new PartialSums(num_frags, zero_sums) );
 
   for (int i = 0; i < num_frags; i++) {
     IntVec& ps = (*p_partial_sums)[i];
@@ -771,7 +776,7 @@ PartialSums* make_partial_sums_new(const IntVec& frags, const int missed_sites) 
 
 //////////////////////////////////////////////////////////
 // Fill score matrix, find best alignment, and return it.
-Alignment * make_best_alignment(const AlignTask& task) {
+AlignmentPtr make_best_alignment(const AlignTask& task) {
 
   // populate the score matrix
   fill_score_matrix(task);
@@ -780,14 +785,15 @@ Alignment * make_best_alignment(const AlignTask& task) {
   ScoreCellPVec trail;
   bool have_alignment = get_best_alignment(task, trail);
   if (!have_alignment) {
-    return nullptr;
+    Alignment * null = 0;
+    return AlignmentPtr(null);
   }
 
   return alignment_from_trail(task, trail);
 }
 
 // Fill score matrix, find best alignment, and return it.
-Alignment * make_best_alignment_using_partials(const AlignTask& task) {
+AlignmentPtr make_best_alignment_using_partials(const AlignTask& task) {
 
   // populate the score matrix
   fill_score_matrix_using_partials(task);
@@ -796,7 +802,8 @@ Alignment * make_best_alignment_using_partials(const AlignTask& task) {
   ScoreCellPVec trail;
   bool have_alignment = get_best_alignment(task, trail);
   if (!have_alignment) {
-    return nullptr;
+    Alignment * null = 0;
+    return AlignmentPtr(null);
   }
 
   return alignment_from_trail(task, trail);

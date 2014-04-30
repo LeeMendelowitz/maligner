@@ -6,8 +6,8 @@
 // It acts as a node in the DAG underlying the dynamic programming
 // table.
 
-#include<vector>
-#include<set>
+#include <vector>
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
 #include <ostream>

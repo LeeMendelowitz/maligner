@@ -4,6 +4,7 @@
 #include <boost/python/stl_iterator.hpp>
 #include <boost/python/return_internal_reference.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+#include <boost/shared_ptr.hpp>
 
 #include "ScoreCell.h"
 #include "ScoreMatrix.h"
@@ -12,6 +13,8 @@
 #include "types.h"
 
 using namespace boost::python;
+using boost::shared_ptr;
+
 using self_ns::str;
 
 template<typename T>
@@ -37,22 +40,22 @@ std::vector<T> make_vec(object o) {
 
 // Make a new Score Matrix, and return as a pointer.
 // This has the important advantage that we avoid copies when passing to Python.
-ScoreMatrix* make_score_matrix(size_t m, size_t n) {
-    return new ScoreMatrix(m, n);
+ScoreMatrixPtr make_score_matrix(size_t m, size_t n) {
+    return ScoreMatrixPtr(new ScoreMatrix(m, n));
 }
 
-IntVec* make_int_vec() {
-    IntVec * p = new IntVec();
+IntVecPtr make_int_vec() {
+    IntVecPtr p = IntVecPtr(new IntVec());
     return p;
 }
 
-BoolVec* make_bool_vec() {
-    BoolVec * p = new BoolVec();
+BoolVecPtr make_bool_vec() {
+    BoolVecPtr p = BoolVecPtr(new BoolVec());
     return p;
 }
 
-AlignmentPVec* make_alignment_vec() {
-    AlignmentPVec * p = new AlignmentPVec();
+AlignmentPVecPtr make_alignment_vec() {
+    AlignmentPVecPtr p = AlignmentPVecPtr(new AlignmentPVec());
     return p;
 }
 
@@ -63,8 +66,10 @@ void print_align_task2(AlignTask& task) {
 
 BOOST_PYTHON_MODULE(malignpy)
 {
+    register_ptr_to_python< AlignmentPtr >();
 
-    class_<ScoreMatrix>("ScoreMatrix", no_init)
+
+    class_<ScoreMatrix, ScoreMatrixPtr >("ScoreMatrix", no_init)
         .def("resize", &ScoreMatrix::resize)
         .def("getSize", &ScoreMatrix::getSize)
         .def("getCapacity", &ScoreMatrix::getCapacity)
@@ -79,7 +84,7 @@ BOOST_PYTHON_MODULE(malignpy)
 
     // C++ promises to never delete the ScoreMatrix. This is done by Python garbage
     // collector at shutdown or when matrix is explicitly deleted with del.
-    def("make_score_matrix", make_score_matrix, return_value_policy<manage_new_object>());
+    def("make_score_matrix", make_score_matrix);
 
     class_<ScoreCell>("ScoreCell")
         .def_readonly("q", &ScoreCell::q_)
@@ -98,9 +103,9 @@ BOOST_PYTHON_MODULE(malignpy)
         .def_readwrite("query_is_bounded", &AlignOpts::query_is_bounded);
         
     class_<AlignTask>("AlignTask",
-                      init<IntVec&, IntVec&, PartialSums&,
-                           PartialSums& , ScoreMatrix *,    
-                           AlignmentPVec&,
+                      init<IntVecPtr, IntVecPtr, PartialSumsPtr,
+                           PartialSumsPtr , ScoreMatrixPtr,    
+                           AlignmentPVecPtr,
                            AlignOpts&>()
                       );
 
@@ -117,24 +122,28 @@ BOOST_PYTHON_MODULE(malignpy)
     class_< ScoreCellPVec >("ScoreCellVec")
         .def(vector_indexing_suite< ScoreCellPVec >());
 
-    class_< std::vector<int> >("IntVec")
+    class_< IntVec, IntVecPtr >("IntVec")
         .def("assign", &vec_assign<int>)
         .def("sum", &sum_all<int>)
         .def(vector_indexing_suite< std::vector<int> >());
 
-    class_< AlignmentPVec >("AlignmentPVec")
-        .def(vector_indexing_suite< AlignmentPVec >());
+    // To correctly work with a vector of shared_ptr, the
+    // second argument to VectorIndexingSuite must be true.
+    // Black magic. See:
+    //   http://stackoverflow.com/questions/5919170/boost-python-and-vectors-of-shared-ptr
+    class_< AlignmentPVec, AlignmentPVecPtr >("AlignmentPVec")
+        .def(vector_indexing_suite< AlignmentPVec, true >());
 
-    class_< PartialSums >("PartialSums")
+    class_< PartialSums, PartialSumsPtr >("PartialSums")
         .def(vector_indexing_suite< PartialSums >());
 
     class_< MatchedChunkVec >("MatchedChunkVec")
         .def(vector_indexing_suite< MatchedChunkVec >());
 
-    class_< BoolVec >("BoolVec")
+    class_< BoolVec, BoolVecPtr >("BoolVec")
         .def(vector_indexing_suite< BoolVec >());
 
-    def("make_int_vec", make_int_vec, return_value_policy<manage_new_object>() );
+    def("make_int_vec", make_int_vec);
 
     class_< Score >("Score")
         .add_property("total", &Score::total)
@@ -142,7 +151,7 @@ BOOST_PYTHON_MODULE(malignpy)
         .def_readonly("ref_miss_score", &Score::ref_miss_score)
         .def_readonly("sizing_score", &Score::sizing_score);
 
-    class_< Alignment, Alignment* >("Alignment")
+    class_< Alignment, AlignmentPtr, boost::noncopyable >( "Alignment", no_init )
         .def_readonly("matched_chunks", &Alignment::matched_chunks)
         .def_readonly("rescaled_matched_chunks", &Alignment::rescaled_matched_chunks)
         .def_readonly("score", &Alignment::score)
@@ -170,13 +179,13 @@ BOOST_PYTHON_MODULE(malignpy)
     def("build_trail", build_trail);
     def("build_chunk_trail", build_chunk_trail);
     def("get_best_alignment", get_best_alignment);
-    def("alignment_from_trail", alignment_from_trail, return_value_policy<manage_new_object>());
+    def("alignment_from_trail", alignment_from_trail);
     def("print_align_task", print_align_task2);
-    def("make_best_alignment", make_best_alignment, return_value_policy<manage_new_object>());
-    def("make_partial_sums", make_partial_sums_new, return_value_policy<manage_new_object>());
-    def("make_bool_vec", make_bool_vec, return_value_policy<manage_new_object>());
-    def("make_alignment_vec", make_alignment_vec, return_value_policy<manage_new_object>());
+    def("make_best_alignment", make_best_alignment);
+    def("make_partial_sums", make_partial_sums_new);
+    def("make_bool_vec", make_bool_vec);
+    def("make_alignment_vec", make_alignment_vec);
     def("fill_score_matrix_using_partials", fill_score_matrix_using_partials);
-    def("make_best_alignment_using_partials", make_best_alignment_using_partials, return_value_policy<manage_new_object>());
+    def("make_best_alignment_using_partials", make_best_alignment_using_partials);
     def("make_best_alignments_using_partials", make_best_alignments_using_partials);
 }

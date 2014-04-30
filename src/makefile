@@ -24,16 +24,16 @@ malignpy.o: malignpy.cc align.h ScoreCell.h ScoreMatrix.h ScoreCell.h globals.h
 	mv maligner.a ../lib/maligner.a
 
 ScoreCell.o : ScoreCell.cc ScoreCell.h
-	$(CXX) $(CXXFLAGS) -c -g -fPIC $<
+	$(CXX) $(CXXFLAGS) -I$(BOOST_INC) -c -g -fPIC $<
 
 ScoreMatrix.o : ScoreMatrix.cc ScoreMatrix.h
-	$(CXX) $(CXXFLAGS) -c -g -fPIC $<
+	$(CXX) $(CXXFLAGS) -I$(BOOST_INC) -c -g -fPIC $<
 
 align.o : align.cc align.h ScoreCell.h ScoreMatrix.h
-	$(CXX) $(CXXFLAGS) -c -g -fPIC $<
+	$(CXX) $(CXXFLAGS) -I$(BOOST_INC) -c -g -fPIC $<
 
 globals.o: globals.cc globals.h
-	$(CXX) $(CXXFLAGS) -c -g -fPIC $<
+	$(CXX) $(CXXFLAGS) -I$(BOOST_INC) -c -g -fPIC $<
 
 clean:
 	rm *.o *.so ../lib/maligner.a
