@@ -11,7 +11,10 @@
 # [MapId] [Length (bp)] [number of fragments] [frag 0 length (bp)] [frag 1 length (bp)] ...
 import sys
 
+from ..common import wrap_file_function
+
 class SOMAMap(object):
+
     def __init__(self, *args, **kwargs):
         if 'line' in kwargs:
             self.makeFromLine(kwargs['line'])
@@ -21,6 +24,9 @@ class SOMAMap(object):
 
     # Create a SOMAMap from a line in maps file
     def makeFromLine(self, line):
+        """
+        Create a SOMAMap from a line in a SOMA Maps file.
+        """
         fields = line.strip().split()
         self.mapId = fields[0]
         self.length = int(fields[1])
@@ -48,6 +54,14 @@ class SOMAMap(object):
         fields.extend(str(frag) for frag in self.frags)
         outS = '\t'.join(fields) + '\n'
         f.write(outS)
+
+    def get_data(self):
+        """
+        Return dict representation of a SOMAMap
+        """
+        fields = ['mapId', 'length', 'numFrags', 'frags']
+        d = { k:getattr(self,k) for k in fields }
+        return d
 
     # Check the consistency of the object
     def checkMap(self):

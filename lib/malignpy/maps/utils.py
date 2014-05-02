@@ -2,6 +2,7 @@ import sys
 import re
 
 from .SOMAMap import SOMAMap
+from ..common import wrap_file_function
 
 ###################################################
 # Convert an optical map from the Schwartz lab format
@@ -131,16 +132,10 @@ def readMapDataXML(fileName):
 
 #########################################################
 # Read map file in the SOMA map format
-def readMaps(handle):
-    fin = handle
-    closeFile = False
-    if type(fin) is str:
-        fin = open(fin)
-        closeFile = True
+@wrap_file_function('r')
+def readMaps(fin):
     maps = [SOMAMap(line=l) for l in fin]
     mapDict = dict((m.mapId, m) for m in maps)
-    if closeFile:
-        fin.close()
     return mapDict
 
 #############################################
@@ -149,17 +144,18 @@ def gen_maps(f):
     Generate maps from the SOMAMap file specified by f.
     f can be a filename str or a file handle.
     """
-    fin = f
-    closeFile = False
-    if type(fin) is str:
-        fin = open(fin)
-        closeFile = True
-    lines = (l for l in fin if l)
+
+    should_close = False
+    if isinstance(f, str):
+        f = open(f)
+        should_close = True
+
+    lines = (l for l in f if l)
     for l in lines:
         yield SOMAMap(line=l)
-    if closeFile:
-        fin.close()
 
+    if should_close:
+        f.close()
 
 #########################################################
 # Write maps to a file in the SOMA map format
@@ -175,3 +171,8 @@ def writeMaps(mapList, handle):
 
     if closeFile:
         fout.close()
+
+#########################################################
+@wrap_file_function('r', 'w')
+def convert_maps_file_to_mongo(maps_in, json_out):
+    map_gen = gen_maps()
