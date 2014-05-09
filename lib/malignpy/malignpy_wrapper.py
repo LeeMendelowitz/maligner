@@ -95,6 +95,7 @@ def _AlignOpts__str__(self):
            'ref_miss_penalty',
            'query_max_misses',
            'ref_max_misses',
+           'sd_rate',
            'max_chunk_sizing_error',
            'min_sd',
            'alignments_per_reference',
@@ -126,6 +127,7 @@ AlignOpts.__init__.__func__.__doc__ = \
         in reference.
       query_max_misses: Maximum consecutive unmatched sites in query. 
       ref_max_misses: Maximum consecutive unmatched sites in reference.
+      sd_rate: Fraction of reference chunk size considered to be 1 s.d. in sizing error model.
       min_sd: Minimum standard deviation imposed by sizing error model, in bp.
       max_chunk_sizing_error: Maximum sizing error score allowed
        for a reference chunk.
