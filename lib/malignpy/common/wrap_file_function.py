@@ -1,6 +1,7 @@
 """
 Utilities for working with alignment json files.
 """
+from functools import wraps
 
 class wrap_file_function(object):
   """
@@ -28,6 +29,7 @@ class wrap_file_function(object):
 
   def __call__(self, func):
 
+    @wraps(func)
     def wrapped(*args, **kwargs):
 
       close = [] # Files that should be closed

@@ -25,13 +25,14 @@ class AlignOpts {
 public:
 
   AlignOpts(double p1, double p2, int p3, int p4,
+            double sdr,
             double p5, double p6, int p7 = 1, int p8 = 1,
             bool p9 = true) : 
     query_miss_penalty(p1), // penalty for having a site in query unaligned to reference
     ref_miss_penalty(p2), // penalty for having a site in reference unaligned to query
     query_max_misses(p3),
     ref_max_misses(p4),
-    sd_rate(0.1), // Fraction of reference fragment to use as standard deviation
+    sd_rate(sdr), // Fraction of reference fragment to use as standard deviation
     min_sd(p5), // minimum standard deviation imposed in sizing error model, bp
     max_chunk_sizing_error(p6),
     alignments_per_reference(p7),

@@ -66,8 +66,6 @@ void print_align_task2(AlignTask& task) {
 
 BOOST_PYTHON_MODULE(malignpy)
 {
-    register_ptr_to_python< AlignmentPtr >();
-
 
     class_<ScoreMatrix, ScoreMatrixPtr >("ScoreMatrix", no_init)
         .def("resize", &ScoreMatrix::resize)
@@ -91,11 +89,12 @@ BOOST_PYTHON_MODULE(malignpy)
         .def_readonly("r", &ScoreCell::r_)
         .def_readonly("score", &ScoreCell::score_);
 
-    class_<AlignOpts>("AlignOpts", init< double, double, int, int, double, double, int, int, bool>())
+    class_<AlignOpts>("AlignOpts", init< double, double, int, int, double, double, double, int, int, bool>())
         .def_readwrite("query_miss_penalty", &AlignOpts::query_miss_penalty)
         .def_readwrite("ref_miss_penalty", &AlignOpts::ref_miss_penalty)
         .def_readwrite("query_max_misses", &AlignOpts::query_max_misses)
         .def_readwrite("ref_max_misses", &AlignOpts::ref_max_misses)
+        .def_readwrite("sd_rate", &AlignOpts::sd_rate)
         .def_readwrite("max_chunk_sizing_error", &AlignOpts::max_chunk_sizing_error)
         .def_readwrite("min_sd", &AlignOpts::min_sd)
         .def_readwrite("alignments_per_reference", &AlignOpts::alignments_per_reference)
@@ -165,7 +164,7 @@ BOOST_PYTHON_MODULE(malignpy)
         .def_readonly("query_interior_size", &Alignment::query_interior_size)
         .def_readonly("ref_interior_size", &Alignment::ref_interior_size)
         .def_readonly("interior_size_ratio", &Alignment::interior_size_ratio)
-        .def_readonly("query_scaling_factor", &Alignment::query_scaling_factor)
+        .def_readwrite("query_scaling_factor", &Alignment::query_scaling_factor)
         .def("rescale_matched_chunks", &Alignment::rescale_matched_chunks)                
         .def(self_ns::str(self_ns::self));
 

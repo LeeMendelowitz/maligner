@@ -134,6 +134,17 @@ def readMapDataXML(fileName):
 # Read map file in the SOMA map format
 @wrap_file_function('r')
 def readMaps(fin):
+    """
+    Read all SOMA maps in the file and return as a dict.
+
+    Usage:
+      maps = readMaps('file.maps')
+
+      # or
+      f = open('file.maps')
+      maps = readMaps(f)
+      f.close()
+    """
     maps = [SOMAMap(line=l) for l in fin]
     mapDict = dict((m.mapId, m) for m in maps)
     return mapDict
