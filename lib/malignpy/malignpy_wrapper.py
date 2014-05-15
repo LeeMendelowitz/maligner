@@ -76,15 +76,20 @@ def _alignment_get_data(self):
   data = OrderedDict()
 
   # Add these attributes
-  keys = [ 'query_id', 'ref_id', 'ref_is_forward', 
-          'score', 'rescaled_score',   'query_num_sites', 'query_num_frags', 'num_matched_sites', 'query_misses', 'ref_misses',
+  keys = [ 'query_id',
+          'ref_id', 'ref_is_forward', 
+          'score', 'rescaled_score',
+          'query_num_sites', 'query_num_frags',
+          'num_matched_sites', 'query_misses', 'ref_misses',
           'query_miss_rate', 'ref_miss_rate', 'total_miss_rate',
-          'query_interior_size', 'ref_interior_size', 'interior_size_ratio', 'query_scaling_factor',
+          'query_interior_size', 'ref_interior_size', 'interior_size_ratio',
+          'query_scaling_factor',
           'query_id', 'ref_id', 'ref_is_forward']
   data.update((k, get_data_from_obj(self, k)) for k in keys)
   data['matched_chunks'] = [m.get_data() for m in self.matched_chunks]
   data['rescaled_matched_chunks'] = [m.get_data() for m in self.rescaled_matched_chunks]
   data['total_score'] = self.score.total
+  data['total_score_rescaled'] = self.rescaled_score.total
   data['max_chunk_sizing_score'] = max(c['score']['sizing_score'] for c in data['matched_chunks'])
 
 

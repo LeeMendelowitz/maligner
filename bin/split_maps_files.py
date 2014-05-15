@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+"""
+Split a maps files into N pieces.
+"""
+
+import argparse
+from itertools import islice
+import os, sys
+
+import malignpy
+from malignpy.common import wrap_file_function
+
+parser = argparse.ArgumentParser(description='Split a maps file into N chunks')
+parser.add_argument('maps_file', metavar='MAPS_FILE', type=str,
+                   help='SOMA MAPS FILE')
+parser.add_argument('num_chunks', metavar='N', type=int, help='Number of chunks')
+parser.add_argument('-o', '--output', metavar='OUTPUT_DIR', help = "Output directory. (Default: working dir")
+
+
+@wrap_file_function('r')
+def count_lines(fp):
+  for i, l in enumerate(fp):
+    pass
+  return i+1
+
+
+def split(map_file_path, num_pieces, output_dir = None):
+
+  map_file_path = os.path.abspath(map_file_path)
+  output_dir, fn = os.path.split(map_file_path)
+  bn, _ = os.path.splitext(fn)
+  if not output_dir:
+    output_dir = os.getcwd()
+  output_pfx = bn
+
+  lines = count_lines(map_file_path)
+
+  maps_per_piece = int(lines/num_pieces)
+  remainder = lines - maps_per_piece * num_pieces
+  assert(remainder < num_pieces)
+
+  maps_per_file = [maps_per_piece] * num_pieces
+  for i in range(remainder):
+    maps_per_file[i] += 1
+
+  with open(map_file_path) as fin:
+    for i, n in enumerate(maps_per_file):
+      output_name = '%s.split%i.maps'%(output_pfx, i)
+      output_path = os.path.join(output_dir, output_name)
+      with open(output_path, 'w') as fout:
+        for l in islice(fin, n):
+          fout.write(l)
+
+if __name__ == '__main__':
+  args = parser.parse_args()
+  split(args.maps_file, args.num_chunks, args.output)
+

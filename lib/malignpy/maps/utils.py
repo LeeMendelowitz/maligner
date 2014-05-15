@@ -4,6 +4,13 @@ import re
 from .SOMAMap import SOMAMap
 from ..common import wrap_file_function
 
+__all__ = (
+    "readMaps",
+    "gen_maps",
+    "writeMaps",
+    "convert_maps_file_to_mongo"
+)
+
 ###################################################
 # Convert an optical map from the Schwartz lab format
 # to the SOMA format
