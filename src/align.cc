@@ -489,78 +489,62 @@ int get_best_alignments(const AlignTask& task) {
   AlignmentPVec neighborhood_alignments;
   neighborhood_alignments.reserve(1 + 2 * align_opts.neighbor_delta );
   
-
-
   const int m = query.size() + 1;
   const int n = ref.size() + 1;
   const int num_rows = mat.getNumRows();
   const int num_cols = mat.getNumCols();
   const int last_row = m - 1;
 
-  int num_alignments_found = 0;
   size_t max_alignments = align_opts.alignments_per_reference * ( 1 + 2 * align_opts.neighbor_delta );
-  
   alignments.reserve(max_alignments);
 
-  for (int r = 0; r < align_opts.alignments_per_reference; r++) {
+  ScoreCellPVec alignment_seeds;
+  alignment_seeds.reserve(n);
 
-    double best_score = -INF;
-    int best_cell_col = -1;
-    int best_cell_index = -1;
-    ScoreCell * p_best_cell = nullptr;
-
-    // Get the cell with the best score in the last row that is
-    // still in play.
-    int index = last_row;
-    for (int i = 0; i < n; i++, index += num_rows) {
-      
-      if (!mat.cell_in_play(i)) continue;
-
-      ScoreCell * pCell = mat.getCell(index);
-
-      #if GET_BEST_DEBUG > 0
-      cerr << "index: " << index << ", ";
-      cerr << "cell: " << pCell << "\n";
-      #endif
-
-      if (pCell->backPointer_ && pCell->score_ > best_score ) {
-        p_best_cell = pCell;
-        best_score = pCell->score_;
-        best_cell_col = i;
-        best_cell_index = index;
-      } 
+  // Go to the last row in the matrix, and get the best score cells.
+  int index = last_row;
+  for (int i = 0; i < n; i++, index += num_rows) {
+    ScoreCell * pCell = mat.getCell(index);
+    bool have_alignment = pCell && pCell->score_ > -INF && pCell->backPointer_;
+    if (have_alignment) {
+      alignment_seeds.push_back(pCell);
     }
+  }
 
-    #if GET_BEST_DEBUG > 0
-      if (p_best_cell) {
-          cerr << "\np_best_cell: " << *p_best_cell <<  "\n";
-      } else {
-          cerr << "\np_best_cell: " << p_best_cell <<  "\n";
-      }
-    #endif
-   
-    bool have_alignment = p_best_cell && p_best_cell->score_ > -INF && p_best_cell->backPointer_;
-    if (!have_alignment) break;
+  // Sort the alignment seeds in descending order of score
+  std::sort(alignment_seeds.begin(), alignment_seeds.end(), ScoreCellPointerCmp);
+
+  // Iterate over these alignment seeds 
+  const size_t num_seeds = alignment_seeds.size();
+  int num_seeds_selected = 0;
+  for (int s = 0;
+       s < num_seeds && num_seeds_selected < align_opts.alignments_per_reference;
+       s++)
+  {
+
+    ScoreCell * pCell = alignment_seeds[s];
+    int seed_col = pCell->r_;
+    if (!mat.cell_in_play(seed_col)) continue;
 
     // Build the alignment
-    AlignmentPtr a = alignment_from_cell(task, p_best_cell);
+    AlignmentPtr a = alignment_from_cell(task, pCell);
     if (!a) continue;
 
-    num_alignments_found++;
+    num_seeds_selected++;
 
     // Retrieve alignments from neighbors, if requested.
     if(align_opts.neighbor_delta > 0)
     {
-      // Do a neighborhood search for other alignments in the vicinity of this one.
 
+      // Do a neighborhood search for other alignments in the vicinity of this one.
       neighborhood_alignments.push_back(a);
 
-      int lb = best_cell_col - align_opts.neighbor_delta;
-      int ub = best_cell_col + align_opts.neighbor_delta + 1;
+      int lb = seed_col - align_opts.neighbor_delta;
+      int ub = seed_col + align_opts.neighbor_delta + 1;
       if (lb < 0) lb = 0;
       if (ub > n) ub = n;
       for (int col = lb; col < ub; col++) {
-        if (col == best_cell_col) continue;
+        if (col == col) continue;
         ScoreCell * p_neighbor = mat.getCell(last_row, col);
         bool have_alignment = p_neighbor->score_ > -INF && p_neighbor->backPointer_;
         if (!have_alignment) continue;
@@ -577,14 +561,13 @@ int get_best_alignments(const AlignTask& task) {
       {
       AlignmentPtr a0 = neighborhood_alignments[0];
       AlignmentPtr al = neighborhood_alignments.back();
-      std::cerr << "Neighborhood: best_cell_col: " << best_cell_col << " lb: " << lb << " ub: " << ub << "\n";
+      std::cerr << "Neighborhood: seed_col: " << seed_col << " lb: " << lb << " ub: " << ub << "\n";
 
       std::cerr << "Num alignments in neighborhood: " << neighborhood_alignments.size() << "\n";
       std::cerr << "First: " << a0->rescaled_matched_chunks.back().ref_chunk.end << " score: " << a0->score << "rescaled: " << a0->rescaled_score << " total_rescaled: " << a0->total_rescaled_score << "\n";
       std::cerr << "Last: " << al->rescaled_matched_chunks.back().ref_chunk.end << " score: " << al->score << "rescaled: " << al->rescaled_score << " total_rescaled: " << al->total_rescaled_score << "\n";
       }
       #endif
-
 
 
       // Save the best alignment (i.e. with the lowest "edit distance" score)
@@ -600,8 +583,8 @@ int get_best_alignments(const AlignTask& task) {
 
     // Mark neighboring cells as out of play.
     {
-      int lb = best_cell_col - align_opts.min_alignment_spacing + 1;
-      int ub = best_cell_col + align_opts.min_alignment_spacing;
+      int lb = seed_col - align_opts.min_alignment_spacing + 1;
+      int ub = seed_col + align_opts.min_alignment_spacing;
       if (lb < 0) lb = 0;
       if (ub > n) ub = n;
       for (int col = lb; col < ub; col++) {
@@ -611,7 +594,7 @@ int get_best_alignments(const AlignTask& task) {
 
   }
 
-  return num_alignments_found;
+  return num_seeds_selected;
 }
 
 
