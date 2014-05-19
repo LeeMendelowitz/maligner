@@ -5,6 +5,7 @@
 #include <boost/python/return_internal_reference.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <boost/shared_ptr.hpp>
+#include <string>
 
 #include "ScoreCell.h"
 #include "ScoreMatrix.h"
@@ -89,7 +90,8 @@ BOOST_PYTHON_MODULE(malignpy)
         .def_readonly("r", &ScoreCell::r_)
         .def_readonly("score", &ScoreCell::score_);
 
-    class_<AlignOpts>("AlignOpts", init< double, double, int, int, double, double, double, int, int, bool>())
+    class_<AlignOpts>("AlignOpts", init< double, double, int, int, 
+         double, double, double, int, int, int, bool>())
         .def_readwrite("query_miss_penalty", &AlignOpts::query_miss_penalty)
         .def_readwrite("ref_miss_penalty", &AlignOpts::ref_miss_penalty)
         .def_readwrite("query_max_misses", &AlignOpts::query_max_misses)
@@ -99,14 +101,28 @@ BOOST_PYTHON_MODULE(malignpy)
         .def_readwrite("min_sd", &AlignOpts::min_sd)
         .def_readwrite("alignments_per_reference", &AlignOpts::alignments_per_reference)
         .def_readwrite("min_alignment_spacing", &AlignOpts::min_alignment_spacing)
+        .def_readwrite("neighbor_delta", &AlignOpts::neighbor_delta)
         .def_readwrite("query_is_bounded", &AlignOpts::query_is_bounded);
-        
+       
+    class_< MapData, MapDataPtr >("MapData", 
+            init< const std::string&, size_t, bool >() )
+     .def_readwrite("map_name", &MapData::map_name_)
+     .def_readwrite("num_frags", &MapData::num_frags_)
+     .def_readwrite("is_bounded", &MapData::is_bounded_)
+     .def("print_debug_stats", &MapData::print_debug_stats)
+     .staticmethod("print_debug_stats");
+
     class_<AlignTask>("AlignTask",
-                      init<IntVecPtr, IntVecPtr, PartialSumsPtr,
+                      init<MapDataPtr, MapDataPtr, IntVecPtr, IntVecPtr, PartialSumsPtr,
                            PartialSumsPtr , ScoreMatrixPtr,    
                            AlignmentPVecPtr,
                            AlignOpts&>()
-                      );
+                      )
+        .def(init<MapDataPtr, MapDataPtr, IntVecPtr, IntVecPtr,
+                           PartialSumsPtr, PartialSumsPtr,
+                           int, ScoreMatrixPtr,    
+                           AlignmentPVecPtr,
+                           AlignOpts&>());
 
     class_< Chunk >("Chunk", no_init)
                    .def_readwrite("start", &Chunk::start)

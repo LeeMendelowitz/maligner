@@ -14,7 +14,8 @@ def _IntVec_create(iterable=None):
   """
   res = make_int_vec()
   if iterable:
-    res.extend(iterable)
+    vals = (int(i + 0.5) for i in iterable)
+    res.extend(vals)
   return res
 
 IntVec.create = staticmethod(_IntVec_create)
@@ -105,6 +106,7 @@ def _AlignOpts__str__(self):
            'min_sd',
            'alignments_per_reference',
            'min_alignment_spacing',
+           'neighbor_delta',
            'query_is_bounded'
           ]
 
@@ -126,22 +128,24 @@ AlignOpts.__init__.__func__.__doc__ = \
   
    Args:
 
-      query_miss_penalty: Cost of missing have an extra unmatched
+      - query_miss_penalty: Cost of missing have an extra unmatched
          site in query
-      ref_miss_penalty: Cost of having an extra unmatched site
+      - ref_miss_penalty: Cost of having an extra unmatched site
         in reference.
-      query_max_misses: Maximum consecutive unmatched sites in query. 
-      ref_max_misses: Maximum consecutive unmatched sites in reference.
-      sd_rate: Fraction of reference chunk size considered to be 1 s.d. in sizing error model.
-      min_sd: Minimum standard deviation imposed by sizing error model, in bp.
-      max_chunk_sizing_error: Maximum sizing error score allowed
+      - query_max_misses: Maximum consecutive unmatched sites in query. 
+      - ref_max_misses: Maximum consecutive unmatched sites in reference.
+      - sd_rate: Fraction of reference chunk size considered to be 1 s.d. in sizing error model.
+      - min_sd: Minimum standard deviation imposed by sizing error model, in bp.
+      - max_chunk_sizing_error: Maximum sizing error score allowed
        for a reference chunk.
-      alignments_per_reference: Number of alignments to store per reference.
-      min_alignment_spacing: Minimum number of fragments between rightmost reference
+      - alignments_per_reference: Number of alignments to store per reference.
+      - min_alignment_spacing: Minimum number of fragments between rightmost reference
         fragment to accept a secondary alignment. Alignments are selecting in descending
         order of score, so the best alignment is selected first, then the second best alignment
         provided it is min_alignment_spacing fragments away in reference.
-      query_is_bounded: True if query leftmost/rightmost fragment is bounded on both
+      - neighbor_delta: Select alignments within +/- neighbor_delta reference fragments of the best scoring
+                      alignments.
+      - query_is_bounded: True if query leftmost/rightmost fragment is bounded on both
         ends by a nick site.
 
 """

@@ -21,6 +21,10 @@ using Constants::INF;
 #define FILL_DEBUG 0
 #define BREAKS_DEBUG 0
 #define RESCALE_DEBUG 0 
+#define NEIGHBORHOOD_DEBUG 0
+
+int MapData::num_copies = 0;
+int MapData::num_constructs = 0;
 
 inline double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts) {
 
@@ -41,28 +45,45 @@ inline double sizing_penalty(int query_size, int ref_size, const AlignOpts& alig
 
 }
 
+// Sort an AlignmentPtrVec in ascending order of score.
+bool alignment_rescaled_score_comp(const AlignmentPtr& a1, const AlignmentPtr& a2) {
+  return a1->total_rescaled_score < a2->total_rescaled_score;
+}
+
 // rescale the query chunks using the query_scaling_factor, and
 // recompute the sizing error for those chunks.
-void Alignment::rescale_matched_chunks(AlignOpts& align_opts) {
+void Alignment::rescale_matched_chunks(const AlignOpts& align_opts) {
+
+  //summarize();
+
   rescaled_score = score;
   rescaled_score.sizing_score = 0.0;
+
+  #if RESCALE_DEBUG > 0
+  std::cerr << "Rescaling with query factor: " << query_scaling_factor << "\n";
+  #endif
+
   const size_t l = rescaled_matched_chunks.size();
   for (size_t i = 0; i < l; i++) {
-    MatchedChunk& mc = rescaled_matched_chunks[i];
+    const MatchedChunk& mc = matched_chunks[i];
+    MatchedChunk& rmc =  rescaled_matched_chunks[i];
     int old_query_size = mc.query_chunk.size;
     int new_query_size = query_scaling_factor*old_query_size;
     double old_sizing_score = mc.score.sizing_score;
     double new_sizing_score = sizing_penalty(new_query_size, mc.ref_chunk.size, align_opts);
-    mc.query_chunk.size = new_query_size;
+    rmc.query_chunk.size = new_query_size;
     if (!mc.query_chunk.is_boundary && !mc.ref_chunk.is_boundary) {
-      mc.score.sizing_score = new_sizing_score;
+      rmc.score.sizing_score = new_sizing_score;
       rescaled_score.sizing_score += new_sizing_score;
-      #if RESCALE_DEBUG > 0
+      #if RESCALE_DEBUG > 10
       std::cerr << "old_q: " << old_query_size << " new_q: " << new_query_size
               << " old_sizing_score: " << old_sizing_score << " new: " << new_sizing_score << "\n";
       #endif
     }
   }
+
+  total_rescaled_score = rescaled_score.total();
+
 }
 
 
@@ -90,7 +111,7 @@ void fill_score_matrix(const AlignTask& align_task) {
   // Note: Number of rows may be different from m if matrix is padded with extra rows.
   const int num_rows = mat.getNumRows();
 
-  assert((int) mat.getNumCols() == n);
+  assert((int) mat.getNumCols() >= n);
   assert((int) mat.getNumRows() >= m);
 
   #if FILL_DEBUG > 0
@@ -258,7 +279,7 @@ void fill_score_matrix_using_partials(const AlignTask& align_task) {
   // Note: Number of rows may be different from m if matrix is padded with extra rows.
   const int num_rows = mat.getNumRows();
 
-  assert((int) mat.getNumCols() == n);
+  assert((int) mat.getNumCols() >= n);
   assert((int) mat.getNumRows() >= m);
 
   #if FILL_DEBUG > 0
@@ -323,7 +344,7 @@ void fill_score_matrix_using_partials(const AlignTask& align_task) {
 
       for(int l = j-1; l >= l0; l--) {
 
-        const bool is_ref_boundary = l == 0 || j == n - 1;
+        const bool is_ref_boundary = (l == 0 || j == n - 1) && !align_opts.ref_is_bounded;
 
         int ref_miss = j - l - 1; // sites in reference unaligned to query
         double ref_miss_score = ref_miss_penalties[ref_miss];
@@ -465,6 +486,9 @@ int get_best_alignments(const AlignTask& task) {
   IntVec& ref = *task.ref;
   ScoreMatrix& mat = *task.mat;
   AlignmentPVec& alignments = *task.alignments;
+  AlignmentPVec neighborhood_alignments;
+  neighborhood_alignments.reserve(1 + 2 * align_opts.neighbor_delta );
+  
 
 
   const int m = query.size() + 1;
@@ -474,11 +498,15 @@ int get_best_alignments(const AlignTask& task) {
   const int last_row = m - 1;
 
   int num_alignments_found = 0;
-  alignments.reserve(align_opts.alignments_per_reference);
+  size_t max_alignments = align_opts.alignments_per_reference * ( 1 + 2 * align_opts.neighbor_delta );
+  
+  alignments.reserve(max_alignments);
+
   for (int r = 0; r < align_opts.alignments_per_reference; r++) {
 
     double best_score = -INF;
     int best_cell_col = -1;
+    int best_cell_index = -1;
     ScoreCell * p_best_cell = nullptr;
 
     // Get the cell with the best score in the last row that is
@@ -499,6 +527,7 @@ int get_best_alignments(const AlignTask& task) {
         p_best_cell = pCell;
         best_score = pCell->score_;
         best_cell_col = i;
+        best_cell_index = index;
       } 
     }
 
@@ -515,13 +544,62 @@ int get_best_alignments(const AlignTask& task) {
 
     // Build the alignment
     AlignmentPtr a = alignment_from_cell(task, p_best_cell);
-    if (a) { 
+    if (!a) continue;
 
-      alignments.push_back(a); 
+    num_alignments_found++;
 
-      num_alignments_found++;
+    // Retrieve alignments from neighbors, if requested.
+    if(align_opts.neighbor_delta > 0)
+    {
+      // Do a neighborhood search for other alignments in the vicinity of this one.
 
-      // Mark neighboring cells as out of play.
+      neighborhood_alignments.push_back(a);
+
+      int lb = best_cell_col - align_opts.neighbor_delta;
+      int ub = best_cell_col + align_opts.neighbor_delta + 1;
+      if (lb < 0) lb = 0;
+      if (ub > n) ub = n;
+      for (int col = lb; col < ub; col++) {
+        if (col == best_cell_col) continue;
+        ScoreCell * p_neighbor = mat.getCell(last_row, col);
+        bool have_alignment = p_neighbor->score_ > -INF && p_neighbor->backPointer_;
+        if (!have_alignment) continue;
+        AlignmentPtr a = alignment_from_cell(task, p_neighbor);
+        neighborhood_alignments.push_back(a);
+      }
+
+      // Sort the neighborhood alignments in ascending order of score.
+      std::sort(neighborhood_alignments.begin(),
+                neighborhood_alignments.end(),
+                alignment_rescaled_score_comp);
+      
+      #if NEIGHBORHOOD_DEBUG > 0
+      {
+      AlignmentPtr a0 = neighborhood_alignments[0];
+      AlignmentPtr al = neighborhood_alignments.back();
+      std::cerr << "Neighborhood: best_cell_col: " << best_cell_col << " lb: " << lb << " ub: " << ub << "\n";
+
+      std::cerr << "Num alignments in neighborhood: " << neighborhood_alignments.size() << "\n";
+      std::cerr << "First: " << a0->rescaled_matched_chunks.back().ref_chunk.end << " score: " << a0->score << "rescaled: " << a0->rescaled_score << " total_rescaled: " << a0->total_rescaled_score << "\n";
+      std::cerr << "Last: " << al->rescaled_matched_chunks.back().ref_chunk.end << " score: " << al->score << "rescaled: " << al->rescaled_score << " total_rescaled: " << al->total_rescaled_score << "\n";
+      }
+      #endif
+
+
+
+      // Save the best alignment (i.e. with the lowest "edit distance" score)
+      assert(neighborhood_alignments.size() > 0);
+      alignments.push_back(neighborhood_alignments[0]);
+      neighborhood_alignments.clear();
+
+    } else {
+
+      alignments.push_back(a);
+
+    }
+
+    // Mark neighboring cells as out of play.
+    {
       int lb = best_cell_col - align_opts.min_alignment_spacing + 1;
       int ub = best_cell_col + align_opts.min_alignment_spacing;
       if (lb < 0) lb = 0;
@@ -529,8 +607,8 @@ int get_best_alignments(const AlignTask& task) {
       for (int col = lb; col < ub; col++) {
         mat.mark_cell_in_play(col, false);
       }
-
     }
+
   }
 
   return num_alignments_found;
@@ -586,7 +664,7 @@ void build_chunk_trail(const AlignTask& task, ScoreCellPVec& trail, ChunkVec& qu
     
     const ScoreCell* pCell = trail[i];
     int m = pCell->q_; // index of query site, one based
-    int n = pCell->r_; // index of ref size, one based
+    int n = pCell->r_; // index of ref site, one based
 
     #if DEBUG > 0
     cerr << "cell: " << pCell << " " << *pCell << "\n"
@@ -600,21 +678,15 @@ void build_chunk_trail(const AlignTask& task, ScoreCellPVec& trail, ChunkVec& qu
     assert(n < nl);
 
     bool is_query_boundary = (m == 0 || ml == query.size()) && !align_opts.query_is_bounded;
-    bool is_ref_boundary = (n == 0) || (nl == ref.size());
+    bool is_ref_boundary = !align_opts.ref_is_bounded && ( (n + task.ref_offset == 0) || 
+        (nl + task.ref_offset == task.ref_map_data->num_frags_) );
 
-    // Build chunks
+    // Build chunks. Specify indices of chunks with respect to the original maps,
+    // if aligning a slice of the map.
     int q_size = sum(query, m, ml);
     int r_size = sum(ref, n, nl);
-    /* USE C++11 instead
-    Chunk q_chunk(m, ml, q_size, is_query_boundary); 
-    Chunk r_chunk(n, nl, r_size, is_ref_boundary);
-    query_chunks.push_back(q_chunk);
-    ref_chunks.push_back(r_chunk);
-    */
-    //query_chunks.emplace(qi, m, ml, q_size, is_query_boundary);
-    //ref_chunks.emplace(ri, n, nl, r_size, is_ref_boundary);
     query_chunks.emplace_back(m, ml, q_size, is_query_boundary);
-    ref_chunks.emplace_back(n, nl, r_size, is_ref_boundary);
+    ref_chunks.emplace_back(n + task.ref_offset, nl + task.ref_offset, r_size, is_ref_boundary);
 
     ml = m;
     nl = n;
@@ -697,12 +769,18 @@ AlignmentPtr alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail) {
 AlignmentPtr alignment_from_cell(const AlignTask& task, ScoreCell* p_cell) {
   
   const size_t m = task.query->size() + 1;
+  const AlignOpts& align_opts = *task.align_opts;
 
   ScoreCellPVec trail;
   trail.reserve(m);
   build_trail(p_cell, trail);
 
   AlignmentPtr aln = alignment_from_trail(task, trail);
+
+  if (align_opts.rescale_query) {
+    aln->rescale_matched_chunks(align_opts);
+  }
+
   return aln;
 }
 

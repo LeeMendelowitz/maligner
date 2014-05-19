@@ -7,15 +7,17 @@
 #include <vector>
 #include <utility>
 #include <memory>
+#include <string>
 #include <boost/shared_ptr.hpp>
 
 // Forward Declarations
 class ScoreMatrix;
 class Alignment;
+class MapData;
 
 typedef std::vector<IntVec> PartialSums;
 typedef boost::shared_ptr< PartialSums > PartialSumsPtr;
-
+typedef boost::shared_ptr< MapData > MapDataPtr;
 typedef boost::shared_ptr< Alignment > AlignmentPtr;
 typedef std::vector< AlignmentPtr > AlignmentPVec;
 typedef boost::shared_ptr< AlignmentPVec > AlignmentPVecPtr;
@@ -27,7 +29,9 @@ public:
   AlignOpts(double p1, double p2, int p3, int p4,
             double sdr,
             double p5, double p6, int p7 = 1, int p8 = 1,
-            bool p9 = true) : 
+            int ndelta = 0,
+            bool p9 = true,
+            bool p10 = false) : 
     query_miss_penalty(p1), // penalty for having a site in query unaligned to reference
     ref_miss_penalty(p2), // penalty for having a site in reference unaligned to query
     query_max_misses(p3),
@@ -37,7 +41,11 @@ public:
     max_chunk_sizing_error(p6),
     alignments_per_reference(p7),
     min_alignment_spacing(p8),
-    query_is_bounded(p9)
+    neighbor_delta(ndelta), // Return alignments within +/- neighbor_delta ref. fragments
+                            // of each selected alignment.
+    rescale_query(true), // Rescale the query chunks post-alignment & adjust sizing score.
+    query_is_bounded(p9),
+    ref_is_bounded(p10)
   {};
 
   double query_miss_penalty;
@@ -51,10 +59,50 @@ public:
   int alignments_per_reference; // max number of alignments per reference
   int min_alignment_spacing; // minimum amount of spacing between multiple accepted
                             // alignments to the same reference.
+  int neighbor_delta;
+  bool rescale_query;
   bool query_is_bounded; // true if the first/last fragments in query map are bounded by restriction sites.
+  bool ref_is_bounded; // true if the first/last fragments in reference map are bounded by restriction sites.
 };
 
 double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts);
+
+// Store MetaData for a map.
+struct MapData {
+
+    MapData(const std::string& map_name,
+      size_t num_frags,
+      bool is_bounded = false) :
+      map_name_(map_name),
+      num_frags_(num_frags),
+      is_bounded_(is_bounded)
+    {
+      num_constructs++;
+    };
+
+    MapData(const MapData& o) :
+      num_frags_(o.num_frags_),
+      map_name_(o.map_name_),
+      is_bounded_(o.is_bounded_)
+    {
+      num_copies++;
+    };
+
+    static void print_debug_stats() {
+      std::cerr << "MapData Stats:\n"
+               << "\tnum_constructs: " << num_constructs << "\n"
+               << "\tnum_copies: " << num_copies << "\n";
+    }
+
+    std::string map_name_;
+    size_t num_frags_; // Total fragments in the map. This may be larger than the number of
+                       // fragments provided for alignment in the case that we are aligning a slice
+                       // of the map.
+    bool is_bounded_; // Are the leftmost/rightmost fragments bounded by sites? NOTE: This is not yet used in code, and duplicates an argument in AlignOpts
+
+    static int num_constructs;
+    static int num_copies;
+};
 
 //////////////// ///////////////////////////////////////////////////////////////////////
 // Bundle the alignment options and data structures
@@ -67,14 +115,37 @@ class AlignTask {
   
 public:
 
-  AlignTask(IntVecPtr q, IntVecPtr r, PartialSumsPtr qps,
-            PartialSumsPtr rps, ScoreMatrixPtr m,
+  AlignTask(MapDataPtr qmd, MapDataPtr rmd, IntVecPtr q, IntVecPtr r, PartialSumsPtr qps,
+            PartialSumsPtr rps,
+            ScoreMatrixPtr m,
             AlignmentPVecPtr alns,
             AlignOpts& ao) :
+    query_map_data(qmd),
+    ref_map_data(rmd),
     query(q),
     ref(r),
     query_partial_sums(qps),
     ref_partial_sums(rps),
+    ref_offset(0),
+    mat(m),
+    alignments(alns),
+    align_opts(&ao)
+  {
+  }
+
+  AlignTask(MapDataPtr qmd, MapDataPtr rmd, IntVecPtr q, IntVecPtr r, PartialSumsPtr qps,
+            PartialSumsPtr rps,
+            int ro,
+            ScoreMatrixPtr m,
+            AlignmentPVecPtr alns,
+            AlignOpts& ao) :
+    query_map_data(qmd),
+    ref_map_data(rmd),
+    query(q),
+    ref(r),
+    query_partial_sums(qps),
+    ref_partial_sums(rps),
+    ref_offset(ro),
     mat(m),
     alignments(alns),
     align_opts(&ao)
@@ -83,10 +154,13 @@ public:
 
   // Do we need this copy constructor??
   AlignTask(const AlignTask& other) :
+    query_map_data(other.query_map_data),
+    ref_map_data(other.ref_map_data),
     query(other.query),
     ref(other.ref),
     query_partial_sums(other.query_partial_sums),
     ref_partial_sums(other.ref_partial_sums),
+    ref_offset(other.ref_offset),
     mat(other.mat),
     alignments(other.alignments),
     align_opts(other.align_opts)
@@ -96,10 +170,13 @@ public:
   ~AlignTask() {
   }
 
-  IntVecPtr query;
-  IntVecPtr ref;
+  MapDataPtr query_map_data;
+  MapDataPtr ref_map_data;
+  IntVecPtr query; // query fragments
+  IntVecPtr ref; // reference fragments
   PartialSumsPtr query_partial_sums;
   PartialSumsPtr ref_partial_sums;
+  int ref_offset; // index of the first fragment in ref. This will be nonzero if aligning to slice of reference.
   ScoreMatrixPtr mat;
   AlignmentPVecPtr alignments;
   AlignOpts * align_opts;
@@ -209,6 +286,7 @@ public:
     matched_chunks(std::move(mc)),
     rescaled_matched_chunks(matched_chunks),
     score(s),
+    rescaled_score(s),
     query_scaling_factor(1.0)
   {
     //std::cerr << "Alignment constructor from matched_chunks\n";
@@ -219,6 +297,7 @@ public:
     matched_chunks(a.matched_chunks),
     rescaled_matched_chunks(matched_chunks),
     score(a.score),
+    rescaled_score(a.score),
     query_scaling_factor(1.0)
   {
     //std::cerr << "Alignment copy constructor\n";
@@ -229,6 +308,7 @@ public:
     matched_chunks(std::move(a.matched_chunks)),
     rescaled_matched_chunks(matched_chunks),
     score(a.score),
+    rescaled_score(a.score),
     query_scaling_factor(1.0) {
     //std::cerr << "Alignment move constructor!\n";
     summarize();
@@ -237,7 +317,7 @@ public:
 
   // rescale the query chunks using the query_scaling_factor, and
   // recompute the sizing error for those chunks.
-  void rescale_matched_chunks(AlignOpts& align_opts);
+  void rescale_matched_chunks(const AlignOpts& align_opts);
 
   // Compute summary statistics from matched chunks.
   void summarize() {
@@ -247,6 +327,9 @@ public:
     query_interior_size = 0;
     ref_interior_size = 0;
     num_matched_sites = 0;
+
+    total_score = score.total();
+    total_rescaled_score = rescaled_score.total();
 
     const size_t l = matched_chunks.size();
     for (size_t i = 0; i < l; i++) {
@@ -292,15 +375,18 @@ public:
     num_matched_sites = 0;
     interior_size_ratio = 0;
     query_scaling_factor = 0;
-
+    total_score = 0;
+    total_rescaled_score = 0;
   }
 
   // Attributes
-
   MatchedChunkVec matched_chunks;
   MatchedChunkVec rescaled_matched_chunks;
   Score score;
   Score rescaled_score;
+
+  double total_score;
+  double total_rescaled_score;
 
   // summary statistics of an alignment.
   // These are computable from the matched_chunks
@@ -319,7 +405,6 @@ public:
 
 
 std::ostream& operator<<(std::ostream& os, const Alignment& aln);
-
 
 
 
@@ -375,4 +460,5 @@ AlignmentPtr make_best_alignment(const AlignTask& task);
 AlignmentPtr make_best_alignment_using_partials(const AlignTask& task);
 int make_best_alignments_using_partials(const AlignTask& task);
 
-
+// Comparison functions for sorting alignment pointer vectors
+bool alignment_rescaled_score_comp(const AlignmentPtr& a1, const AlignmentPtr& a2);
