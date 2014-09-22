@@ -6,6 +6,12 @@ from .malignpy import *
 from utils import is_iterable
 from collections import OrderedDict
 
+import numpy as np
+log10 = np.log10
+log = np.log
+
+LOG_1_OVER_SQRT_2PI = -0.5*log(2 * np.pi)
+
 # Make the IntVec more friendly
 def _IntVec_create(iterable=None):
   """
@@ -61,6 +67,7 @@ def _matched_chunk_data(self):
 MatchedChunk.get_data = _matched_chunk_data
 
 
+#############################################################################################################
 def _alignment_set_data(self, query_id, ref_id, query_num_frags, query_num_sites, ref_is_forward=True, **kwargs):
   """
   Set alignment metadata.
@@ -74,6 +81,9 @@ def _alignment_set_data(self, query_id, ref_id, query_num_frags, query_num_sites
     setattr(self,k,v)
 
 def _alignment_get_data(self):
+  """Return alignment data as a python dictionary.
+  """
+
   data = OrderedDict()
 
   # Add these attributes
@@ -85,7 +95,13 @@ def _alignment_get_data(self):
           'query_miss_rate', 'ref_miss_rate', 'total_miss_rate',
           'query_interior_size', 'ref_interior_size', 'interior_size_ratio',
           'query_scaling_factor',
-          'query_id', 'ref_id', 'ref_is_forward']
+          'query_id', 'ref_id', 'ref_is_forward',
+          'hit_log_likelihood',
+          'miss_log_likelihood',
+          'total_log_likelihood',
+          'chunk_log_likelihood',
+          'chunk_log_likelihoods']
+
   data.update((k, get_data_from_obj(self, k)) for k in keys)
   data['matched_chunks'] = [m.get_data() for m in self.matched_chunks]
   data['rescaled_matched_chunks'] = [m.get_data() for m in self.rescaled_matched_chunks]
@@ -95,6 +111,46 @@ def _alignment_get_data(self):
 
 
   return data
+
+
+def _compute_log_likelihood(self, nick_rate, min_sd, sd_rate, sd_scale = 1000.0):
+  """Compute the log likelihood score of an alignment.
+
+  Assumes a Bernoulli process for nicking, and a sizing error model
+  where sigma(r_i) = sd_rate * r_i. Sizing error is normally distributed
+  with mean 0.
+
+  Parameters:
+     - nick_rate
+     - min_sd
+     - sd_rate
+     - sd_scale: Scaling on the sd. in the likelihood evaluation. 
+           if sd_scale = 1000.0, then sd is in kb units.
+  """
+
+  num_misses = self.ref_misses
+  num_hits = self.num_matched_sites
+  
+  query_chunk_sizes = np.array([c.query_chunk.size for c in self.rescaled_matched_chunks if not c.is_boundary])
+  ref_chunk_sizes = np.array([c.ref_chunk.size for c in self.rescaled_matched_chunks if not c.is_boundary])
+
+  size_deltas = query_chunk_sizes - ref_chunk_sizes
+  sds = sd_rate * ref_chunk_sizes
+  sds[sds < min_sd] = min_sd
+
+  chunk_log_likelihoods = LOG_1_OVER_SQRT_2PI - log(1.0/sd_scale * sds) + ( - size_deltas * size_deltas / (2.0 * sds * sds) )
+  
+  hit_log_likelihood = num_hits * log(nick_rate)
+  miss_log_likelihood = num_misses * log(1.0 - nick_rate)
+  chunk_log_likelihood = np.sum(chunk_log_likelihoods)
+  total_log_likelihood = hit_log_likelihood + miss_log_likelihood + chunk_log_likelihood
+
+  self.hit_log_likelihood = hit_log_likelihood
+  self.miss_log_likelihood = miss_log_likelihood
+  self.chunk_log_likelihood = chunk_log_likelihood
+  self.chunk_log_likelihoods = [cll for cll in chunk_log_likelihoods]
+  self.total_log_likelihood = total_log_likelihood
+
 
 def _AlignOpts__str__(self):
   attrs = ['query_miss_penalty',
@@ -107,7 +163,8 @@ def _AlignOpts__str__(self):
            'alignments_per_reference',
            'min_alignment_spacing',
            'neighbor_delta',
-           'query_is_bounded'
+           'query_is_bounded',
+           'sd_likelihood_scale'
           ]
 
   outs = ''
@@ -116,9 +173,10 @@ def _AlignOpts__str__(self):
   return outs
 
 
-
+# Attach functions to the Alignment class
 Alignment.set_data = _alignment_set_data
 Alignment.get_data = _alignment_get_data
+Alignment.compute_log_likelihood = _compute_log_likelihood
 
 
 # Add docstrings

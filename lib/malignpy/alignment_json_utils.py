@@ -128,7 +128,11 @@ def parse_alignment(a):
           'query_misses',
           'ref_misses',
           'max_chunk_sizing_score',
-          'query_scaling_factor']
+          'query_scaling_factor',
+          'hit_log_likelihood',
+          'miss_log_likelihood',
+          'chunk_log_likelihood',
+          'total_log_likelihood']
   
   update(keys)
 

@@ -20,7 +20,7 @@ using Constants::INF;
 #define BUILD_TRAIL_DEBUG 0
 #define FILL_DEBUG 0
 #define BREAKS_DEBUG 0
-#define RESCALE_DEBUG 0 
+#define RESCALE_DEBUG 0
 #define NEIGHBORHOOD_DEBUG 0
 
 int MapData::num_copies = 0;
@@ -839,6 +839,8 @@ PartialSumsPtr make_partial_sums_new(const IntVec& frags, const int missed_sites
 // Fill score matrix, find best alignment, and return it.
 AlignmentPtr make_best_alignment(const AlignTask& task) {
 
+  const AlignOpts& align_opts = *task.align_opts;
+
   // populate the score matrix
   fill_score_matrix(task);
 
@@ -850,11 +852,18 @@ AlignmentPtr make_best_alignment(const AlignTask& task) {
     return AlignmentPtr(null);
   }
 
-  return alignment_from_trail(task, trail);
+  AlignmentPtr aln =  alignment_from_trail(task, trail);
+  if (align_opts.rescale_query) {
+    aln->rescale_matched_chunks(align_opts);
+  }
+  return aln;
+
 }
 
 // Fill score matrix, find best alignment, and return it.
 AlignmentPtr make_best_alignment_using_partials(const AlignTask& task) {
+
+  const AlignOpts& align_opts = *task.align_opts;
 
   // populate the score matrix
   fill_score_matrix_using_partials(task);
@@ -867,7 +876,12 @@ AlignmentPtr make_best_alignment_using_partials(const AlignTask& task) {
     return AlignmentPtr(null);
   }
 
-  return alignment_from_trail(task, trail);
+  AlignmentPtr aln =  alignment_from_trail(task, trail);
+  if (align_opts.rescale_query) {
+    aln->rescale_matched_chunks(align_opts);
+  }
+  return aln;
+
 }
 
 //////////////////////////////////////////////////////////

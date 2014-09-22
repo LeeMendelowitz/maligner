@@ -155,6 +155,7 @@ BOOST_PYTHON_MODULE(malignpy)
     class_< MatchedChunkVec >("MatchedChunkVec")
         .def(vector_indexing_suite< MatchedChunkVec >());
 
+
     class_< BoolVec, BoolVecPtr >("BoolVec")
         .def(vector_indexing_suite< BoolVec >());
 
@@ -187,7 +188,8 @@ BOOST_PYTHON_MODULE(malignpy)
     class_< MatchedChunk >("MatchedChunk")
         .def_readonly("query_chunk", &MatchedChunk::query_chunk)
         .def_readonly("ref_chunk", &MatchedChunk::ref_chunk)
-        .def_readonly("score", &MatchedChunk::score);
+        .def_readonly("score", &MatchedChunk::score)
+        .add_property("is_boundary", &MatchedChunk::is_boundary);
     
     // Functions
     def("fill_score_matrix", fill_score_matrix);
@@ -203,4 +205,5 @@ BOOST_PYTHON_MODULE(malignpy)
     def("fill_score_matrix_using_partials", fill_score_matrix_using_partials);
     def("make_best_alignment_using_partials", make_best_alignment_using_partials);
     def("make_best_alignments_using_partials", make_best_alignments_using_partials);
+
 }
