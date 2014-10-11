@@ -5,9 +5,9 @@ from .SOMAMap import SOMAMap
 from ..common import wrap_file_function
 
 __all__ = (
-    "readMaps",
+    "read_maps",
     "gen_maps",
-    "writeMaps",
+    "write_maps",
     "convert_maps_file_to_mongo"
 )
 
@@ -15,7 +15,7 @@ __all__ = (
 # Convert an optical map from the Schwartz lab format
 # to the SOMA format
 # opticalMapFile: optical map file in the Schwartz lab format
-def convertOpticalMaps(opticalMapFile, outputPfx):
+def convert_optical_maps(opticalMapFile, outputPfx):
     opMapFileOut = '%s.opt'%outputPfx
 
     msg = '\n'+'*'*50 + \
@@ -83,7 +83,7 @@ def mapDataSchwartzGen(handle):
 #############################################################################################
 # Reads (in a crude fashion) an optical map in xml format
 # Return a list of OpticalMapData instances
-def readMapDataXML(fileName):
+def read_map_data_xml(fileName):
     fin = open(fileName)
     opticalMapList = []
 
@@ -140,12 +140,12 @@ def readMapDataXML(fileName):
 #########################################################
 # Read map file in the SOMA map format
 @wrap_file_function('r')
-def readMaps(fin):
+def read_maps(fin):
     """
     Read all SOMA maps in the file and return as a dict.
 
     Usage:
-      maps = readMaps('file.maps')
+      maps = read_maps('file.maps')
 
       # or
       f = open('file.maps')
@@ -177,7 +177,7 @@ def gen_maps(f):
 
 #########################################################
 # Write maps to a file in the SOMA map format
-def writeMaps(mapList, handle):
+def write_maps(mapList, handle):
     fout = handle
     closeFile = False
     if type(handle) is str:
