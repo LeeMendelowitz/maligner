@@ -8,10 +8,24 @@ and potentially the reference a simple Bernoulli model.
 """
 
 import numpy as np
+from numpy import bincount, cumsum
+from scipy.interpolate import interp1d
+from scipy.stats import rv_discrete
 from itertools import izip
+import sys
 import logging
+import pandas
+from datetime import datetime
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
+def stdout(msg):
+  sys.stdout.write(msg)
+  sys.stdout.flush()
+
+class ReturnObj(object):
+  pass
 
 ###################################################################
 class NullModelControls(object):
@@ -25,6 +39,10 @@ class NullModelControls(object):
   min_chunks = 1 # minimum number of fragments to simulate in the null distribution.
   max_chunks = 20  # maximum nubmer of chunks to simulate in the null distribution.
   sd_rate = 0.1 # The standard deviation model for sizing error: sd = sd_rate * ref_chunk_size
+
+  num_frags = 10000000 # Number of random fragments to generate for null distribution
+  rel_error = 0.05 # The relative error allowed for fragment compatability
+  min_error = 1000 # The minimum error considered for fragment compatibility.
 
   def __init__(self, **kwargs):
     for k, v in kwargs.iteritems():
@@ -77,6 +95,48 @@ class NullModelScorer(object):
     return self.score_map(query_map, adjusted_ref)
 
 
+  def chunk_score_matrix(self, query_map, ref_map):
+    """Return an np.array with the scores of matching query chunk q_i with
+    reference chunk r_j.
+    """
+    ref_chunk_lengths = ref_map.chunk_lengths
+    ref_misses_per_chunk = ref_map.misses_per_chunk
+    query_chunk_lengths = query_map.chunk_lengths
+    ref_sds = self.compute_sds(ref_chunk_lengths)
+    chunk_score_mat = np.zeros((len(query_chunk_lengths), len(ref_chunk_lengths)))
+    nrow = len(query_chunk_lengths)
+    ncol = len(ref_chunk_lengths)
+    sd_mat = np.tile(ref_sds, (nrow, 1))
+    r_mat = np.tile(ref_chunk_lengths, (nrow, 1))
+    q_mat = np.tile(query_chunk_lengths.reshape(nrow, 1), (1, ncol))
+    delta = r_mat - q_mat
+
+    chunk_score_matrix = delta*delta / (sd_mat*sd_mat)
+
+    # Compute the alignment score matrix,
+    # where entry (i,j) has the chunk score of the ith chunk of the alignment starting
+    # at reference location j
+    m,n = chunk_score_matrix.shape
+    nr, nc = m, n - m + 1
+    r = np.arange(nr).repeat(nc)
+    c = np.tile(np.arange(nc), nr) + np.arange(nr).repeat(nc)
+    alignment_score_matrix = chunk_score_matrix[r,c].reshape(nr, nc)
+
+    ret = ReturnObj()
+    ret.chunk_score_matrix = chunk_score_matrix
+    ret.alignment_score_matrix = alignment_score_matrix
+    ret.alignment_score_matrix_cumsum = np.cumsum(alignment_score_matrix, axis=0)
+    ret.best_scores = np.min(ret.alignment_score_matrix_cumsum, axis = 1)
+
+
+    return ret
+
+
+
+
+
+
+
 ###################################################################
 class NullModelMap(object):
   """
@@ -117,8 +177,19 @@ class NullModelMap(object):
 class NullModelSimulator(object):
 
   def __init__(self, frags, controls):
+    """Create a simulator for a reference genome with restriction fragments
+    given by frags.
+
+    The controls object is an instance of NullModelControls which controls the
+    simulation. 
+    """
     self.frags = np.array(frags)
     self.controls = controls
+    self.N  = len(self.frags)
+    self.query_miss_probability = self.controls.query_miss_probability
+    self.query_hit_probability = 1.0 - self.query_miss_probability
+    self.log_query_miss_probability = np.log(self.query_miss_probability)
+    self.log_query_hit_probability = np.log(self.query_hit_probability)
 
   def _simulate_one_map(self, miss_probability, num_chunks):
     """Return a NullModelMap populated with chunks.
@@ -166,16 +237,239 @@ class NullModelSimulator(object):
     logging.info("Generating reference maps")
     self.simulate_ref_maps(self.controls.N)
 
-    # Score alignments of random subsets of query to random subsets of reference
-    # TODO!
+
+  def generate_random_frags(self, N):
+    """
+    Generate random restriction fragments through simulation, using the 
+    nick probability in self.controls.
+    """
+    miss_prob = self.controls.query_miss_probability
+    hit_prob = 1.0 - miss_prob
+    frags = self.frags
+    _generate_random_frags = self._generate_random_frags
+
+    # To avoid too much sampling at once, only sample MAX_COLS
+    # at once.
+    MAX_COLS = 1000000
+    num_left = N
+
+    n = min(num_left, MAX_COLS)
+    ret = _generate_random_frags(frags, hit_prob, n)
+    num_left = num_left - n
+
+    while num_left > 0:
+      n = min(num_left, MAX_COLS)
+      res = _generate_random_frags(frags, hit_prob,  n)
+      ret.misses = np.concatenate((ret.misses, res.misses))
+      ret.sizes = np.concatenate((ret.sizes, res.sizes))
+      num_left = num_left - n
+
+    return ret
+
+  @staticmethod
+  def _generate_random_frags(frags, hit_prob, N):
+    """
+    Generate random fragments by generating patterns by sampling with replacement from frags,
+    with prob. of nick hit_prob.
+
+    Return N N-map restriction fragments generated by this process. 
+    """
+    num_misses = np.random.geometric(hit_prob, N) - 1
+    nrow = np.max(num_misses) + 1
+    ncol = N
+    inds = np.random.randint(0, len(frags), nrow*ncol) # Sampling way more than we need.
+    frag_mat = frags[inds].reshape(nrow, ncol)
+    chunk_lengths = np.cumsum(frag_mat, axis = 0)
+    ret = ReturnObj()
+    ret.sizes = chunk_lengths[num_misses, np.arange(ncol)]
+    ret.misses = num_misses
+    return ret
+
+  def simulate_null_distribution(self):
+    """
+    Simulate random N-map restriction fragments from the reference fragment distribution.
+
+    Save a csv with the distribution of interior unmatched sites by chunk size.
+    """
+
+    sim_results = self.generate_random_frags(self.controls.num_frags)
+
+    o = np.argsort(sim_results.sizes)
+    sim_results.sizes = sim_results.sizes[o]
+    sim_results.misses = sim_results.misses[o]
+    max_misses = np.max(sim_results.misses)
+
+    start = 0
+    end = 500000 + 0.1
+    by = 1000
+    rel_error = self.controls.rel_error
+    min_error = self.controls.min_error
+    test_points = np.arange(start, end, by)
+    num_test_points = len(test_points)
+
+    # Perform binary search to determine the indices of the lower bound and upper bound
+    # compatible with each fragment size.
+    lb = np.maximum(test_points - np.maximum(rel_error*test_points, min_error), 0)
+    ub = test_points + np.maximum(rel_error*test_points, min_error)
+    lbi = np.searchsorted(sim_results.sizes, lb, side = 'left')
+    ubi = np.searchsorted(sim_results.sizes, ub, side = 'right')
+
+    misses_at_point = [sim_results.misses[lbi[i]:ubi[i]] for i in xrange(num_test_points)]
+    misses_at_point_bincount = np.array([np.bincount(m, minlength = max_misses + 1) for m in misses_at_point])
+    nr,nc = misses_at_point_bincount.shape
+
+    num_in_bin = np.array([ubi[i] - lbi[i] for i in xrange(num_test_points)])
+
+    # Make the probability interpolator for sampling compatible chunk of a given size
+    frac_in_bin = num_in_bin.astype(float) / self.controls.num_frags
+
+    self.frac_in_bin = frac_in_bin # save for debugging
+    self.test_points = test_points # save for debugging
+    self.frac_compatible_interpolator = interp1d(test_points, frac_in_bin, bounds_error = False)
+
+    # normalize the bincount to make fractions (i.e. empirical probabilities)
+    denom = num_in_bin.reshape(len(num_in_bin), 1).repeat(nc, axis=1).astype(np.float64)
+    misses_at_point_frac = misses_at_point_bincount / denom
+
+    # Create a pandas data frame summarizing the results of the simulation
+    df_data = {'midpt' : test_points,
+               'n' : num_in_bin}
+    df = pandas.DataFrame(data = df_data)
+    ncol = misses_at_point_bincount.shape[1]
+    for i in range(ncol):
+        k = 'miss%i'%i
+        df[k] = misses_at_point_bincount[:,i]
+        k = 'frac%i'%i
+        df[k] = misses_at_point_frac[:,i]
+
+    df.to_csv('sim.results3.csv', foat_format = "%.6f", index = False)
+    self.null_distribution = df
+
+    return df
+
+  def make_interpolators(self):
+    """Make interpolators for computing number of unmatched sites in 
+    compatible random alignments
+    """
+    nd = self.null_distribution
+    midpt = nd['midpt']
+    frac_cols = [col for col in nd.columns if 'frac' in col]
+    num_unmatched = [int(col[4:]) for col in frac_cols]
+    interpolators = {}
+    for i in range(len(frac_cols)):
+      unmatched = num_unmatched[i]
+      col_name = frac_cols[i]
+      interpolators[unmatched] = interp1d(midpt, nd[col_name], assume_sorted = True, bounds_error = False)
+    self.interpolators = interpolators
+    return self.interpolators
+
+  def interpolate_compatible_probs(self, frags):
+    return self.frac_compatible_interpolator(frags)
+  
+  def interpolate_unmatched_probs(self, frags):
+    """Use self.interpolators to interpolate the 
+    distribution of unmatched sites for an array of fragment sizes frags.
+    """
+    frags = np.array(frags)
+    df = pandas.DataFrame()
+    interpolators = self.interpolators
+    num_interpolators = len(interpolators)
+    data = {i:interpolators[i](frags) for i in xrange(num_interpolators)}
+    df = pandas.DataFrame(data = data)
+    # for i in range(num_interpolators):
+    #   df[i] = interpolators[i](frags)
+    df.index = frags
+    return df
+
+  def simulate_miss_rates(self, frags, N = 5000):
+    """Simulate the distribution of unmatched sites for random compatible alignments
+    to the sequence of fragment sizes given by N. Use N random samples.
+    Return the cumulative distribution of unmatched sites.
+    """
+    
+    unmatched_null_distribution = self.interpolate_unmatched_probs(frags)
+    num_frags, max_misses = unmatched_null_distribution.shape
+    rvs = [rv_discrete(values = (np.arange(max_misses), p)) for k, p in unmatched_null_distribution.iterrows()]
+
+    # Make random samples for number of misses for each fragment
+    mat = np.zeros((num_frags, N))
+    for row, rv in enumerate(rvs):
+      mat[row,:] = rv.rvs(size=N)
+
+    # Take column sums for the number of misses
+    miss_counts = mat.sum(axis=0).astype(int)
+    miss_count_binned = cumsum(bincount(miss_counts)).astype(float)/N
+    return miss_count_binned
+
+  def null_probability(self, frag_sizes, interior_unmatched):
+    """Compute the null probability of generating a random sequence
+    of fragments of sizes frag_sizes with the given interior unmatched sites.
+    """
+    prob_selected = self.interpolate_compatible_probs(frag_sizes)
+    prob_unmatched = self.interpolate_unmatched_probs(frag_sizes).as_matrix()
+    unmatched_probs = prob_unmatched[range(len(frag_sizes)), interior_unmatched.astype(int)]
+    return (prob_selected, unmatched_probs)
+
+  def log_null_probability(self, frag_sizes, interior_unmatched):
+    """Compute the log probability of generating a compatible alignment with these miss characteristics
+    to a random genome"""
+    pass
+    prob_chunk_selected, unmatched_probs = self.null_probability(frag_sizes, interior_unmatched)
+    prob_generated = np.prod(prob_chunk_selected*unmatched_probs)
+
+    # The probability of no hits to a random genome is:
+    # Prob[no hits] = (1 - prob_generated)**[# of genomic locations]
+
+    prob_no_hits = (1 - prob_generated)**(2 * self.N)
+    # The prob of one or more alignments to random genome is [1 - Prob[no hits]]
+
+    return np.log(1 - prob_no_hits)
+
+  def null_probability_generated(self, frag_sizes, interior_unmatched):
+    """Compute the log probability of generating a compatible alignment with these miss characteristics
+    to a random genome"""
+    pass
+    prob_chunk_selected, unmatched_probs = self.null_probability(frag_sizes, interior_unmatched)
+    prob_generated = np.prod(prob_chunk_selected*unmatched_probs)
+    return prob_generated
+
+
+  def log_pattern_probability(self, interior_unmatched):
+    """Compute the probability of producing the restriction pattern.
+    It's not clear if we should include the bounding matched sites or not.
+    For a probability odds ratio, this will end up being a constant factor shift.
+    
+    For now, include the boundaries.
+    """
+    num_unmatched = np.sum(interior_unmatched)
+    num_matched = 1 + len(interior_unmatched)
+    return num_matched * self.log_query_hit_probability + num_unmatched * self.log_query_miss_probability
+
+  def log_likelihood_ratio(self, frag_sizes, interior_unmatched):
+    """Return the log likelihood_ratio that the alignment has the observed restriction pattern
+    to the probability of generating the sequence of chunks randomly.
+
+    Note: The probability of randomly generating the sequence of chunks as they appear in the alignment will
+    be small, but this is not the same probability as asking "what is the probability that a random genome has this 
+    chunk sequence in one or more locations". The latter probability is larger, because allows for the alignment chunk
+    pattern to appear anywhere in either the forward or reverse orientation.
+    """
+    L_HA = self.log_pattern_probability(interior_unmatched)
+    L_H0 = np.log(self.null_probability_generated(frag_sizes, interior_unmatched))
+    return L_HA - L_H0
 
 
 def all_scores_forward(scorer, query_map, ref_map):
   lq = len(query_map)
   lr = len(ref_map)
   last_pos = lr - lq
-  scores = [scorer.score_at_position(query_map, ref_map, p) for p in xrange(last_pos)]
+  sf = scorer.score_at_position
+  scores = [sf(query_map, ref_map, p) for p in xrange(last_pos)]
   return scores
+
+
+
+
 
 
 

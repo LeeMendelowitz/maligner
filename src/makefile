@@ -1,10 +1,15 @@
 CXXFLAGS=-Wall -pedantic -std=c++0x -O3
 
-PYTHON_INC = /fs/szattic-asmg7/lmendelo/packages/distribution/include/python2.7
-PYTHON_LIB = /fs/szattic-asmg7/lmendelo/packages/distribution/lib/python2.7/config
+PYTHON_INC=/fs/szattic-asmg7/lmendelo/packages/distribution/include/python2.7
+PYTHON_LIB=/fs/szattic-asmg7/lmendelo/packages/distribution/lib/python2.7/config
 
-BOOST_INC = /fs/szattic-asmg7/lmendelo/packages/distribution/include
-BOOST_LIB = /fs/szattic-asmg7/lmendelo/packages/distribution/lib
+PYTHON_INC=/usr/include/python2.7
+
+BOOST_INC=/fs/szattic-asmg7/lmendelo/packages/distribution/include
+BOOST_INC=/usr/local/include
+
+BOOST_LIB=/fs/szattic-asmg7/lmendelo/packages/distribution/lib
+BOOST_LIB=/usr/local/lib
 
 maligner_lib: ../lib/maligner.a
 
