@@ -8,7 +8,7 @@ and potentially the reference a simple Bernoulli model.
 """
 
 import numpy as np
-from numpy import bincount, cumsum
+from numpy import bincount, cumsum, log
 from scipy.interpolate import interp1d
 from scipy.stats import rv_discrete
 from itertools import izip
@@ -410,25 +410,24 @@ class NullModelSimulator(object):
     unmatched_probs = prob_unmatched[range(len(frag_sizes)), interior_unmatched.astype(int)]
     return (prob_selected, unmatched_probs)
 
-  def log_null_probability(self, frag_sizes, interior_unmatched):
-    """Compute the log probability of generating a compatible alignment with these miss characteristics
-    to a random genome"""
-    pass
-    prob_chunk_selected, unmatched_probs = self.null_probability(frag_sizes, interior_unmatched)
-    prob_generated = np.prod(prob_chunk_selected*unmatched_probs)
+  # def log_null_probability(self, frag_sizes, interior_unmatched):
+  #   """Compute the log probability of generating a compatible alignment with these miss characteristics
+  #   to a random genome"""
+  #   pass
+  #   prob_chunk_selected, unmatched_probs = self.null_probability(frag_sizes, interior_unmatched)
+  #   prob_generated = np.prod(prob_chunk_selected*unmatched_probs)
 
-    # The probability of no hits to a random genome is:
-    # Prob[no hits] = (1 - prob_generated)**[# of genomic locations]
+  #   # The probability of no hits to a random genome is:
+  #   # Prob[no hits] = (1 - prob_generated)**[# of genomic locations]
 
-    prob_no_hits = (1 - prob_generated)**(2 * self.N)
-    # The prob of one or more alignments to random genome is [1 - Prob[no hits]]
+  #   prob_no_hits = (1 - prob_generated)**(2 * self.N)
+  #   # The prob of one or more alignments to random genome is [1 - Prob[no hits]]
 
-    return np.log(1 - prob_no_hits)
+  #   return np.log(1 - prob_no_hits)
 
   def null_probability_generated(self, frag_sizes, interior_unmatched):
     """Compute the log probability of generating a compatible alignment with these miss characteristics
     to a random genome"""
-    pass
     prob_chunk_selected, unmatched_probs = self.null_probability(frag_sizes, interior_unmatched)
     prob_generated = np.prod(prob_chunk_selected*unmatched_probs)
     return prob_generated
@@ -455,8 +454,20 @@ class NullModelSimulator(object):
     pattern to appear anywhere in either the forward or reverse orientation.
     """
     L_HA = self.log_pattern_probability(interior_unmatched)
-    L_H0 = np.log(self.null_probability_generated(frag_sizes, interior_unmatched))
+    L_H0 = log(self.null_probability_generated(frag_sizes, interior_unmatched))
     return L_HA - L_H0
+
+  def assign_likelihoods(self, aln):
+    """
+    Assign likelihoods to an alignment object aln.
+    The alignment object should have misses and frag_lengths attributes which describe
+    the number of misses and total length of each chunk.
+    """
+    aln.log_HA = self.log_pattern_probability(aln.misses)
+    aln.p_H0 = self.null_probability_generated(aln.frag_lengths, aln.misses)
+    aln.log_H0 = log(aln.p_H0)
+    aln.log_likelihood_ratio = aln.log_HA - aln.log_H0
+    aln.E_H0 = aln.p_H0*self.N # Expected number of times an alignment compatible to this one would appear in a random genome.
 
 
 def all_scores_forward(scorer, query_map, ref_map):

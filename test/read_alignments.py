@@ -13,6 +13,10 @@ if __name__ == "__main__":
 import malignpy.core.null_distribution
 from malignpy.core.null_distribution import *
 from malignpy.maps.utils import read_maps
+from malignpy.core.kmer_match_alignments import \
+  (Alignment, iter_non_overlapping_alns, iter_query_groups)
+
+
 import numpy as np
 import pandas
 from pandas import DataFrame
@@ -38,25 +42,22 @@ simulator.make_interpolators()
 
 
 print 'reading 1000 alignments'
-from malignpy.core.kmer_match_alignments import Alignment
-aln_file = open('/media/sf_Lee/workspace/maligner/kmer_match/parrot.chunk.all.new_output2.aln')
-num_lines = 1000
-lines = (aln_file.next() for i in xrange(num_lines))
-alns = [Alignment(l) for l in lines]
+ALN_FILE = 'kmer_match/MM52.all.rel_error_10p0.aln.head'
+aln_file = open(ALN_FILE)
+# num_lines = 10000
+# lines = (aln_file.next() for i in xrange(num_lines))
+# alns = [Alignment(l) for l in lines]
+alns = iter_non_overlapping_alns(aln_file)
 
-for a in alns:
-  a.log_likelihood_ratio = simulator.log_likelihood_ratio(a.frag_lengths, a.misses)
+fout = open(ALN_FILE + '.filtered', 'w')
+fout.write(Alignment.match_string_header + "\n")
+for i,a in enumerate(alns):
+  simulator.assign_likelihoods(a)
+  # a.log_HA = simulator.log_pattern_probability(a.misses)
+  # a.log_H0 = np.log(simulator.null_probability_generated(a.frag_lengths, a.misses))
+  # a.log_likelihood_ratio = simulator.log_likelihood_ratio(a.frag_lengths, a.misses)
+  fout.write(a.match_string() + '\n')
+fout.close()
 
-repeats_file = open('/media/sf_Lee/workspace/maligner/kmer_match/parrot.chunk.all.new_output2.repeats.aln')
-lines = (repeats_file.next() for i in xrange(num_lines))
-repeats_alns = [Alignment(l) for l in lines]
-for i,r in enumerate(repeats_alns):
-  r.log_likelihood_ratio = simulator.log_likelihood_ratio(r.frag_lengths, r.misses)
 
-for i,r in enumerate(repeats_alns):
-  print i,r,r.log_likelihood_ratio
 
-from collections import defaultdict
-query_to_alns = defaultdict(list)
-for r in repeats_alns:
-  query_to_alns[r.query].append(r)
