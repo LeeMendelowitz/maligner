@@ -17,6 +17,7 @@ import logging
 import pandas
 from datetime import datetime
 
+from malignpy.maps.SOMAMap import SOMAMap
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -195,6 +196,21 @@ class NullModelSimulator(object):
     self.query_hit_probability = 1.0 - self.query_miss_probability
     self.log_query_miss_probability = np.log(self.query_miss_probability)
     self.log_query_hit_probability = np.log(self.query_hit_probability)
+
+  def generate_random_reference(self):
+    """Generate a random reference in-silico map where we sample from replacement
+    from the catalogue of reference fragments.
+    """
+    inds = np.random.randint(0, self.num_reference_frags, self.num_reference_frags)
+    frags = self.frags[inds]
+    return frags
+
+  def generate_random_references(self, N):
+    frags = (self.generate_random_reference() for i in xrange(N))
+    maps = [SOMAMap(frags = f, mapId = '') for f in frags]
+    for i,m in enumerate(maps):
+      m.mapId = 'random_map_%i'%i
+    return maps
 
   def _simulate_one_map(self, miss_probability, num_chunks):
     """Return a NullModelMap populated with chunks.
