@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+"""
+Randomly sample from a maps file.
+"""
+
+import argparse
+from itertools import islice
+import os, sys
+import numpy as np
+
+import malignpy
+from malignpy.common import wrap_file_function
+
+parser = argparse.ArgumentParser(description='Split a maps file into N chunks')
+parser.add_argument('maps_file', metavar='MAPS_FILE', type=str,
+                   help='SOMA MAPS FILE')
+parser.add_argument('-n', '--num_maps', metavar='N', type=int, help='Number of maps to sample.')
+parser.add_argument('-r', '--rate', metavar='RATE', type = float, help='Sample rate.')
+parser.add_argument('-o', '--output', metavar='OUTPUT FILE',
+  help = "Output file. (Default: STDOUT)", default = sys.stdout)
+
+
+@wrap_file_function('r')
+def count_lines(fp):
+  for i, l in enumerate(fp):
+    pass
+  return i+1
+
+
+@wrap_file_function('r', 'w')
+def sample_by_n(map_file, output_file, num_maps):
+  """Sample num_maps lines from the map_file"""
+
+  num_lines = count_lines(map_file)
+
+  if num_maps >= num_lines:
+    msg = """num_maps is greater than lines in map_file:
+      num_lines: {num_lines}
+      num_maps: {num_maps}""".format(num_lines = num_lines, num_maps = num_maps)
+    raise RuntimeError(msg)
+
+  map_file.seek(0)
+
+
+
+  # Sample lines
+  lines_to_sample = np.random.choice(np.arange(num_lines), size = num_maps, replace=False)
+  lines_to_sample.sort() 
+  next_ind = 0
+  next = lines_to_sample[next_ind]
+
+  for i, l in enumerate(map_file):
+    if i == next:
+      output_file.write(l)
+      next_ind += 1
+      if next_ind >= lines_to_sample.shape[0]:
+        break
+      next = lines_to_sample[next_ind]
+
+@wrap_file_function('r', 'w')
+def sample_by_rate(map_file, output_file, rate):
+  """Sample lines from the map_file using the sample rate.
+  """
+
+  map_file.seek(0)
+
+  # Sample lines
+
+  for l in map_file:
+    if np.random.rand() < rate:
+      output_file.write(l)
+
+
+if __name__ == '__main__':
+  args = parser.parse_args()
+  if args.num_maps is not None:
+    sample_by_n(args.maps_file, args.output, args.num_maps)
+  elif args.rate is not None:
+    sample_by_rate(args.maps_file, args.output, args.rate)
+  else:
+    raise RuntimeError('num_maps or rate must be provided')
+
