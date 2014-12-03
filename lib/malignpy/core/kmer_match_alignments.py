@@ -28,6 +28,8 @@ class Alignment(object):
 
     self.total_misses = sum(self.misses)
     self.num_frags = len(self.frags)
+    self.num_chunks = self.num_frags
+    self.num_ref_frags = self.end - self.start
 
     self.miss_rate = float(self.total_misses) / (self.total_misses + self.num_frags + 1)
     
@@ -42,12 +44,16 @@ class Alignment(object):
     "orientation",
     "start",
     "end",
+    "num_ref_frags",
+    "num_chunks",
     "total_misses",
     "miss_rate",
     "log_HA",
     "log_H0",
     "log_likelihood_ratio",
     "E_H0",
+    "p_H0",
+    "p_H0_alt",
     "frag_string"
   ])
 
@@ -66,12 +72,16 @@ class Alignment(object):
                      self.orientation,
                      str(self.start),
                      str(self.end),
+                     str(self.num_ref_frags),
+                     str(self.num_chunks),
                      str(self.total_misses),
                      float_formatter(self.miss_rate),
                      float_formatter(getattr(self, "log_HA", "NA")),
                      float_formatter(getattr(self, "log_H0", "NA")),
                      float_formatter(getattr(self, "log_likelihood_ratio", "NA")),
                      float_scientific(getattr(self, "E_H0", "NA")),
+                     float_scientific(getattr(self, "p_H0", "NA")),
+                     float_scientific(getattr(self, "p_H0_alt", "NA")),
                      ' '.join(self._frags_raw)])
     return ret
 

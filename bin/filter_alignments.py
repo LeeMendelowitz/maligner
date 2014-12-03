@@ -26,7 +26,8 @@ parser.add_argument('alns_file', metavar='ALIGNMENTS_FILE', type=str,
 parser.add_argument('ref_maps', metavar='REF_MAP_FILE', type=str,
                    help='Reference map file.')
 parser.add_argument('-o', '--output', metavar='OUTPUT_FILE', help = "Output file name. (Default: STDOUT)")
-
+parser.add_argument('-r', '--rel_error', metavar='REL_ERROR', help = "Relative error. (Default: 0.10)",
+    type = float, default = 0.10)
 
 def serr(msg):
   sys.stderr.write(msg + '\n')
@@ -58,12 +59,12 @@ if __name__ == '__main__':
     all_frags.extend(m.frags)
   all_frags = np.array(all_frags)
 
-  controls = NullModelControls()
+  controls = NullModelControls(rel_error = args.rel_error)
   serr('building simulator')
   simulator = NullModelSimulator(all_frags, controls)
   scorer = NullModelScorer(controls)
   serr('simulating null distribution')
-  simulator.simulate_null_distribution()
+  simulator.simulate_null_distribution_ver2()
   serr('making interpolators')
   simulator.make_interpolators()
   serr('filtering alignments')
