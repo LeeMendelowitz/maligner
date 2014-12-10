@@ -62,7 +62,11 @@ def readMapDataSchwartz(filename, verbose = False):
     fin.close()
     return omaps
 
+@wrap_file_function('r')
 def mapDataSchwartzGen(handle):
+    """
+    Yield SOMA Maps from the Schwartz lab map format
+    """
     fin = handle
     for line in fin:
         # Skip if line is empty
@@ -78,7 +82,8 @@ def mapDataSchwartzGen(handle):
         fragLengths = [int(1000.0*float(field)) for field in fields[2:]] # Convert to bp
         omap = SOMAMap(mapId = mapId, frags = fragLengths, enzyme = enzyme)
         yield omap
-    
+
+read_map_data_schwartz_format =  mapDataSchwartzGen
 
 #############################################################################################
 # Reads (in a crude fashion) an optical map in xml format
@@ -157,23 +162,15 @@ def read_maps(fin):
     return mapDict
 
 #############################################
+@wrap_file_function('r')
 def gen_maps(f):
     """
     Generate maps from the SOMAMap file specified by f.
     f can be a filename str or a file handle.
     """
-
-    should_close = False
-    if isinstance(f, str):
-        f = open(f)
-        should_close = True
-
     lines = (l for l in f if l)
     for l in lines:
         yield SOMAMap(line=l)
-
-    if should_close:
-        f.close()
 
 #########################################################
 # Write maps to a file in the SOMA map format
