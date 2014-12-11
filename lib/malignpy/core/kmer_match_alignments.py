@@ -1,6 +1,6 @@
 # Objects for parsing output of kmer_match alignments
 import numpy as np
-from numpy import array, sum, zeros
+from numpy import array, sum, zeros, sqrt, mean
 from collections import defaultdict
 from operator import attrgetter
 
@@ -38,6 +38,20 @@ class Alignment(object):
     self.log_HA = None
     self.log_likelihood_ratio = None
 
+  def set_query_data(self, query_map):
+    """The alignment only stores information about the reference and assumes the entire query
+    is aligned. Here we attach a query_map to the alignment so we can compute frag sizing error
+    """
+    self.query_map = query_map
+    self.query_frags = array(query_map.frags)
+    inner_frags = self.query_frags[1:-1]
+    # self.frag_lengths: reference lengths of the alignment chunks
+    self.frag_sizing_error = inner_frags - self.frag_lengths
+    self.rel_frag_sizing_error = self.frag_sizing_error / self.frag_lengths.astype(float)
+    self.mean_rel_frag_sizing_error = np.mean(self.rel_frag_sizing_error)
+    self.mean_abs_rel_frag_sizing_error = np.mean(np.abs(self.rel_frag_sizing_error))
+    self.sd_rel_frag_sizing_error = np.std(self.rel_frag_sizing_error)
+
   match_string_header = "\t".join([
     "query",
     "reference",
@@ -54,6 +68,9 @@ class Alignment(object):
     "E_H0",
     "p_H0",
     "p_H0_alt",
+    "mean_rel_frag_sizing_error",
+    "mean_abs_rel_frag_sizing_error",
+    "sd_rel_frag_sizing_error",
     "frag_string"
   ])
 
@@ -62,10 +79,19 @@ class Alignment(object):
     miss_rate, log_H0, log_HA, and log_likelihood_ratio"""
 
     def float_formatter(s):
-      return '%.6f'%s if s else 'NA'
+      try:
+        return '%.6f'%s
+      except TypeError:
+        return "NA"
 
     def float_scientific(s):
-      return '%.6E'%s if s else 'NA'
+      try:
+        return '%.6E'%s
+      except TypeError:
+        return "NA"
+
+    def g(k):
+      return getattr(self, k, "NA")
 
     ret = "\t".join([self.query,
                      self.reference,
@@ -76,12 +102,15 @@ class Alignment(object):
                      str(self.num_chunks),
                      str(self.total_misses),
                      float_formatter(self.miss_rate),
-                     float_formatter(getattr(self, "log_HA", "NA")),
-                     float_formatter(getattr(self, "log_H0", "NA")),
-                     float_formatter(getattr(self, "log_likelihood_ratio", "NA")),
-                     float_scientific(getattr(self, "E_H0", "NA")),
-                     float_scientific(getattr(self, "p_H0", "NA")),
-                     float_scientific(getattr(self, "p_H0_alt", "NA")),
+                     float_formatter(g("log_HA")),
+                     float_formatter(g("log_H0")),
+                     float_formatter(g("log_likelihood_ratio")),
+                     float_scientific(g("E_H0")),
+                     float_scientific(g("p_H0")),
+                     float_scientific(g("p_H0_alt")),
+                     float_formatter(g("mean_rel_frag_sizing_error")),
+                     float_formatter(g("mean_abs_rel_frag_sizing_error")),
+                     float_formatter(g("sd_rel_frag_sizing_error")),
                      ' '.join(self._frags_raw)])
     return ret
 

@@ -25,6 +25,8 @@ parser.add_argument('alns_file', metavar='ALIGNMENTS_FILE', type=str,
                    help='Alignments file.')
 parser.add_argument('ref_maps', metavar='REF_MAP_FILE', type=str,
                    help='Reference map file.')
+parser.add_argument('query_maps', metavar='QUERY_MAP_FILE', type=str,
+                   help='Query map file.')
 parser.add_argument('-o', '--output', metavar='OUTPUT_FILE', help = "Output file name. (Default: STDOUT)")
 parser.add_argument('-r', '--rel_error', metavar='REL_ERROR', help = "Relative error. (Default: 0.10)",
     type = float, default = 0.10)
@@ -33,7 +35,7 @@ def serr(msg):
   sys.stderr.write(msg + '\n')
 
 @wrap_file_function('r', 'w')
-def filter_alignments_file(aln_file, output_file, simulator):
+def filter_alignments_file(aln_file, output_file, simulator, query_map_dict):
 
   alns = iter_non_overlapping_alns(aln_file)
 
@@ -41,6 +43,7 @@ def filter_alignments_file(aln_file, output_file, simulator):
   fout.write(Alignment.match_string_header + "\n")
   for i,a in enumerate(alns):
     simulator.assign_likelihoods(a)
+    a.set_query_data(query_map_dict[a.query])
     fout.write(a.match_string() + '\n')
   fout.close()
 
@@ -59,6 +62,10 @@ if __name__ == '__main__':
     all_frags.extend(m.frags)
   all_frags = np.array(all_frags)
 
+  # Note: This may be a problem for large maps files.
+  serr('reading query maps')
+  query_map_dict = read_maps(args.query_maps)
+
   controls = NullModelControls(rel_error = args.rel_error)
   serr('building simulator')
   simulator = NullModelSimulator(all_frags, controls)
@@ -68,4 +75,4 @@ if __name__ == '__main__':
   serr('making interpolators')
   simulator.make_interpolators()
   serr('filtering alignments')
-  filter_alignments_file(args.alns_file, args.output, simulator)
+  filter_alignments_file(args.alns_file, args.output, simulator, query_map_dict)
