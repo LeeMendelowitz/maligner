@@ -42,7 +42,8 @@ def run(input_maps_file):
     print '{}_max\t{:,.2f}'.format(pfx, max(vals))
 
 
-
+  print 'num_maps\t{:,d}'.format(len(frags_per_map))
+  print '\n'
   print_stats(lengths, 'map_length_bp')
   print '\n'
   print_stats(frags_per_map, 'frags_per_map')
