@@ -56,6 +56,7 @@ def run(input_maps_file, include_terminal):
 
   print 'num_maps\t{:,d}'.format(len(frags_per_map))
   print 'num_frags\t{:,d}'.format(len(frags))
+  print 'total_length_kb\t{:,.3f}'.format(float(sum(frags))/1000.0)
   print '\n'
   print_stats(lengths, 'map_length_bp')
   print '\n'
