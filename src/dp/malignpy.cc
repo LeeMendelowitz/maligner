@@ -4,7 +4,8 @@
 #include <boost/python/stl_iterator.hpp>
 #include <boost/python/return_internal_reference.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
-#include <boost/shared_ptr.hpp>
+
+#include <memory>
 #include <string>
 
 #include "ScoreCell.h"
@@ -14,9 +15,9 @@
 #include "types.h"
 
 using namespace boost::python;
-using boost::shared_ptr;
-
+using std::shared_ptr;
 using self_ns::str;
+using namespace maligner_dp;
 
 template<typename T>
 void vec_assign(std::vector<T>& v, object o) {

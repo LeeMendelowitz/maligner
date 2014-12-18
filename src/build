@@ -1,6 +1,0 @@
-#!/bin/bash
-
-echo -e "\n\n-----------------------------------------\n\n" >> build.log
-echo "`date`\n" >> build.log
-
-make all 2>&1 | tee -a build.log

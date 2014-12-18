@@ -1,7 +1,9 @@
 #include "ScoreCell.h"
 #include <algorithm>
 
-std::ostream& operator<<(std::ostream& os, const ScoreCell& cell)
+using namespace maligner_dp;
+
+std::ostream& maligner_dp::operator<<(std::ostream& os, const ScoreCell& cell)
 {
     os << "[(" << cell.q_ << "," << cell.r_ << "), " << cell.score_ << ",";
     const ScoreCell * pTgt = cell.backPointer_;
@@ -12,6 +14,6 @@ std::ostream& operator<<(std::ostream& os, const ScoreCell& cell)
     return os;
 }
 
-bool ScoreCellPointerCmp(const ScoreCell* p1, const ScoreCell* p2) {
+bool maligner_dp::ScoreCellPointerCmp(const ScoreCell* p1, const ScoreCell* p2) {
   return (p1->score_ > p2->score_);
 }

@@ -13,7 +13,7 @@ using std::cerr;
 #include "ScoreMatrix.h"
 #include "ScoreCell.h"
 
-using Constants::INF;
+
 
 #define DEBUG 0
 #define GET_BEST_DEBUG 0
@@ -23,10 +23,13 @@ using Constants::INF;
 #define RESCALE_DEBUG 0
 #define NEIGHBORHOOD_DEBUG 0
 
+using namespace maligner_dp;
+using maligner_dp::Constants::INF;
+
 int MapData::num_copies = 0;
 int MapData::num_constructs = 0;
 
-inline double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts) {
+inline double maligner_dp::sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts) {
 
   /* TODO: This can be baked into the dynamic programming routine */
   /* For each reference fragment, compute the standard deviation ahead of time */
@@ -46,13 +49,13 @@ inline double sizing_penalty(int query_size, int ref_size, const AlignOpts& alig
 }
 
 // Sort an AlignmentPtrVec in ascending order of score.
-bool alignment_rescaled_score_comp(const AlignmentPtr& a1, const AlignmentPtr& a2) {
+bool maligner_dp::alignment_rescaled_score_comp(const AlignmentPtr& a1, const AlignmentPtr& a2) {
   return a1->total_rescaled_score < a2->total_rescaled_score;
 }
 
 // rescale the query chunks using the query_scaling_factor, and
 // recompute the sizing error for those chunks.
-void Alignment::rescale_matched_chunks(const AlignOpts& align_opts) {
+void maligner_dp::Alignment::rescale_matched_chunks(const AlignOpts& align_opts) {
 
   //summarize();
 
@@ -95,7 +98,7 @@ void Alignment::rescale_matched_chunks(const AlignOpts& align_opts) {
   The ScoreMatrix should already have the same nubmer of columns as the reference,
   and should have enough rows to accomodate the query.
 */
-void fill_score_matrix(const AlignTask& align_task) {
+void maligner_dp::fill_score_matrix(const AlignTask& align_task) {
 
   // Unpack the alignment task
   const IntVec& query = *align_task.query;
@@ -247,7 +250,7 @@ void fill_score_matrix(const AlignTask& align_task) {
 
 } // fill_score_matrix
 
-void fill_score_matrix_using_partials(const AlignTask& align_task) {
+void maligner_dp::fill_score_matrix_using_partials(const AlignTask& align_task) {
   /*
   Fill score matrix using partial sums
   */
@@ -419,7 +422,7 @@ void fill_score_matrix_using_partials(const AlignTask& align_task) {
 } // fill_score_matrix
 
 
-bool get_best_alignment(const AlignTask& task, ScoreCellPVec& trail) {
+bool maligner_dp::get_best_alignment(const AlignTask& task, ScoreCellPVec& trail) {
 
   // Go to the last row of the ScoreMatrix and identify the best score.
   IntVec& query = *task.query;
@@ -478,7 +481,7 @@ bool get_best_alignment(const AlignTask& task, ScoreCellPVec& trail) {
 //
 // Append trail seeds to the trail_seeds in the alignment task.
 // Return True if alignments were found.
-int get_best_alignments(const AlignTask& task) {
+int maligner_dp::get_best_alignments(const AlignTask& task) {
 
   // Go to the last row of the ScoreMatrix and identify the best score.
   AlignOpts& align_opts = *task.align_opts;
@@ -598,7 +601,7 @@ int get_best_alignments(const AlignTask& task) {
 }
 
 
-void build_trail(ScoreCell* pCell, ScoreCellPVec& trail) {
+void maligner_dp::build_trail(ScoreCell* pCell, ScoreCellPVec& trail) {
 
   #if BUILD_TRAIL_DEBUG > 0
   std::cerr << "Building trail from " << pCell << std::endl;
@@ -616,7 +619,7 @@ void build_trail(ScoreCell* pCell, ScoreCellPVec& trail) {
 
 
 // trail: starts from end of alignment
-void build_chunk_trail(const AlignTask& task, ScoreCellPVec& trail, ChunkVec& query_chunks, ChunkVec& ref_chunks) {
+void maligner_dp::build_chunk_trail(const AlignTask& task, ScoreCellPVec& trail, ChunkVec& query_chunks, ChunkVec& ref_chunks) {
 
   const int ts = trail.size();
   if (ts == 0) { return; }
@@ -676,7 +679,7 @@ void build_chunk_trail(const AlignTask& task, ScoreCellPVec& trail, ChunkVec& qu
   }
 }
 
-void print_chunk_trail(const ChunkVec& query_chunks, const ChunkVec& ref_chunks) {
+void maligner_dp::print_chunk_trail(const ChunkVec& query_chunks, const ChunkVec& ref_chunks) {
 
   assert(query_chunks.size() == ref_chunks.size());
   int cs = query_chunks.size();
@@ -696,7 +699,7 @@ void print_chunk_trail(const ChunkVec& query_chunks, const ChunkVec& ref_chunks)
 
 // Make and return an alignment from the trail through the
 // score matrix.
-AlignmentPtr alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail) {
+AlignmentPtr maligner_dp::alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail) {
 
     const AlignOpts& align_opts = *task.align_opts;
     const IntVec& query = *task.query;
@@ -749,7 +752,7 @@ AlignmentPtr alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail) {
     return AlignmentPtr(new Alignment(std::move(matched_chunks), total_score));
 }
 
-AlignmentPtr alignment_from_cell(const AlignTask& task, ScoreCell* p_cell) {
+AlignmentPtr maligner_dp::alignment_from_cell(const AlignTask& task, ScoreCell* p_cell) {
   
   const size_t m = task.query->size() + 1;
   const AlignOpts& align_opts = *task.align_opts;
@@ -769,7 +772,7 @@ AlignmentPtr alignment_from_cell(const AlignTask& task, ScoreCell* p_cell) {
 
 
 // Make partial sums of the preceeding fragment sizes, up to (missed_sites + 1) fragments.
-PartialSums make_partial_sums(const IntVec& frags, const int missed_sites) {
+PartialSums maligner_dp::make_partial_sums(const IntVec& frags, const int missed_sites) {
 /*
 
   Consider fragments with indices i and fragment sizes f
@@ -802,7 +805,7 @@ PartialSums make_partial_sums(const IntVec& frags, const int missed_sites) {
 }
 
 // Make partial sums of the preceeding fragment sizes, up to (missed_sites + 1) fragments.
-PartialSumsPtr make_partial_sums_new(const IntVec& frags, const int missed_sites) {
+PartialSumsPtr maligner_dp::make_partial_sums_new(const IntVec& frags, const int missed_sites) {
 /*
 
   Consider fragments with indices i and fragment sizes f
@@ -837,7 +840,7 @@ PartialSumsPtr make_partial_sums_new(const IntVec& frags, const int missed_sites
 
 //////////////////////////////////////////////////////////
 // Fill score matrix, find best alignment, and return it.
-AlignmentPtr make_best_alignment(const AlignTask& task) {
+AlignmentPtr maligner_dp::make_best_alignment(const AlignTask& task) {
 
   const AlignOpts& align_opts = *task.align_opts;
 
@@ -861,7 +864,7 @@ AlignmentPtr make_best_alignment(const AlignTask& task) {
 }
 
 // Fill score matrix, find best alignment, and return it.
-AlignmentPtr make_best_alignment_using_partials(const AlignTask& task) {
+AlignmentPtr maligner_dp::make_best_alignment_using_partials(const AlignTask& task) {
 
   const AlignOpts& align_opts = *task.align_opts;
 
@@ -886,7 +889,7 @@ AlignmentPtr make_best_alignment_using_partials(const AlignTask& task) {
 
 //////////////////////////////////////////////////////////
 // Fill score matrix, find best n alignments, and return them in a vector..
-int make_best_alignments_using_partials(const AlignTask& task) {
+int maligner_dp::make_best_alignments_using_partials(const AlignTask& task) {
 
   // Unpack the alignment task
   const IntVec& query = *task.query;
@@ -902,7 +905,7 @@ int make_best_alignments_using_partials(const AlignTask& task) {
 }
 
 
-std::ostream& operator<<(std::ostream& os, const Chunk& chunk) {
+std::ostream& maligner_dp::operator<<(std::ostream& os, const Chunk& chunk) {
 
   os << "([" << chunk.start << ", " << chunk.end << "], " 
      << chunk.size << ")";
@@ -911,7 +914,7 @@ std::ostream& operator<<(std::ostream& os, const Chunk& chunk) {
 
 }
 
-std::ostream& operator<<(std::ostream& os, const MatchedChunk& chunk) {
+std::ostream& maligner_dp::operator<<(std::ostream& os, const MatchedChunk& chunk) {
 
   os << "q: " << chunk.query_chunk
      << " r: " << chunk.ref_chunk
@@ -920,7 +923,7 @@ std::ostream& operator<<(std::ostream& os, const MatchedChunk& chunk) {
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const Score& score) {
+std::ostream& maligner_dp::operator<<(std::ostream& os, const Score& score) {
 
   os << "(" << score.query_miss_score
      << ", " << score.ref_miss_score
@@ -930,14 +933,14 @@ std::ostream& operator<<(std::ostream& os, const Score& score) {
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const Alignment& aln) {
+std::ostream& maligner_dp::operator<<(std::ostream& os, const Alignment& aln) {
 
   os << "Alignment: " << aln.matched_chunks << "\n";
   return os;
 
 }
 
-std::ostream& print_align_task(std::ostream& os, const AlignTask& task) {
+std::ostream& maligner_dp::print_align_task(std::ostream& os, const AlignTask& task) {
 
   os << "align_task:\n"
      << "\tquery: " << task.query << "\n"

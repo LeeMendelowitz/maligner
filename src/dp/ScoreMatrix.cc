@@ -2,9 +2,11 @@
 
 #include "ScoreMatrix.h"
 #include "globals.h"
-using Constants::INF;
 
-size_t ScoreMatrix::countFilledCells() const {
+using maligner_dp::Constants::INF;
+using namespace maligner_dp;
+
+size_t maligner_dp::ScoreMatrix::countFilledCells() const {
     size_t count = 0;
     for (size_t i = 0; i < data_.size(); i++)
     {
@@ -18,7 +20,7 @@ size_t ScoreMatrix::countFilledCells() const {
     return count;
 }
 
-size_t ScoreMatrix::countFilledByRow(size_t row) const {
+size_t maligner_dp::ScoreMatrix::countFilledByRow(size_t row) const {
     
     if (row >= numRows_) {
         return 0;
@@ -35,7 +37,7 @@ size_t ScoreMatrix::countFilledByRow(size_t row) const {
     return count;
 }
 
-double ScoreMatrix::percentFilled() const {
+double maligner_dp::ScoreMatrix::percentFilled() const {
     double size = (double) getSize();
     int filled = 0;
     for (int j = 0; j < getNumCols(); j++) {
@@ -49,7 +51,7 @@ double ScoreMatrix::percentFilled() const {
     return ((double) filled)/size*100.0;
 }
 
-double ScoreMatrix::getMaxScore() const {
+double maligner_dp::ScoreMatrix::getMaxScore() const {
     double maxScore = -INF;
     for(size_t i = 0; i < numCols_; i++)
     {
@@ -61,7 +63,7 @@ double ScoreMatrix::getMaxScore() const {
     return maxScore;
 }
 
-double ScoreMatrix::getMaxScoreByRow(size_t row) const {
+double maligner_dp::ScoreMatrix::getMaxScoreByRow(size_t row) const {
     double maxScore = -INF;
     if (row >= numRows_) {
         return maxScore;
@@ -73,7 +75,7 @@ double ScoreMatrix::getMaxScoreByRow(size_t row) const {
     return maxScore;
 }
 
-std::ostream& operator<<(std::ostream& os, ScoreMatrix& mat) {
+std::ostream& maligner_dp::operator<<(std::ostream& os, ScoreMatrix& mat) {
     const size_t nrow = mat.getNumRows();
     const size_t ncol = mat.getNumCols();
     for (size_t i = 0; i < nrow; i++) {
