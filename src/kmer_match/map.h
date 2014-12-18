@@ -18,8 +18,24 @@ class Map {
   // METHODS
 
   // Default constructor  
+  Map() {};
   Map(const std::string& name, int size, const IntVec& frags);
   Map(const std::string& line);
+  
+  // Move constructor
+  Map(Map&& o) :
+    name_(std::move(o.name_)),
+    size_(std::move(o.size_)),
+    frags_(std::move(o.frags_))
+  {}
+  
+  // Move assignment
+  Map& operator=(Map&& o) {
+    name_ = std::move(o.name_);
+    size_ = o.size_;
+    frags_ = std::move(o.frags_);
+    return *this;
+  }
 
   /////////////////////////////////////////////////
   // MEMBERS

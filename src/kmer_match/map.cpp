@@ -5,25 +5,10 @@
 #include <exception>
 
 #include "map.h"
+#include "map_reader.h"
 
 using namespace std;
 
-class ReadMapException : public std::exception
-{
-  public:
-
-    ReadMapException(const std::string& line) {
-      message_ = "Error reading map: " + line;
-    };
-
-    virtual const char* what() const noexcept
-    {
-      return message_.c_str();
-    }
-
-    std::string message_;
-
-};
 
 //////////////////////////////////////////////////////
 // Map default constructor
@@ -81,25 +66,11 @@ Map::Map(const std::string& line) {
 }
 
 
-
 //////////////////////////////////////////////////////
 // Read maps from a file. 
 MapVec read_maps(const std::string& file_name) {
-
-  std::ifstream fin(file_name);
-  std::string line;
-  MapVec maps;
-
-  while(std::getline(fin, line)) {
-    try {
-      maps.emplace_back(line);
-    } catch(ReadMapException& e) {
-      cerr << e.what() << "\n";
-    }
-  }
-
-  return maps;
-
+  MapReader reader(file_name);
+  return reader.read_all_maps();
 }
 
 ///////////////////////////////////////////////////////
