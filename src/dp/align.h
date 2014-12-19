@@ -18,11 +18,21 @@ namespace maligner_dp {
   class MapData;
 
   typedef std::vector<IntVec> PartialSums;
-  typedef std::shared_ptr< PartialSums > PartialSumsPtr;
-  typedef std::shared_ptr< MapData > MapDataPtr;
-  typedef std::shared_ptr< Alignment > AlignmentPtr;
-  typedef std::vector< AlignmentPtr > AlignmentPVec;
-  typedef std::shared_ptr< AlignmentPVec > AlignmentPVecPtr;
+  using std::shared_ptr;
+
+  // Using shared pointers:
+  // typedef std::shared_ptr< PartialSums > PartialSumsPtr;
+  // typedef std::shared_ptr< MapData > MapDataPtr;
+  // typedef std::shared_ptr< Alignment > AlignmentPtr;
+  // typedef std::vector< AlignmentPtr > AlignmentPVec;
+  // typedef std::shared_ptr< AlignmentPVec > AlignmentPVecPtr;
+
+  // Using raw pointers:
+  typedef  PartialSums* PartialSumsPtr;
+  typedef  MapData* MapDataPtr;
+  typedef  Alignment* AlignmentPtr;
+  typedef  std::vector< AlignmentPtr > AlignmentPVec;
+  typedef  AlignmentPVec* AlignmentPVecPtr;
 
   class AlignOpts {
 
@@ -113,6 +123,7 @@ namespace maligner_dp {
   // These structures are for a single alignment task (i.e. one query to one reference)
   // Note this just collects non-const pointers
   // to external objects into a single object
+
   class AlignTask {
     
   public:
@@ -185,7 +196,6 @@ namespace maligner_dp {
   };
 
   std::ostream& print_align_task(std::ostream& os, const AlignTask& task);
-
 
   class Chunk {
   public:

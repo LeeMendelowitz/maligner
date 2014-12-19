@@ -8,6 +8,7 @@
 #include <getopt.h>
 
 #include "map.h"
+#include "map_reader.h"
 #include "map_frag.h"
 #include "map_frag_db.h"
 #include "error_model.h"
@@ -157,6 +158,8 @@ void parse_args(int argc, char** argv)
 
 
 int main(int argc, char* argv[]) {
+
+  using namespace kmer_match;
 
   opt::program_name = argv[0];
   parse_args(argc, argv);

@@ -1,23 +1,27 @@
 #include "ref_alignment.h"
 
-std::ostream& operator<<(std::ostream& os, const ReferenceAlignment& aln) {
 
-  const MapChunk * first = aln.chunks_.front();
-  const MapChunk * last = aln.chunks_.back();
-  bool is_forward = first->start_ < last->start_;
+namespace kmer_match {
   
-  os << first->pMap_->name_ << " ";
+  std::ostream& operator<<(std::ostream& os, const ReferenceAlignment& aln) {
 
-  if(is_forward) {
-    os << "F " << first->start_ << " " << last->end_ << " ";
-  } else {
-    os << "R " << last->start_ << " " << first->end_ << " ";
+    const MapChunk * first = aln.chunks_.front();
+    const MapChunk * last = aln.chunks_.back();
+    bool is_forward = first->start_ < last->start_;
+    
+    os << first->pMap_->name_ << " ";
+
+    if(is_forward) {
+      os << "F " << first->start_ << " " << last->end_ << " ";
+    } else {
+      os << "R " << last->start_ << " " << first->end_ << " ";
+    }
+
+    for(ConstMapChunkPVec::const_iterator iter = aln.chunks_.begin(); iter != aln.chunks_.end(); iter++) {
+      os << **iter << " ";
+    }
+
+    return os;
   }
 
-  for(ConstMapChunkPVec::const_iterator iter = aln.chunks_.begin(); iter != aln.chunks_.end(); iter++) {
-    os << **iter << " ";
-  }
-
-  return os;
 }
-
