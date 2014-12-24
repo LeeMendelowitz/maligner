@@ -29,16 +29,21 @@ namespace maligner_dp {
 
         ScoreMatrix(size_t numRows = 0, size_t numCols = 0);
         void resize(size_t numRows, size_t numCols);
+
         size_t getSize() const { return size_; }
         size_t getCapacity() const { return data_.size(); }
         size_t getNumRows() const { return numRows_; }
         size_t getNumCols() const { return numCols_; }
+
         ScoreCell * getCell(size_t row, size_t col);
         ScoreCell * getCell(const IntPair& coord);
         ScoreCell * getCell(size_t n);
+        ScoreCellVec& getData() { return data_; }
+
         const ScoreCell * getCell(size_t row, size_t col) const;
         const ScoreCell * getCell(const IntPair& coord) const;
         const ScoreCell * getCell(size_t n) const;
+        const ScoreCellVec& getData() const { return data_; }
 
         // Indicators for whether cell in last row is in play.
         bool cell_in_play(size_t col) const { return last_row_in_play_[col];}
@@ -52,6 +57,7 @@ namespace maligner_dp {
         double percentFilled() const;
         double getMaxScore() const;
         double getMaxScoreByRow(size_t row) const;
+        size_t countColor(ScoreCellColor col) const;
 
     private:
         size_t numRows_;
@@ -62,7 +68,8 @@ namespace maligner_dp {
         
     };
 
-    typedef std::shared_ptr< ScoreMatrix> ScoreMatrixPtr;
+    // typedef std::shared_ptr< ScoreMatrix> ScoreMatrixPtr;
+    typedef ScoreMatrix* ScoreMatrixPtr;
 
 
     std::ostream& operator<<(std::ostream& os, ScoreMatrix& mat);
@@ -83,9 +90,9 @@ namespace maligner_dp {
         const size_t N = data_.size();
 
         // Wipe out all cells
-        for (size_t i = 0; i < N; i++) {
-            getCell(i)->reset();
-        }
+        // for (size_t i = 0; i < N; i++) {
+        //     getCell(i)->reset();
+        // }
 
         // Set the coordinates for those cells that are in bounds
         for (size_t j = 0; j < numCols_; j++) {
@@ -93,6 +100,9 @@ namespace maligner_dp {
                 ScoreCell * pCell = getCell(i, j);
                 pCell->q_ = i;
                 pCell->r_ = j;
+                pCell->backPointer_ = nullptr;
+                pCell->score_ = -INF;
+                pCell->color_ = ScoreCellColor::WHITE;
             }
         }
 
@@ -148,6 +158,8 @@ namespace maligner_dp {
         // Check that coord within bounds?
         return &data_[n];
     }
+
+   void print_filled_by_row(std::ostream& os, const ScoreMatrix& sm);
 
 }
 

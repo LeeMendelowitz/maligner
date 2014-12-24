@@ -23,6 +23,7 @@ namespace maligner_dp {
     typedef std::unordered_set<ScoreCell *> ScoreCellSet;
     typedef std::pair<int, int> IntPair;
 
+    enum class ScoreCellColor { WHITE, BLACK, RED, GREEN};
     class ScoreCell
     {
         public:
@@ -30,20 +31,24 @@ namespace maligner_dp {
         ScoreCell() :
             q_(-1),
             r_(-1),
-            backPointer_(nullptr)
+            backPointer_(nullptr),
+            color_(ScoreCellColor::WHITE)
         { };
 
         ScoreCell(int q, int r) :
             q_(q),
             r_(r),
-            backPointer_(nullptr)
+            backPointer_(nullptr),
+            color_(ScoreCellColor::WHITE)
         { };
 
         ScoreCell(IntPair ip) :
             q_(ip.first),
             r_(ip.second),
-            backPointer_(nullptr)
+            backPointer_(nullptr),
+            color_(ScoreCellColor::WHITE)
         { };
+
 
         IntPair key() const { 
             return IntPair(q_, r_);
@@ -55,10 +60,15 @@ namespace maligner_dp {
 
         void reset();
 
+        void setColor(ScoreCellColor color) {
+            color_ = color;
+        }
+
         int q_;
         int r_;
         double score_;
         ScoreCell * backPointer_; // back pointer for DP solution path
+        ScoreCellColor color_;
     };
 
 
@@ -68,6 +78,7 @@ namespace maligner_dp {
         r_ = -1;
         backPointer_ = nullptr;
         score_ = -INF;
+        color_ = ScoreCellColor::WHITE;
     }
 
 

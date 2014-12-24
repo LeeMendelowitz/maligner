@@ -10,7 +10,7 @@ message(STATUS "CMAKE_BUILD_TYPE : ${CMAKE_BUILD_TYPE}")
 # Compiler flags
 set(CMAKE_CXX_COMPILER "g++")
 set(CMAKE_CXX_FLAGS_RELEASE "-std=c++11 -O3")
-set(CMAKE_CXX_FLAGS_DEBUG "-std=c++11 -g")
+set(CMAKE_CXX_FLAGS_DEBUG "-std=c++11 -O0 -g")
 # set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS_DEBUG})
 
 #########################################

@@ -11,7 +11,7 @@ namespace maligner_dp {
 
     T s = 0;
 
-    assert(start <= end);
+    // assert(start <= end);
     if (start >= (int) v.size()) {
       return 0;
     }
@@ -35,6 +35,15 @@ namespace maligner_dp {
     }
 
     return s;
+  }
+
+  template< class T>
+  void clear_vector(std::vector<T>& v) {
+    const size_t N = v.size();
+    for(size_t i = 0; i < N; i++) {
+      delete v[i];
+    }
+    v.clear();
   }
 
   template< typename T>

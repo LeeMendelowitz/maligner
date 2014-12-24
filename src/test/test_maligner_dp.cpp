@@ -19,6 +19,7 @@
 #include "map_chunk_db.h"
 
 // dp includes
+#include "alignment.h"
 #include "align.h"
 #include "utils.h"
 #include "ScoreMatrix.h"
@@ -47,7 +48,7 @@ static const int NUM_POSITION_ARGS = 2;
 
 static const char *USAGE_MESSAGE =
 "Usage: " PACKAGE_NAME " " SUBPROGRAM " [OPTION] ... QUERY_MAPS_FILE REFERENCE_MAPS_FILE\n"
-"Align the maps in the QUERY_MAPS_FILE to the maps in the REFERENCE_MAPS_FILE using dynamic programming.\n"
+"Align the maps in the QUERY_MAPS_FILE to the maps in the REFERENCE_MAPS_FILE\n"
 "\n"
 "      -h, --help                       display this help and exit\n"
 "      -v, --version                    display the version and exit\n"
@@ -78,8 +79,8 @@ namespace maligner_dp {
       static int query_max_misses = 2;
       static int ref_max_misses = 5;
       static double sd_rate = 0.10;
-      static double min_sd = 500.0;
-      static double max_chunk_sizing_error = 4.0;
+      static double min_sd = 1000.0;
+      static double max_chunk_sizing_error = 16.0;
       static int alignments_per_reference = 1;
       static int min_alignment_spacing = 10;
       static int neighbor_delta = 0;
@@ -217,7 +218,6 @@ typedef unordered_map<string, MapWrapper> MapWrapperDB;
 
 int main(int argc, char* argv[]) {
 
-  using maligner_dp::Alignment;
   maligner_dp::opt::program_name = argv[0];
   parse_args(argc, argv);
   Timer timer;
@@ -263,19 +263,9 @@ int main(int argc, char* argv[]) {
  ScoreMatrix sm;
  MapReader query_map_reader(maligner_dp::opt::query_maps_file);
  Map query_map;
- AlignmentVec alns_forward, alns_reverse;
+ AlignmentVec alns;
 
  while(query_map_reader.next(query_map)) {
-
-
-    alns_forward.clear();
-    alns_reverse.clear();
-
-    const IntVec& query_frags_forward = query_map.frags_;
-    const IntVec query_frags_reverse(query_frags_forward.rbegin(), query_frags_forward.rend());
-    PartialSums qps_forward = make_partial_sums(query_frags_forward, align_opts.query_max_misses);
-    PartialSums qps_reverse = make_partial_sums(query_frags_reverse, align_opts.query_max_misses);
-
 
     MapWrapper qmw(query_map,align_opts.query_max_misses);
 
@@ -283,7 +273,6 @@ int main(int argc, char* argv[]) {
 
     Timer query_timer;
     query_timer.start();
-
     for(MapWrapperDB::iterator ref_map_iter = map_db.begin();
         ref_map_iter != map_db.end();
         ref_map_iter++) {
@@ -291,91 +280,81 @@ int main(int argc, char* argv[]) {
 
       MapWrapper& rmw = ref_map_iter->second;
       const size_t num_ref_frags = rmw.m_.frags_.size();
+
+      timer.start();
       sm.resize(num_query_frags + 1, num_ref_frags + 1);
-
-      // const IntVec* p_frags_forward = &query_frags_forward;
-      // const IntVec* p_frags_reverse = &query_frags_reverse;
-
-      AlignTask task_forward(&qmw.md_, &rmw.md_,
-        &query_frags_forward, &rmw.m_.frags_, 
-        &qps_forward, &rmw.ps_,
-        0, // ref_offset
-        &sm, &alns_forward, align_opts
-      );
-
-      AlignTask task_reverse(&qmw.md_, &rmw.md_,
-        &query_frags_reverse, &rmw.m_.frags_, 
-        &qps_reverse, &rmw.ps_,
-        0, // ref_offset
-        &sm, &alns_reverse, align_opts
-      );
-
-      std::cerr << "Aligning " << query_map.name_ << " to " << rmw.m_.name_ << "\n";
-      Timer timer;
-
-      // Align Forward
-      timer.start();
-      Alignment aln_forward = make_best_alignment_using_partials(task_forward);
       timer.end();
-      std::cerr << "Alignments forward is valid: " << aln_forward.is_valid
-                << " " << timer << "\n";
 
-      if(aln_forward.is_valid) {
-        // alns_forward.push_back(std::move(aln_forward));
-        alns_forward.push_back(aln_forward);
-        // std::cout << aln_forward << "\n";
-      }
+      std::cout << "Resize: ("
+        << sm.getNumRows() << "x" << sm.getNumCols()
+        << ") capacity: " << sm.getCapacity()
+        << " size: " << sm.getSize() 
+        << " size-to-capacity: " << double(sm.getSize())/double(sm.getCapacity())
+        << " " << timer << "\n";
+      // Temporary loop to see speed without resizing
+      // for(int i =0; i <5; i++) {
+        AlignTask task(&qmw.md_, &rmw.md_,
+          &qmw.m_.frags_, &rmw.m_.frags_, 
+          &qmw.ps_, &rmw.ps_,
+          0,
+          &sm, &alns, align_opts
+        );
 
-      // Align Reverse
-      // TO DO: We need to have a means of building reverse alignments with the 
-      // correct labeling of indices. Right now we are ignoring this.
-      timer.start();
-      Alignment aln_reverse = make_best_alignment_using_partials(task_reverse);
-      timer.end();
-      std::cerr << "Alignments reverse is valid: " << aln_reverse.is_valid
-                << " " << timer << "\n";
+        std::cout << "Aligning " << query_map.name_ << " to " << rmw.m_.name_ << "\n";
+        // make_best_alignments_using_partials(task);
 
-      if(aln_reverse.is_valid) {
-        // alns_reverse.push_back(std::move(aln_reverse));
-        alns_reverse.push_back(aln_reverse);
-        // std::cout << aln_reverse << "\n";
-      }
+        timer.start();
+        fill_score_matrix_using_partials(task);
+        timer.end();
+        std::cout << "fill_score_matrix_using_partials: " << timer << "\n";
+        print_filled_by_row(std::cout, sm);
+        std::cout << "percent filled last row\t" << double(sm.countFilledByRow(sm.getNumRows()-1))/sm.getNumCols() << "\n";
+        std::cout << "percent filled\t" << sm.percentFilled() << "\n";
+
+        // timer.start();
+        // fill_score_matrix_using_partials_no_size_penalty(task);
+        // timer.end();
+        // std::cout << "fill_score_matrix_using_partials_no_size_penalty: " << timer << "\n";
+        // std::cout << "percent filled\t" << sm.percentFilled() << "\n";
+
+        // timer.start();
+        // fill_score_matrix_using_partials_with_size_penalty_class(task);
+        // timer.end();
+        // std::cout << "fill_score_matrix_using_partials_with_size_penalty_class: " << timer << "\n";
+        // std::cout << "percent filled\t" << sm.percentFilled() << "\n";
+        
+        // timer.start();
+        // fill_score_matrix_using_partials_with_cell_queue(task);
+        // timer.end();
+        // std::cout << "fill_score_matrix_using_partials_with_cell_queue: " << timer << "\n";
+        // print_filled_by_row(std::cout, sm);
+        // std::cout << "percent filled last row\t" << double(sm.countFilledByRow(sm.getNumRows()-1))/sm.getNumCols() << "\n";
+        // std::cout << "percent filled\t" << sm.percentFilled() << "\n"; 
+
+        timer.start();
+        fill_score_matrix_using_partials_with_cell_mark(task);
+        timer.end();
+        std::cout << "fill_score_matrix_using_partials_with_cell_mark: " << timer << "\n";
+        print_filled_by_row(std::cout, sm);
+        std::cout << "percent filled last row\t" << double(sm.countFilledByRow(sm.getNumRows()-1))/sm.getNumCols() << "\n";
+        std::cout << "percent filled\t" << sm.percentFilled() << "\n";   
+
+        size_t white_count = sm.countColor(ScoreCellColor::WHITE);
+        size_t green_count =sm.countColor(ScoreCellColor::GREEN);
+        std::cout << "White: " << white_count << " (" << double(white_count)/sm.getSize() << ") "
+                  << " Green: " << green_count << " (" << double(green_count)/sm.getSize() << ")" 
+                  << "\n";     
+
+        std::cout << "done.\n";
+      // }
 
     }
+    query_timer.end();
 
-    // Of all the forward alignments and reverse alignments, print only the best.
-    // cerr << "forward scores:\n";
-    // for(auto& v: alns_forward) {
-    //   cerr << "aln score: " << v.total_score << "\n";
-    // }
-    // cerr << "reverse scores:\n";
-    // for(auto& v: alns_reverse) {
-    //   cerr << "aln score: " << v.total_score << "\n";
-    // }
+    std::cout << "Found " << alns.size() << " alignments. " << query_timer << "\n";
 
-    std::sort(alns_forward.begin(), alns_forward.end(), AlignmentScoreComp());
-
-    cout << "Best forward: ";
-    if( alns_forward.empty() ) {
-      cout << "None\n";
-    } else {
-      cout << alns_forward[0] << "\n";
-    }
-
-    std::sort(alns_reverse.begin(), alns_reverse.end(), AlignmentScoreComp());
-
-    cout << "Best reverse: ";
-    if ( alns_reverse.empty() ) {
-      cout << "None\n";
-    } else {
-      cout << alns_reverse[0] << "\n";
-    }
+    alns.clear();
     
-    query_timer.end();    
-
-    std::cerr << "Aligned query " << query_map.name_ << "to all references. "
-              << query_timer << "\n";
-    std::cerr << "*****************************************\n";
  }
  
 

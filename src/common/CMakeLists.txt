@@ -2,13 +2,13 @@
 # include_directories(${UTIL_SOURCE_DIR}/include)
 
 # source files
-set(DP_SOURCES "align.cc" "globals.cc" "ScoreCell.cc" "ScoreMatrix.cc" "alignment.cc")
+set(COMMON_SRC "timer.cpp")
 
 # Build Library
-add_library(dp STATIC ${DP_SOURCES})
+add_library(common STATIC ${COMMON_SRC})
 
 # install directory
-install(TARGETS dp ARCHIVE DESTINATION "${MALIGNER_LIB_DIR}")
+install(TARGETS common ARCHIVE DESTINATION "${MALIGNER_LIB_DIR}")
 
 # CAN ATTEMPT TO BUILD THE PYTHON LIBRARY WITH HELP FROM THIS:
 # http://stackoverflow.com/questions/5851016/boost-python-and-cmake-link-and-load-errors
