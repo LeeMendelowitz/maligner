@@ -1567,7 +1567,7 @@ namespace maligner_dp {
       }
 
       // return Alignment(std::move(matched_chunks), total_score);
-      return Alignment(matched_chunks, total_score);
+      return Alignment(matched_chunks, total_score, *task.query_map_data, *task.ref_map_data);
   }
 
   Alignment alignment_from_cell(const AlignTask& task, ScoreCell* p_cell) {
@@ -1720,41 +1720,6 @@ namespace maligner_dp {
     return num_alignments;
   }
 
-
-  std::ostream& operator<<(std::ostream& os, const Chunk& chunk) {
-
-    os << "([" << chunk.start << ", " << chunk.end << "], " 
-       << chunk.size << ")";
-
-    return os;
-
-  }
-
-  std::ostream& operator<<(std::ostream& os, const MatchedChunk& chunk) {
-
-    os << "q: " << chunk.query_chunk
-       << " r: " << chunk.ref_chunk
-       << " score: " << chunk.score << "\n";
-
-    return os;
-  }
-
-  std::ostream& operator<<(std::ostream& os, const Score& score) {
-
-    os << "(" << score.query_miss_score
-       << ", " << score.ref_miss_score
-       << ", " << score.sizing_score
-       << ")";
-
-    return os;
-  }
-
-  std::ostream& operator<<(std::ostream& os, const Alignment& aln) {
-
-    os << "Alignment: " << aln.matched_chunks << "\n";
-    return os;
-
-  }
 
   std::ostream& print_align_task(std::ostream& os, const AlignTask& task) {
 

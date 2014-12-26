@@ -64,6 +64,11 @@ namespace maligner_dp {
   };
 
   typedef std::vector<MatchedChunk> MatchedChunkVec;
+
+  std::ostream& operator<<(std::ostream& os, const MatchedChunk& chunk);
+  std::ostream& operator<<(std::ostream& os, const Score& score);
+  
+
   
 }
 

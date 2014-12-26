@@ -19,6 +19,7 @@
 #include "map_chunk_db.h"
 
 // dp includes
+#include "map_data.h"
 #include "alignment.h"
 #include "align.h"
 #include "utils.h"

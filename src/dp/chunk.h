@@ -2,6 +2,7 @@
 #define CHUNK_H
 
 #include <vector>
+#include <ostream>
 
 namespace maligner_dp {
 
@@ -31,6 +32,8 @@ namespace maligner_dp {
   };
 
   typedef std::vector<Chunk> ChunkVec;
+
+  std::ostream& operator<<(std::ostream& os, const Chunk& chunk);
   
 }
 

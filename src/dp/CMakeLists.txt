@@ -2,7 +2,16 @@
 # include_directories(${UTIL_SOURCE_DIR}/include)
 
 # source files
-set(DP_SOURCES "align.cc" "globals.cc" "ScoreCell.cc" "ScoreMatrix.cc" "alignment.cc")
+set(DP_SOURCES
+  "align.cc"
+  "globals.cc"
+  "ScoreCell.cc"
+  "ScoreMatrix.cc"
+  "alignment.cc"
+  "chunk.cc"
+  "matched_chunk.cc"
+  "map_data.cc"
+)
 
 # Build Library
 add_library(dp STATIC ${DP_SOURCES})

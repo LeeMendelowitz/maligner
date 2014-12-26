@@ -1,5 +1,8 @@
 #include "alignment.h"
 #include "align.h"
+#include "matched_chunk.h"
+
+#include <ostream>
 
 namespace maligner_dp {
 
@@ -38,5 +41,55 @@ namespace maligner_dp {
     total_rescaled_score = rescaled_score.total();
 
   }
+
+
+  std::ostream& operator<<(std::ostream& os, const AlignmentHeader&) {
+    os << "query_map" << "\t"
+       << "ref_map" << "\t"
+       << "is_forward" << "\t"
+       << "num_matched_chunks" << "\t"
+       << "query_misses" << "\t"
+       << "ref_misses" << "\t"
+       << "query_miss_rate" << "\t"
+       << "ref_miss_rate" << "\t"
+       << "total_score" << "\t"
+       << "sizing_score" << "\t"
+       << "chunk_string" << "\n";
+    return os;
+  }
+
+
+  void print_alignment(std::ostream& os, const Alignment& aln,
+    bool is_forward) {
+
+    os << aln.query_map_data.map_name_ << "\t"
+       << aln.ref_map_data.map_name_ << "\t"
+       << (is_forward ? "F" : "R") << "\t"
+       << aln << "\n";
+  }
+
+
+  
+  std::ostream& operator<<(std::ostream& os, const Alignment& aln) {
+
+
+    os << aln.matched_chunks.size() << "\t"
+       << aln.query_misses << "\t"
+       << aln.ref_misses << "\t"
+       << aln.query_miss_rate << "\t"
+       << aln.ref_miss_rate << "\t"
+       << aln.total_score << "\t"
+       << aln.score.sizing_score << "\t";
+
+    for(auto& mc : aln.matched_chunks) {
+      os << mc << ";";
+    }
+
+    return os;
+
+  }
+
+
   const Alignment INVALID_ALIGNMENT;
+
 }

@@ -19,6 +19,7 @@
 #include "map_chunk_db.h"
 
 // dp includes
+#include "map_data.h"
 #include "align.h"
 #include "utils.h"
 #include "ScoreMatrix.h"
@@ -265,6 +266,8 @@ int main(int argc, char* argv[]) {
  Map query_map;
  AlignmentVec alns_forward, alns_reverse;
 
+
+ std::cout << AlignmentHeader();
  while(query_map_reader.next(query_map)) {
 
 
@@ -310,15 +313,15 @@ int main(int argc, char* argv[]) {
         &sm, &alns_reverse, align_opts
       );
 
-      std::cerr << "Aligning " << query_map.name_ << " to " << rmw.m_.name_ << "\n";
+      // std::cerr << "Aligning " << query_map.name_ << " to " << rmw.m_.name_ << "\n";
       Timer timer;
 
       // Align Forward
       timer.start();
       Alignment aln_forward = make_best_alignment_using_partials(task_forward);
       timer.end();
-      std::cerr << "Alignments forward is valid: " << aln_forward.is_valid
-                << " " << timer << "\n";
+      // std::cerr << "Alignments forward is valid: " << aln_forward.is_valid
+      //           << " " << timer << "\n";
 
       if(aln_forward.is_valid) {
         // alns_forward.push_back(std::move(aln_forward));
@@ -332,8 +335,8 @@ int main(int argc, char* argv[]) {
       timer.start();
       Alignment aln_reverse = make_best_alignment_using_partials(task_reverse);
       timer.end();
-      std::cerr << "Alignments reverse is valid: " << aln_reverse.is_valid
-                << " " << timer << "\n";
+      // std::cerr << "Alignments reverse is valid: " << aln_reverse.is_valid
+      //           << " " << timer << "\n";
 
       if(aln_reverse.is_valid) {
         // alns_reverse.push_back(std::move(aln_reverse));
@@ -355,20 +358,23 @@ int main(int argc, char* argv[]) {
 
     std::sort(alns_forward.begin(), alns_forward.end(), AlignmentScoreComp());
 
-    cout << "Best forward: ";
+    // cout << "Best forward: ";
     if( alns_forward.empty() ) {
-      cout << "None\n";
+      // cout << "None\n";
     } else {
-      cout << alns_forward[0] << "\n";
+      print_alignment(std::cout, alns_forward.front(), true);
+
+      // cout << alns_forward[0] << "\n";
     }
 
     std::sort(alns_reverse.begin(), alns_reverse.end(), AlignmentScoreComp());
 
-    cout << "Best reverse: ";
+    // cout << "Best reverse: ";
     if ( alns_reverse.empty() ) {
-      cout << "None\n";
+      // cout << "None\n";
     } else {
-      cout << alns_reverse[0] << "\n";
+      print_alignment(std::cout, alns_reverse.front(), false);
+      // cout << alns_reverse[0] << "\n";
     }
     
     query_timer.end();    

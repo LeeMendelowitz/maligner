@@ -2,15 +2,20 @@
 #define ALIGNMENT_H
 
 #include <vector>
+#include <ostream>
 
+#include "map_data.h"
 #include "matched_chunk.h"
 
 namespace maligner_dp {
 
-  using std::size_t; // Very confused that this need to be declared. I thought size_t was a thing.
+  using std::size_t;
 
   // Forward Declarations
   class AlignOpts;
+
+  class AlignmentHeader {};
+  std::ostream& operator<<(std::ostream& os, const AlignmentHeader& a);
 
   class Alignment {
   public:
@@ -22,7 +27,10 @@ namespace maligner_dp {
     Alignment() : is_valid(false) {
     }
 
-    Alignment(MatchedChunkVec& mc, Score& s) :
+    Alignment(const MatchedChunkVec& mc, const Score& s, const MapData& query_md,
+      const MapData& ref_md) :
+      query_map_data(query_md),
+      ref_map_data(ref_md),
       matched_chunks(mc),
       rescaled_matched_chunks(matched_chunks),
       score(s),
@@ -52,6 +60,8 @@ namespace maligner_dp {
     void reset_stats();
 
     // Attributes
+    MapData query_map_data;
+    MapData ref_map_data;
     MatchedChunkVec matched_chunks;
     MatchedChunkVec rescaled_matched_chunks;
     Score score;
@@ -73,6 +83,7 @@ namespace maligner_dp {
     double interior_size_ratio;
     double query_scaling_factor;
     bool is_valid;
+
   };
 
   typedef std::vector<Alignment> AlignmentVec;
@@ -158,6 +169,10 @@ namespace maligner_dp {
       total_rescaled_score = 0;
   }
 
+
+  void print_alignment(std::ostream& os, const Alignment& aln, bool is_forward);
+
+  std::ostream& operator<<(std::ostream& os, const Alignment& aln);
 
 }
 

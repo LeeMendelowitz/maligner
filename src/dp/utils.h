@@ -46,33 +46,33 @@ namespace maligner_dp {
     v.clear();
   }
 
-  template< typename T>
-  std::ostream& operator<<(std::ostream& os, std::vector<T> vec) {
-    size_t n = vec.size();
-    os << "[ ";
-    for (size_t i = 0; i < n; i++) {
-      os << vec[i];
-      if (i != n-1) {
-        os << ", ";
-      }
-    }
-    os << " ]";
-    return os;
-  }
+  // template< typename T>
+  // std::ostream& operator<<(std::ostream& os, std::vector<T> vec) {
+  //   size_t n = vec.size();
+  //   os << "[ ";
+  //   for (size_t i = 0; i < n; i++) {
+  //     os << vec[i];
+  //     if (i != n-1) {
+  //       os << ", ";
+  //     }
+  //   }
+  //   os << " ]";
+  //   return os;
+  // }
 
-  template< typename T>
-  std::ostream& operator<<(std::ostream& os, std::vector<T*> vec) {
-    size_t n = vec.size();
-    os << "[ ";
-    for (size_t i = 0; i < n; i++) {
-      os << *vec[i];
-      if (i != n-1) {
-        os << ", ";
-      }
-    }
-    os << " ]";
-    return os;
-  }
+  // template< typename T>
+  // std::ostream& operator<<(std::ostream& os, std::vector<T*> vec) {
+  //   size_t n = vec.size();
+  //   os << "[ ";
+  //   for (size_t i = 0; i < n; i++) {
+  //     os << *vec[i];
+  //     if (i != n-1) {
+  //       os << ", ";
+  //     }
+  //   }
+  //   os << " ]";
+  //   return os;
+  // }
 
 }
 #endif
