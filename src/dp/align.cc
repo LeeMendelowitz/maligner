@@ -259,28 +259,22 @@ namespace maligner_dp {
     */
 
     // Unpack the alignment task
+    AlignOpts& align_opts = *align_task.align_opts;
     const IntVec& query = *align_task.query;
     const IntVec& ref = *align_task.ref;
     const PartialSums& query_partial_sums = *align_task.query_partial_sums;
     const PartialSums& ref_partial_sums = *align_task.ref_partial_sums;
+    const DoubleVec& ref_miss_penalties = align_opts.ref_miss_penalties;
+    const DoubleVec& query_miss_penalties = align_opts.query_miss_penalties;
 
     ScoreMatrix& mat = *align_task.mat;
-    mat.reset();
-    AlignOpts& align_opts = *align_task.align_opts;
 
-    // Compute the miss penalties
-    IntVec query_miss_penalties(align_opts.query_max_misses+1, align_opts.query_miss_penalty);
-    for (int i = 0; i < align_opts.query_max_misses+1; i++) {
-      query_miss_penalties[i] *= (double) i;
-    }
+    // mat.reset();
 
-    IntVec ref_miss_penalties(align_opts.ref_max_misses+1, align_opts.ref_miss_penalty);
-    for (int i = 0; i < align_opts.ref_max_misses+1; i++) {
-      ref_miss_penalties[i] *= (double) i;
-    }
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    mat.resize(m, n);
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
     const int num_rows = mat.getNumRows();
@@ -334,13 +328,12 @@ namespace maligner_dp {
       const IntVec& ref_ps = ref_partial_sums[j-1]; // reference partial sum
 
       int l0 = (j > align_opts.ref_max_misses + 1) ? j - align_opts.ref_max_misses - 1 : 0;
-      const int offset = num_rows*j;
       
       for (int i = 1; i < m; i++) {
 
         const IntVec& query_ps = query_partial_sums[i-1]; // query partial sum
 
-        ScoreCell* pCell = mat.getCell(offset + i);
+        ScoreCell* pCell = mat.getCell(i, j);
 
         // Try all allowable extensions
 
@@ -350,17 +343,13 @@ namespace maligner_dp {
 
         for(int l = j-1; l >= l0; l--) {
 
-          const bool is_ref_boundary = (l == 0 || j == n - 1) && !align_opts.ref_is_bounded;
+          const bool is_ref_boundary = !align_opts.ref_is_bounded && (l == 0 || j == n - 1);
 
           int ref_miss = j - l - 1; // sites in reference unaligned to query
           double ref_miss_score = ref_miss_penalties[ref_miss];
           int ref_size = ref_ps[ref_miss];
 
-          const int offset_back = num_rows*l;
-
           for(int k = i-1; k >= k0; k--) {
-
-            const bool is_query_boundary =  (k == 0 || k == m - 1) && !align_opts.query_is_bounded;
 
             #if FILL_DEBUG > 0
             cerr << "i: " << i
@@ -370,8 +359,10 @@ namespace maligner_dp {
                  << "\n";
             #endif
 
-            ScoreCell* pTarget = mat.getCell(offset_back + k);
+            ScoreCell* pTarget = mat.getCell(k, l);
             if (pTarget->score_ == -INF) continue;
+
+            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || k == m - 1);
 
             int query_miss = i - k - 1; // sites in query unaligned to reference
             double query_miss_score = query_miss_penalties[query_miss];
@@ -387,17 +378,21 @@ namespace maligner_dp {
             }
 
             // Break if the query chunk is already too big for the reference
-            if (query_size > ref_size && size_penalty > align_opts.max_chunk_sizing_error) {
-                #if BREAKS_DEBUG > 0
-                  num_breaks++;
-                #endif
-              break;
+            if (size_penalty > align_opts.max_chunk_sizing_error) {
+
+              // If query is too large, it will only get large and sizing error
+              // will only increase, so we can break here.
+              if(query_size > ref_size) {
+                  #if BREAKS_DEBUG > 0
+                    num_breaks++;
+                  #endif
+                break;
+              }
+
+              continue;
+
             }
 
-            // If the sizing penalty is too large, continue and do not populate matrix.
-            if (size_penalty > align_opts.max_chunk_sizing_error) {
-              continue;
-            }
 
             double chunk_score = -size_penalty - query_miss_score - ref_miss_score;
 
@@ -816,16 +811,21 @@ namespace maligner_dp {
             }
 
             // Break if the query chunk is already too big for the reference
-            if (query_size > ref_size && size_penalty > align_opts.max_chunk_sizing_error) {
-                #if BREAKS_DEBUG > 0
-                  num_breaks++;
-                #endif
-              break;
-            }
-
-            // If the sizing penalty is too large, continue and do not populate matrix.
             if (size_penalty > align_opts.max_chunk_sizing_error) {
-              continue;
+
+              // If query is already too large, we can break.
+              if(query_size > ref_size) {
+                  #if BREAKS_DEBUG > 0
+                    num_breaks++;
+                  #endif
+                break;
+              }
+
+              // If the sizing penalty is too large, continue and do not populate matrix.
+              if (size_penalty > align_opts.max_chunk_sizing_error) {
+                continue;
+              }
+
             }
 
             double chunk_score = -size_penalty - query_miss_score - ref_miss_score;

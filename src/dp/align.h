@@ -36,27 +36,53 @@ namespace maligner_dp {
 
   public:
 
-    AlignOpts(double p1, double p2, int p3, int p4,
-              double sdr,
-              double p5, double p6, int p7 = 1, int p8 = 1,
-              int ndelta = 0,
-              bool p9 = true,
-              bool p10 = false) : 
-      query_miss_penalty(p1), // penalty for having a site in query unaligned to reference
-      ref_miss_penalty(p2), // penalty for having a site in reference unaligned to query
-      query_max_misses(p3),
-      ref_max_misses(p4),
-      sd_rate(sdr), // Fraction of reference fragment to use as standard deviation
-      min_sd(p5), // minimum standard deviation imposed in sizing error model, bp
-      max_chunk_sizing_error(p6),
-      alignments_per_reference(p7),
-      min_alignment_spacing(p8),
-      neighbor_delta(ndelta), // Return alignments within +/- neighbor_delta ref. fragments
+    AlignOpts(double query_miss_penality_in,
+              double ref_miss_penalty_in,
+              int query_max_misses_in,
+              int ref_max_misses_in,
+              double sd_rate_in,
+              double min_sd_in,
+              double max_chunk_sizing_error_in,
+              int alignments_per_reference_in = 1,
+              int min_alignment_spacing_in = 1,
+              int neighborhood_delta_in = 0,
+              bool query_is_bounded_in = true,
+              bool ref_is_bounded_in = false) : 
+      query_miss_penalty(query_miss_penality_in), // penalty for having a site in query unaligned to reference
+      ref_miss_penalty(ref_miss_penalty_in), // penalty for having a site in reference unaligned to query
+      query_max_misses(query_max_misses_in),
+      ref_max_misses(ref_max_misses_in),
+      sd_rate(sd_rate_in), // Fraction of reference fragment to use as standard deviation
+      min_sd(min_sd_in), // minimum standard deviation imposed in sizing error model, bp
+      max_chunk_sizing_error(max_chunk_sizing_error_in),
+      alignments_per_reference(alignments_per_reference_in),
+      min_alignment_spacing(min_alignment_spacing_in),
+      neighbor_delta(neighborhood_delta_in), // Return alignments within +/- neighbor_delta ref. fragments
                               // of each selected alignment.
       rescale_query(true), // Rescale the query chunks post-alignment & adjust sizing score.
-      query_is_bounded(p9),
-      ref_is_bounded(p10)
-    {};
+      query_is_bounded(query_is_bounded_in),
+      ref_is_bounded(ref_is_bounded_in),
+      query_miss_penalties(query_max_misses + 1, 0.0),
+      ref_miss_penalties(ref_max_misses + 1, 0.0)
+    {
+
+      // Initialize query_miss_penalties array
+      for(int i = 0, val = 0;
+          i < query_max_misses + 1;
+          val += query_miss_penalty, ++i)
+      {
+        query_miss_penalties[i] = val;
+      }
+
+      // Initialize ref_miss_penalties array
+      for(int i = 0, val = 0;
+          i < ref_max_misses + 1;
+          val += ref_miss_penalty, ++i)
+      {
+        ref_miss_penalties[i] = val;
+      }
+
+    };
 
     double query_miss_penalty;
     double ref_miss_penalty;
@@ -73,6 +99,11 @@ namespace maligner_dp {
     bool rescale_query;
     bool query_is_bounded; // true if the first/last fragments in query map are bounded by restriction sites.
     bool ref_is_bounded; // true if the first/last fragments in reference map are bounded by restriction sites.
+    
+    // Precomputed multiples of query_miss_penalties and ref_miss_penalties
+    DoubleVec query_miss_penalties;
+    DoubleVec ref_miss_penalties;
+
   };
 
   double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts);

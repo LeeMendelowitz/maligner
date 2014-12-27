@@ -96,7 +96,7 @@ namespace maligner_dp {
 
         // Set the coordinates for those cells that are in bounds
         for (size_t j = 0; j < numCols_; j++) {
-         for (size_t i = 0; i < numRows_; i++) {
+            for (size_t i = 0; i < numRows_; i++) {
                 ScoreCell * pCell = getCell(i, j);
                 pCell->q_ = i;
                 pCell->r_ = j;
