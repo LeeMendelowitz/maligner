@@ -37,9 +37,12 @@ using std::unordered_map;
 
 // Wrapper around all of the Map structures we need to store
 // in order to perform DP alignments.
-using namespace kmer_match;
+//using namespace kmer_match;
 using namespace maligner_dp;
-// using kmer_match::Map;
+using kmer_match::Map;
+using kmer_match::MapVec;
+using kmer_match::read_maps;
+using kmer_match::MapReader;
 
 // using maligner_dp::MapData;
 // using maligner_dp::PartialSums;
@@ -96,7 +99,7 @@ int main(int argc, char* argv[]) {
                        maligner_dp::opt::neighbor_delta,
                        maligner_dp::opt::query_is_bounded,
                        maligner_dp::opt::ref_is_bounded);
-  
+
   // Build a database of reference maps. 
   MapVec ref_maps(read_maps(maligner_dp::opt::ref_maps_file));
   cerr << "Read " << ref_maps.size() << " reference maps.\n";
@@ -115,14 +118,17 @@ int main(int argc, char* argv[]) {
  Map query_map;
  AlignmentVec alns;
 
+ // Align in the forward direction.
+ // Test the amount of time to get the best alignment vs.
+ // get all of the alignments.
  while(query_map_reader.next(query_map)) {
 
     MapWrapper qmw(query_map,align_opts.query_max_misses);
 
     const size_t num_query_frags = query_map.frags_.size();
 
-    Timer query_timer;
-    query_timer.start();
+    // Timer query_timer;
+    // query_timer.start();
     for(MapWrapperDB::iterator ref_map_iter = map_db.begin();
         ref_map_iter != map_db.end();
         ref_map_iter++) {
@@ -131,79 +137,51 @@ int main(int argc, char* argv[]) {
       MapWrapper& rmw = ref_map_iter->second;
       const size_t num_ref_frags = rmw.m_.frags_.size();
 
+      // Only align in the forward direction. 
+      AlignTask task(&qmw.md_, &rmw.md_,
+        &qmw.m_.frags_, &rmw.m_.frags_, 
+        &qmw.ps_, &rmw.ps_,
+        0,
+        &sm, &alns,
+        true, //is_forward
+        align_opts
+      );
+
+      std::cout << "Aligning " << query_map.name_ << " to " << rmw.m_.name_ << "\n";
+
       timer.start();
-      sm.resize(num_query_frags + 1, num_ref_frags + 1);
+      fill_score_matrix_using_partials(task);
       timer.end();
+      std::cout << "fill_score_matrix_using_partials: " << timer << "\n";
 
-      std::cout << "Resize: ("
-        << sm.getNumRows() << "x" << sm.getNumCols()
-        << ") capacity: " << sm.getCapacity()
-        << " size: " << sm.getSize() 
-        << " size-to-capacity: " << double(sm.getSize())/double(sm.getCapacity())
-        << " " << timer << "\n";
-      // Temporary loop to see speed without resizing
-      // for(int i =0; i <5; i++) {
-        AlignTask task(&qmw.md_, &rmw.md_,
-          &qmw.m_.frags_, &rmw.m_.frags_, 
-          &qmw.ps_, &rmw.ps_,
-          0,
-          &sm, &alns,
-          true, //is_forward
-          align_opts
-        );
-
-        std::cout << "Aligning " << query_map.name_ << " to " << rmw.m_.name_ << "\n";
-        // make_best_alignments_using_partials(task);
-
+      {
         timer.start();
-        fill_score_matrix_using_partials(task);
+        Alignment a = make_best_alignment(task);
         timer.end();
-        std::cout << "fill_score_matrix_using_partials: " << timer << "\n";
-        print_filled_by_row(std::cout, sm);
-        std::cout << "percent filled last row\t" << double(sm.countFilledByRow(sm.getNumRows()-1))/sm.getNumCols() << "\n";
-        std::cout << "percent filled\t" << sm.percentFilled() << "\n";
+        std::cout << "Make best alignment: " << timer << "\n";
+      }
 
-        // timer.start();
-        // fill_score_matrix_using_partials_no_size_penalty(task);
-        // timer.end();
-        // std::cout << "fill_score_matrix_using_partials_no_size_penalty: " << timer << "\n";
-        // std::cout << "percent filled\t" << sm.percentFilled() << "\n";
-
-        // timer.start();
-        // fill_score_matrix_using_partials_with_size_penalty_class(task);
-        // timer.end();
-        // std::cout << "fill_score_matrix_using_partials_with_size_penalty_class: " << timer << "\n";
-        // std::cout << "percent filled\t" << sm.percentFilled() << "\n";
-        
-        // timer.start();
-        // fill_score_matrix_using_partials_with_cell_queue(task);
-        // timer.end();
-        // std::cout << "fill_score_matrix_using_partials_with_cell_queue: " << timer << "\n";
-        // print_filled_by_row(std::cout, sm);
-        // std::cout << "percent filled last row\t" << double(sm.countFilledByRow(sm.getNumRows()-1))/sm.getNumCols() << "\n";
-        // std::cout << "percent filled\t" << sm.percentFilled() << "\n"; 
-
+      {     
+        alns.clear();
         timer.start();
-        fill_score_matrix_using_partials_with_cell_mark(task);
+        int num_alignments = get_best_alignments(task);
         timer.end();
-        std::cout << "fill_score_matrix_using_partials_with_cell_mark: " << timer << "\n";
-        print_filled_by_row(std::cout, sm);
-        std::cout << "percent filled last row\t" << double(sm.countFilledByRow(sm.getNumRows()-1))/sm.getNumCols() << "\n";
-        std::cout << "percent filled\t" << sm.percentFilled() << "\n";   
+        std::cout << "get_best_alignments: " << num_alignments << " " << timer << "\n";
+      }
 
-        size_t white_count = sm.countColor(ScoreCellColor::WHITE);
-        size_t green_count =sm.countColor(ScoreCellColor::GREEN);
-        std::cout << "White: " << white_count << " (" << double(white_count)/sm.getSize() << ") "
-                  << " Green: " << green_count << " (" << double(green_count)/sm.getSize() << ")" 
-                  << "\n";     
 
-        std::cout << "done.\n";
-      // }
+      {     
+        alns.clear();
+        timer.start();
+        int num_alignments = get_best_alignments_try_all(task);
+        timer.end();
+        std::cout << "get_best_alignments_try_all: " << num_alignments << " " << timer << "\n";
+      }
 
     }
-    query_timer.end();
+    // query_timer.end();
 
-    std::cout << "Found " << alns.size() << " alignments. " << query_timer << "\n";
+    // std::cout << "Found " << alns.size() << " alignments. " << query_timer << "\n";
 
     alns.clear();
     

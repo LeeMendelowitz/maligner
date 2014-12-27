@@ -61,6 +61,22 @@ namespace maligner_dp {
               score == other.score);
     }
 
+    int ref_start() const {
+      return ref_chunk.start;
+    }
+
+    int ref_end() const {
+      return ref_chunk.end;
+    }
+
+    int query_start() const {
+      return query_chunk.start;
+    }
+
+    int query_end() const {
+      return query_chunk.end;
+    }
+
   };
 
   typedef std::vector<MatchedChunk> MatchedChunkVec;

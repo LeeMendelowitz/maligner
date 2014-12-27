@@ -43,6 +43,7 @@ namespace maligner_dp {
               double sd_rate_in,
               double min_sd_in,
               double max_chunk_sizing_error_in,
+              int max_alignment_seeds_in = 1000,
               int alignments_per_reference_in = 1,
               int min_alignment_spacing_in = 1,
               int neighborhood_delta_in = 0,
@@ -55,6 +56,7 @@ namespace maligner_dp {
       sd_rate(sd_rate_in), // Fraction of reference fragment to use as standard deviation
       min_sd(min_sd_in), // minimum standard deviation imposed in sizing error model, bp
       max_chunk_sizing_error(max_chunk_sizing_error_in),
+      max_alignment_seeds(max_alignment_seeds_in),
       alignments_per_reference(alignments_per_reference_in),
       min_alignment_spacing(min_alignment_spacing_in),
       neighbor_delta(neighborhood_delta_in), // Return alignments within +/- neighbor_delta ref. fragments
@@ -91,6 +93,7 @@ namespace maligner_dp {
     double sd_rate;
     double min_sd;
     double max_chunk_sizing_error;
+    int max_alignment_seeds;
 
     int alignments_per_reference; // max number of alignments per reference
     int min_alignment_spacing; // minimum amount of spacing between multiple accepted
@@ -121,11 +124,14 @@ namespace maligner_dp {
     
   public:
 
-    AlignTask(MapDataPtr qmd, MapDataPtr rmd, const std::vector<int>* q,
-              const std::vector<int>* r, PartialSumsPtr qps,
+    AlignTask(MapDataPtr qmd, MapDataPtr rmd,
+              const std::vector<int>* q,
+              const std::vector<int>* r,
+              PartialSumsPtr qps,
               PartialSumsPtr rps,
               ScoreMatrixPtr m,
               AlignmentVec * alns,
+              bool is_forward_in,
               AlignOpts& ao) :
       query_map_data(qmd),
       ref_map_data(rmd),
@@ -136,6 +142,7 @@ namespace maligner_dp {
       ref_offset(0),
       mat(m),
       alignments(alns),
+      is_forward(is_forward_in),
       align_opts(&ao)
     {
     }
@@ -145,9 +152,10 @@ namespace maligner_dp {
               const std::vector<int>* r,
               PartialSumsPtr qps,
               PartialSumsPtr rps,
-              int ro,
+              int ref_offset_in,
               ScoreMatrixPtr m,
               AlignmentVec * alns,
+              bool is_forward_in,
               AlignOpts& ao) :
       query_map_data(qmd),
       ref_map_data(rmd),
@@ -155,14 +163,12 @@ namespace maligner_dp {
       ref(r),
       query_partial_sums(qps),
       ref_partial_sums(rps),
-      ref_offset(ro),
+      ref_offset(ref_offset_in),
       mat(m),
       alignments(alns),
+      is_forward(is_forward_in),
       align_opts(&ao)
     {
-    }
-
-    ~AlignTask() {
     }
 
     MapDataPtr query_map_data;
@@ -173,7 +179,8 @@ namespace maligner_dp {
     PartialSumsPtr ref_partial_sums;
     int ref_offset; // index of the first fragment in ref. This will be nonzero if aligning to slice of reference.
     ScoreMatrixPtr mat;
-    AlignmentVec* alignments;
+    AlignmentVec* alignments; // Alignment vector to append all found alignments to.
+    bool is_forward; // true if the alignment is forward in the reference, false otherwise.
     AlignOpts * align_opts;
   };
 
@@ -214,6 +221,7 @@ namespace maligner_dp {
 
   // Get the best alignments and store them in the task.
   int get_best_alignments(const AlignTask& task);
+  int get_best_alignments_try_all(const AlignTask& task);
 
   // Make and return an alignment from the trail through the
   // score matrix.
@@ -234,6 +242,70 @@ namespace maligner_dp {
   Alignment make_best_alignment(const AlignTask& task);
   Alignment make_best_alignment_using_partials(const AlignTask& task);
   int make_best_alignments_using_partials(const AlignTask& task);
+
+
+  ///////////////////////////////////////////////////////////////////////////
+  // A BitVector for marking locations that have been covered in a reference.
+  class BitCover {
+
+  public:
+    
+    BitCover(size_t n) : cover_(n, false) {};
+
+    // Mark locations from begin to end as covered.
+    void cover(size_t begin, size_t end) {
+      const size_t e = std::max(std::min(end, cover_.size()), begin);
+      for(size_t i = begin; i < e; i++) {
+        cover_[i] = true; 
+      }
+    }
+
+    // Return true if any part of the interval is covered
+    bool is_covered(size_t begin, size_t end) {
+      for(size_t i = begin; i < end; i++) {
+        if (cover_[i]) return true;
+      }
+      return false;
+    }
+
+    bool is_covered(size_t ind) {
+      return cover_[ind];
+    }
+
+    bool operator[](size_t ind) {
+      return cover_[ind];
+    }
+
+    // A safer version of cover that checks bounds
+    void cover_safe(size_t start, size_t end) {
+
+      size_t e = (start < end) ? end : start;
+
+      if (e > cover_.size()) {
+        cover_.resize(e, false);
+      }
+
+      for(size_t i = start; i < e; i++) {
+        cover_[i] = true;
+      }
+
+    }
+
+    void reset() {
+      const size_t N = cover_.size();
+      reset(N);
+    }
+
+    void reset(size_t n) {
+      cover_.clear();
+      cover_.resize(n, false);
+    }
+
+
+  private:
+    std::vector<bool> cover_;
+
+  };
 
 }
 

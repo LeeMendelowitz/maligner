@@ -1316,6 +1316,8 @@ namespace maligner_dp {
     const int num_cols = mat.getNumCols();
     const int last_row = m - 1;
 
+    BitCover cells_covered(n);
+
     size_t max_alignments = align_opts.alignments_per_reference * ( 1 + 2 * align_opts.neighbor_delta );
     alignments.reserve(max_alignments);
 
@@ -1323,9 +1325,8 @@ namespace maligner_dp {
     alignment_seeds.reserve(n);
 
     // Go to the last row in the matrix, and get the best score cells.
-    int index = last_row;
-    for (int i = 0; i < n; i++, index += num_rows) {
-      ScoreCell * pCell = mat.getCell(index);
+    for (int i = 0; i < n; i++) {
+      ScoreCell * pCell = mat.getCell(last_row, i);
       bool have_alignment = pCell && pCell->score_ > -INF && pCell->backPointer_;
       if (have_alignment) {
         alignment_seeds.push_back(pCell);
@@ -1335,44 +1336,56 @@ namespace maligner_dp {
     // Sort the alignment seeds in descending order of score
     std::sort(alignment_seeds.begin(), alignment_seeds.end(), ScoreCellPointerCmp);
 
-    // Iterate over these alignment seeds 
+    /////////////////////////////////////////////////////////////////////////////////
+    // For each alignment seed, build the Alignment.
+    // Rescale the alignment if necessary.
+    // Select non-overlapping alignments.
     const size_t num_seeds = alignment_seeds.size();
     int num_seeds_selected = 0;
     for (int s = 0;
-         s < num_seeds && num_seeds_selected < align_opts.alignments_per_reference;
+         s < num_seeds && num_seeds_selected < align_opts.max_alignment_seeds;
          s++)
     {
 
       ScoreCell * pCell = alignment_seeds[s];
       int seed_col = pCell->r_;
-      if (!mat.cell_in_play(seed_col)) continue;
+      if (cells_covered[seed_col]) continue;
 
       // Build the alignment
       Alignment a(alignment_from_cell(task, pCell));
-  
+
+      // If the alignment overlaps an existing alignment, ignore.
+      // TODO: We select alignments to build based on the *non*-rescaled score.
+      // Should we build all alignments, rescale, sort based on rescaled score,
+      // and select non-overlapping alignments based on rescaled score?
+      // This will be a little extra computation.
+      if ( cells_covered.is_covered(a.ref_start(), a.ref_end()) ) {
+        continue;
+      }
+
       num_seeds_selected++;
 
-      // Retrieve alignments from neighbors, if requested.
+      // Retrieve alignments from neighbors, if requested, and select the 
+      // one with the best rescaled score.
       if(align_opts.neighbor_delta > 0)
       {
 
         // Do a neighborhood search for other alignments in the vicinity of this one.
-        neighborhood_alignments.push_back(a);
+        neighborhood_alignments.clear();
+        neighborhood_alignments.push_back(std::move(a));
 
-        int lb = seed_col - align_opts.neighbor_delta;
-        int ub = seed_col + align_opts.neighbor_delta + 1;
-        if (lb < 0) lb = 0;
-        if (ub > n) ub = n;
+        int lb = max(seed_col - align_opts.neighbor_delta, 0);
+        int ub = min(seed_col + align_opts.neighbor_delta + 1, n);
         for (int col = lb; col < ub; col++) {
           if (col == seed_col) continue;
           ScoreCell * p_neighbor = mat.getCell(last_row, col);
           bool have_alignment = p_neighbor->score_ > -INF && p_neighbor->backPointer_;
           if (!have_alignment) continue;
           Alignment a(alignment_from_cell(task, p_neighbor));
-          neighborhood_alignments.push_back(a);
+          neighborhood_alignments.push_back(std::move(a));
         }
 
-        // Sort the neighborhood alignments in ascending order of score.
+        // Sort the neighborhood alignments in ascending order of rescaled score.
         std::sort(neighborhood_alignments.begin(),
                   neighborhood_alignments.end(),
                   alignment_rescaled_score_comp);
@@ -1392,29 +1405,82 @@ namespace maligner_dp {
 
         // Save the best alignment (i.e. with the lowest "edit distance" score)
         assert(neighborhood_alignments.size() > 0);
-        alignments.push_back(neighborhood_alignments[0]);
-        neighborhood_alignments.clear();
+        Alignment& a = neighborhood_alignments[0];
+        cells_covered.cover(a.ref_start(), a.ref_end());
+        alignments.push_back(std::move(a));
 
-      } else {
-
-        alignments.push_back(a);
-
+      } else { // if neighbor_delta > 0
+        cells_covered.cover(a.ref_start(), a.ref_end());
+        alignments.push_back(std::move(a));
       }
 
       // Mark neighboring cells as out of play.
       {
-        int lb = seed_col - align_opts.min_alignment_spacing + 1;
-        int ub = seed_col + align_opts.min_alignment_spacing;
-        if (lb < 0) lb = 0;
-        if (ub > n) ub = n;
-        for (int col = lb; col < ub; col++) {
-          mat.mark_cell_in_play(col, false);
-        }
+        int lb = max(seed_col - align_opts.min_alignment_spacing + 1, 0);
+        int ub = min(seed_col + align_opts.min_alignment_spacing, n);
+        cells_covered.cover(lb, ub);
       }
 
     }
 
     return num_seeds_selected;
+  }
+
+
+  /////////////////////////////////////////////////////////////////////
+  // Get the best alignments in the task.
+  // Try *all* alignment seeds (disregard any limits on the number of alignment seeds or
+  //   alignments per reference)
+  // Rescale *all* alignments
+  // Select non-overlapping alignments in order of rescaled score.
+  int get_best_alignments_try_all(const AlignTask& task) {
+
+    // Go to the last row of the ScoreMatrix and identify the best score.
+    AlignOpts& align_opts = *task.align_opts;
+    const IntVec& query = *task.query;
+    const IntVec& ref = *task.ref;
+    ScoreMatrix& mat = *task.mat;
+    AlignmentVec& alignments = *task.alignments;
+    
+    AlignmentRescaledScoreComp alignment_rescaled_score_comp;
+
+    const int m = query.size() + 1;
+    const int n = ref.size() + 1;
+    const int num_rows = mat.getNumRows();
+    const int num_cols = mat.getNumCols();
+    const int last_row = m - 1;
+
+    // Go to the last row in the matrix, and get all alignments.
+    AlignmentVec my_alignments;
+    for (int i = 0; i < n; i++) {
+      ScoreCell * pCell = mat.getCell(last_row, i);
+      bool have_alignment = pCell && pCell->score_ > -INF && pCell->backPointer_;
+      if (have_alignment) {
+        Alignment a = alignment_from_cell(task, pCell);
+        my_alignments.push_back(std::move(a));
+      }
+    }
+
+    // Sort the alignment in descending order score
+    std::sort(my_alignments.begin(), my_alignments.end(), AlignmentRescaledScoreComp());
+    
+    int num_alignments = 0;
+    BitCover cells_covered(n);
+    const size_t N = my_alignments.size();
+    for(size_t i = 0; i < N; i++) {
+
+      Alignment& aln = my_alignments[i];
+      if(cells_covered.is_covered(aln.ref_start(), aln.ref_end())) {
+        continue;
+      }
+
+      cells_covered.cover(aln.ref_start(), aln.ref_end());
+      alignments.push_back(std::move(aln));
+      num_alignments++;
+
+    }
+
+    return num_alignments;
   }
 
 
@@ -1444,6 +1510,8 @@ namespace maligner_dp {
     const IntVec& query = *task.query;
     const IntVec& ref = *task.ref;
     const AlignOpts& align_opts = *task.align_opts;
+    const PartialSums& query_partial_sums = *task.query_partial_sums;
+    const PartialSums& ref_partial_sums = *task.ref_partial_sums;
 
     query_chunks.clear();
     query_chunks.reserve(ts-1);
@@ -1486,8 +1554,14 @@ namespace maligner_dp {
 
       // Build chunks. Specify indices of chunks with respect to the original maps,
       // if aligning a slice of the map.
-      int q_size = sum(query, m, ml);
-      int r_size = sum(ref, n, nl);
+
+      // Commenting out, use partial sums instead
+      // int q_size = sum(query, m, ml);
+      // int r_size = sum(ref, n, nl);
+
+      int q_size = query_partial_sums[ml - 1][ml - m - 1];
+      int r_size = ref_partial_sums[nl - 1][nl - n - 1];
+
       query_chunks.emplace_back(m, ml, q_size, is_query_boundary);
       ref_chunks.emplace_back(n + task.ref_offset, nl + task.ref_offset, r_size, is_ref_boundary);
 
@@ -1567,7 +1641,9 @@ namespace maligner_dp {
       }
 
       // return Alignment(std::move(matched_chunks), total_score);
-      return Alignment(matched_chunks, total_score, *task.query_map_data, *task.ref_map_data);
+      return Alignment(matched_chunks, total_score,
+             *task.query_map_data, *task.ref_map_data,
+             task.is_forward);
   }
 
   Alignment alignment_from_cell(const AlignTask& task, ScoreCell* p_cell) {
@@ -1716,7 +1792,7 @@ namespace maligner_dp {
     fill_score_matrix_using_partials(task);
 
     // get the best alignments and store the results in the task.
-    int num_alignments = get_best_alignments(task);
+    int num_alignments = get_best_alignments_try_all(task);
     return num_alignments;
   }
 

@@ -53,18 +53,20 @@ namespace maligner_dp {
        << "query_miss_rate" << "\t"
        << "ref_miss_rate" << "\t"
        << "total_score" << "\t"
+       << "total_rescaled_score" << "\t"
        << "sizing_score" << "\t"
+       << "sizing_score_rescaled" << "\t"
+       << "query_scaling_factor" << "\t"
        << "chunk_string" << "\n";
     return os;
   }
 
 
-  void print_alignment(std::ostream& os, const Alignment& aln,
-    bool is_forward) {
+  void print_alignment(std::ostream& os, const Alignment& aln) {
 
     os << aln.query_map_data.map_name_ << "\t"
        << aln.ref_map_data.map_name_ << "\t"
-       << (is_forward ? "F" : "R") << "\t"
+       << (aln.is_forward ? "F" : "R") << "\t"
        << aln << "\n";
   }
 
@@ -72,16 +74,18 @@ namespace maligner_dp {
   
   std::ostream& operator<<(std::ostream& os, const Alignment& aln) {
 
-
     os << aln.matched_chunks.size() << "\t"
        << aln.query_misses << "\t"
        << aln.ref_misses << "\t"
        << aln.query_miss_rate << "\t"
        << aln.ref_miss_rate << "\t"
        << aln.total_score << "\t"
-       << aln.score.sizing_score << "\t";
+       << aln.total_rescaled_score << "\t"
+       << aln.score.sizing_score << "\t"
+       << aln.rescaled_score.sizing_score << "\t"
+       << aln.query_scaling_factor << "\t";
 
-    for(auto& mc : aln.matched_chunks) {
+    for(auto& mc : aln.rescaled_matched_chunks) {
       os << mc << ";";
     }
 

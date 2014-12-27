@@ -27,15 +27,18 @@ namespace maligner_dp {
     Alignment() : is_valid(false) {
     }
 
-    Alignment(const MatchedChunkVec& mc, const Score& s, const MapData& query_md,
-      const MapData& ref_md) :
+    Alignment(const MatchedChunkVec& mc, const Score& s,
+      const MapData& query_md,
+      const MapData& ref_md,
+      bool is_forward__) :
       query_map_data(query_md),
       ref_map_data(ref_md),
       matched_chunks(mc),
       rescaled_matched_chunks(matched_chunks),
       score(s),
       rescaled_score(s),
-      query_scaling_factor(1.0)
+      query_scaling_factor(1.0),
+      is_forward(is_forward__)
     {
       summarize();
     }
@@ -58,6 +61,24 @@ namespace maligner_dp {
 
     // Reset the summary
     void reset_stats();
+
+    int ref_start() const {
+      if (is_valid) {
+        const MatchedChunk& first = matched_chunks.front();
+        return first.ref_start();
+      }
+      return 0;
+    }
+
+    int ref_end() const {
+      if (is_valid) {
+        const MatchedChunk& last = matched_chunks.back();
+        return last.ref_end();
+      }
+      return 0;
+    }
+
+    void flip_query_coords();
 
     // Attributes
     MapData query_map_data;
@@ -82,6 +103,7 @@ namespace maligner_dp {
     int ref_interior_size; // total size of non-boundary fragments
     double interior_size_ratio;
     double query_scaling_factor;
+    bool is_forward;
     bool is_valid;
 
   };
@@ -120,6 +142,11 @@ namespace maligner_dp {
 
       is_valid = !matched_chunks.empty();
 
+      // Fix query coordinates to match forward coordinates of query
+      if(!is_forward) {
+        flip_query_coords(); 
+      }
+
       std::size_t l(matched_chunks.size());
       for (std::size_t i = 0; i < l; i++) {
         const MatchedChunk& mc = matched_chunks[i];
@@ -155,6 +182,7 @@ namespace maligner_dp {
 
   inline void Alignment::reset_stats() {
       is_valid = false;
+      is_forward = false;
       query_misses = 0;
       ref_misses = 0;
       query_miss_rate = 0;
@@ -169,8 +197,30 @@ namespace maligner_dp {
       total_rescaled_score = 0;
   }
 
+  // Flip the query coordinates in every matched chunk
+  inline void Alignment::flip_query_coords() {
+    const size_t num_chunks {matched_chunks.size()};
+    const size_t num_query_frags = query_map_data.num_frags_;
+    for (size_t i = 0; i < num_chunks; i++) {
 
-  void print_alignment(std::ostream& os, const Alignment& aln, bool is_forward);
+      MatchedChunk& mc1 = matched_chunks[i];
+      MatchedChunk& mc2 = rescaled_matched_chunks[i];
+
+      Chunk& qc = mc1.query_chunk;
+      std::swap(qc.start, qc.end);
+      qc.start = num_query_frags - qc.start;
+      qc.end = num_query_frags - qc.end;
+
+      qc = mc2.query_chunk;
+      std::swap(qc.start, qc.end);
+      qc.start = num_query_frags - qc.start;
+      qc.end = num_query_frags - qc.end;
+
+    }
+  }
+
+
+  void print_alignment(std::ostream& os, const Alignment& aln);
 
   std::ostream& operator<<(std::ostream& os, const Alignment& aln);
 
