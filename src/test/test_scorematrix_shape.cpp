@@ -33,6 +33,8 @@
 // common includes
 #include "timer.h"
 
+// #define DEBUG
+
 int main(int argc, char* argv[]) {
 
   using lmm_utils::Timer;
@@ -42,16 +44,16 @@ int main(int argc, char* argv[]) {
   Timer timer;
 
   size_t num_rows = 100;
-  size_t num_cols = 10000;
+  size_t num_cols = 50000;
 
 
-  size_t num_rows2 = 1000;
-  size_t num_cols2 = 1000;
+  size_t num_rows2 = 50000;
+  size_t num_cols2 = 100;
 
 
 
-  size_t row_delta = 5;
-  size_t col_delta = 5;
+  size_t row_delta = 1;
+  size_t col_delta = 1;
 
   // num_cols = 10;
   // num_rows = 3;
@@ -68,7 +70,7 @@ int main(int argc, char* argv[]) {
   timer.start();
   ScoreCellVec& sm_data = sm.getData();
   for(int i = 0; i < sm_data.size(); i++) {
-    sm_data[i].score_ = 0.0001;
+    sm_data[i].score_ = 1.0;
   }
   timer.end();
 
@@ -91,7 +93,7 @@ int main(int argc, char* argv[]) {
 
           int max_row_delta = min(row_delta, row);
 
-            #if DEBUG > 0
+            #ifdef DEBUG
             std::cerr << " col: " << col
                       << " row: " << row 
                       << " max_col_delta: " << max_col_delta 
@@ -101,7 +103,7 @@ int main(int argc, char* argv[]) {
           for(int k = 1; k <= max_col_delta; k++) {
           for(int l = 1; l <= max_row_delta; l++) {
 
-              #if DEBUG > 0
+              #ifdef DEBUG
               std::cerr << " col: " << col
                         << " row: " << row 
                         << " k: " << k
@@ -123,11 +125,13 @@ int main(int argc, char* argv[]) {
     cerr << "done iterator down columns: " << timer << "\n";
   }
   cerr << "*******************************************************\n";
+
   //////////////////////////////////////////////////////////////
   {
     sm.resize(num_rows2, num_cols2);
+    sm_data = sm.getData();
     for(int i = 0; i < sm_data.size(); i++) {
-      sm_data[i].score_ = 0.0001;
+      sm_data[i].score_ = 1.0;
     }
     cerr << "col row col row using get cell\n"
        << "(" << sm.getNumRows() << "x" << sm.getNumCols() <<") size=" << sm.getSize() << "\n";
@@ -141,7 +145,7 @@ int main(int argc, char* argv[]) {
 
           int max_row_delta = min(row_delta, row);
 
-            #if DEBUG > 0
+            #ifdef DEBUG
             std::cerr << " col: " << col
                       << " row: " << row 
                       << " max_col_delta: " << max_col_delta 
@@ -151,7 +155,7 @@ int main(int argc, char* argv[]) {
           for(int k = 1; k <= max_col_delta; k++) {
           for(int l = 1; l <= max_row_delta; l++) {
 
-              #if DEBUG > 0
+              #ifdef DEBUG
               std::cerr << " col: " << col
                         << " row: " << row 
                         << " k: " << k
