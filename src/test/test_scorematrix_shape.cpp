@@ -52,8 +52,8 @@ int main(int argc, char* argv[]) {
 
 
 
-  size_t row_delta = 1;
-  size_t col_delta = 1;
+  size_t row_delta = 2;
+  size_t col_delta = 5;
 
   // num_cols = 10;
   // num_rows = 3;
@@ -128,6 +128,8 @@ int main(int argc, char* argv[]) {
 
   //////////////////////////////////////////////////////////////
   {
+    size_t row_delta = 5;
+    size_t col_delta = 2;
     sm.resize(num_rows2, num_cols2);
     sm_data = sm.getData();
     for(int i = 0; i < sm_data.size(); i++) {
