@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
   const int num_trials = 100;
 
   timer.start();
-  ScoreMatrix sm(num_rows, num_cols);
+  ScoreMatrix<column_order_tag> sm(num_rows, num_cols);
   
   timer.end();
 

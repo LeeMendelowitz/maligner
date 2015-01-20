@@ -106,7 +106,7 @@ namespace maligner_dp {
     // Unpack the alignment task
     const IntVec& query = *align_task.query;
     const IntVec& ref = *align_task.ref;
-    ScoreMatrix& mat = *align_task.mat;
+    ColumnScoreMatrix& mat = *align_task.mat;
     AlignOpts& align_opts = *align_task.align_opts;
 
     mat.reset();
@@ -267,7 +267,7 @@ namespace maligner_dp {
     const DoubleVec& ref_miss_penalties = align_opts.ref_miss_penalties;
     const DoubleVec& query_miss_penalties = align_opts.query_miss_penalties;
 
-    ScoreMatrix& mat = *align_task.mat;
+    ColumnScoreMatrix& mat = *align_task.mat;
 
     // mat.reset();
 
@@ -434,7 +434,7 @@ namespace maligner_dp {
 
     typedef priority_queue< ScoreCell*, vector<ScoreCell*>, greater<ScoreCell*> > CellQueue;
 
-    ScoreMatrix& mat = *align_task.mat;
+    ColumnScoreMatrix& mat = *align_task.mat;
     mat.reset();
     AlignOpts& align_opts = *align_task.align_opts;
 
@@ -667,7 +667,7 @@ namespace maligner_dp {
     const PartialSums& ref_partial_sums = *align_task.ref_partial_sums;
 
 
-    ScoreMatrix& mat = *align_task.mat;
+    ColumnScoreMatrix& mat = *align_task.mat;
     mat.reset();
     AlignOpts& align_opts = *align_task.align_opts;
 
@@ -892,7 +892,7 @@ namespace maligner_dp {
     const PartialSums& query_partial_sums = *align_task.query_partial_sums;
     const PartialSums& ref_partial_sums = *align_task.ref_partial_sums;
 
-    ScoreMatrix& mat = *align_task.mat;
+    ColumnScoreMatrix& mat = *align_task.mat;
     mat.reset();
     AlignOpts& align_opts = *align_task.align_opts;
 
@@ -1063,7 +1063,7 @@ namespace maligner_dp {
     const PartialSums& query_partial_sums = *align_task.query_partial_sums;
     const PartialSums& ref_partial_sums = *align_task.ref_partial_sums;
 
-    ScoreMatrix& mat = *align_task.mat;
+    ColumnScoreMatrix& mat = *align_task.mat;
     mat.reset();
     AlignOpts& align_opts = *align_task.align_opts;
 
@@ -1244,7 +1244,7 @@ namespace maligner_dp {
     // Go to the last row of the ScoreMatrix and identify the best score.
     const IntVec& query = *task.query;
     const IntVec& ref = *task.ref;
-    ScoreMatrix& mat = *task.mat;
+    ColumnScoreMatrix& mat = *task.mat;
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
@@ -1304,7 +1304,7 @@ namespace maligner_dp {
     AlignOpts& align_opts = *task.align_opts;
     const IntVec& query = *task.query;
     const IntVec& ref = *task.ref;
-    ScoreMatrix& mat = *task.mat;
+    ColumnScoreMatrix& mat = *task.mat;
     AlignmentVec& alignments = *task.alignments;
     AlignmentVec neighborhood_alignments;
     neighborhood_alignments.reserve(1 + 2 * align_opts.neighbor_delta );
@@ -1439,7 +1439,7 @@ namespace maligner_dp {
     AlignOpts& align_opts = *task.align_opts;
     const IntVec& query = *task.query;
     const IntVec& ref = *task.ref;
-    ScoreMatrix& mat = *task.mat;
+    ColumnScoreMatrix& mat = *task.mat;
     AlignmentVec& alignments = *task.alignments;
     
     AlignmentRescaledScoreComp alignment_rescaled_score_comp;

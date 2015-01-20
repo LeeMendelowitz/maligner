@@ -6,7 +6,7 @@ set(DP_SOURCES
   "align.cc"
   "globals.cc"
   "ScoreCell.cc"
-  "ScoreMatrix.cc"
+  # "ScoreMatrix.cc"
   "alignment.cc"
   "chunk.cc"
   "matched_chunk.cc"

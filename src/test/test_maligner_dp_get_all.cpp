@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
  cerr << "Wrapped " << map_db.size() << " reference maps.\n";
 
  // Generate a single ScoreMatrix to use throughout this program.
- ScoreMatrix sm;
+ ScoreMatrix<column_order_tag> sm;
  MapReader query_map_reader(maligner_dp::opt::query_maps_file);
  Map query_map;
  AlignmentVec alns;

@@ -13,10 +13,6 @@
 
 namespace maligner_dp {
 
-
-  // Forward Declarations
-  class ScoreMatrix;
-
   typedef std::vector<IntVec> PartialSums;
   using std::shared_ptr;
 

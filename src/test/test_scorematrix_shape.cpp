@@ -43,14 +43,10 @@ int main(int argc, char* argv[]) {
 
   Timer timer;
 
+  cerr << "Size of score cell:  " << sizeof(ScoreCell) << " bytes\n";
+
   size_t num_rows = 100;
   size_t num_cols = 50000;
-
-
-  size_t num_rows2 = 50000;
-  size_t num_cols2 = 100;
-
-
 
   size_t row_delta = 2;
   size_t col_delta = 5;
@@ -59,28 +55,24 @@ int main(int argc, char* argv[]) {
   // num_rows = 3;
   const int num_trials = 100;
 
-  timer.start();
-  ScoreMatrix sm(num_rows, num_cols);
-  
-  timer.end();
 
-  cerr << "Size of score cell:  " << sizeof(ScoreCell) << " bytes\n";
-  cerr << "Made score matrix: " << timer << "\n";
-
-  timer.start();
-  ScoreCellVec& sm_data = sm.getData();
-  for(int i = 0; i < sm_data.size(); i++) {
-    sm_data[i].score_ = 1.0;
-  }
-  timer.end();
-
-  cerr << "Set score values..." <<  timer << "\n";
-
-
-  
   cerr << "*******************************************************\n";
   //////////////////////////////////////////////////////////////
   {
+
+    timer.start();
+    ScoreMatrix<column_order_tag> sm(num_rows, num_cols);
+    timer.end();
+    cerr << "Made column order score matrix: " << timer << "\n";
+
+    timer.start();
+    ScoreCellVec& sm_data = sm.getData();
+    for(int i = 0; i < sm_data.size(); i++) {
+      sm_data[i].score_ = 1.0;
+    }
+    timer.end();
+    cerr << "Set score values..." <<  timer << "\n";
+
     cerr << "col row col row using get cell\n"
        << "(" << sm.getNumRows() << "x" << sm.getNumCols() <<") size=" << sm.getSize() << "\n";
     double sum = 0.0;
@@ -122,30 +114,39 @@ int main(int argc, char* argv[]) {
     }
     timer.end();
     cerr << "sum=" << sum << "\n";
-    cerr << "done iterator down columns: " << timer << "\n";
+    cerr << "done " << timer << "\n";
   }
   cerr << "*******************************************************\n";
 
   //////////////////////////////////////////////////////////////
   {
-    size_t row_delta = 5;
-    size_t col_delta = 2;
-    sm.resize(num_rows2, num_cols2);
-    sm_data = sm.getData();
+
+    timer.start();
+    ScoreMatrix<row_order_tag> sm(num_rows, num_cols);
+    timer.end();
+    cerr << "Made row order score matrix: " << timer << "\n";
+
+    timer.start();
+    ScoreCellVec& sm_data = sm.getData();
     for(int i = 0; i < sm_data.size(); i++) {
       sm_data[i].score_ = 1.0;
     }
-    cerr << "col row col row using get cell\n"
+    timer.end();
+    cerr << "Set score values..." <<  timer << "\n";
+
+    cerr << "row col row col using get cell\n"
        << "(" << sm.getNumRows() << "x" << sm.getNumCols() <<") size=" << sm.getSize() << "\n";
     double sum = 0.0;
     timer.start();
     for(int itrial = 0; itrial < num_trials; itrial++) {
 
-      for(size_t col = 0; col < num_cols2; col++) {
-        int max_col_delta = min(col_delta, col);
-        for(size_t row = 0; row < num_rows2; row++) {
+      for(size_t row = 0; row < num_rows; row++) {
 
-          int max_row_delta = min(row_delta, row);
+        int max_row_delta = min(row_delta, row);
+
+        for(size_t col = 0; col < num_cols; col++) {
+
+          int max_col_delta = min(col_delta, col);
 
             #ifdef DEBUG
             std::cerr << " col: " << col
@@ -154,8 +155,10 @@ int main(int argc, char* argv[]) {
                       << " max_row_delta: " << max_row_delta
                       << "\n";
             #endif
+
+          for(int l = 1; l <= max_row_delta; l++) {         
           for(int k = 1; k <= max_col_delta; k++) {
-          for(int l = 1; l <= max_row_delta; l++) {
+          
 
               #ifdef DEBUG
               std::cerr << " col: " << col
@@ -176,10 +179,10 @@ int main(int argc, char* argv[]) {
     }
     timer.end();
     cerr << "sum=" << sum << "\n";
-    cerr << "done iterator down columns: " << timer << "\n";
+    cerr << "done " << timer << "\n";
   }
+  cerr << "*******************************************************\n";
 
-  
 
   return EXIT_SUCCESS;
 
