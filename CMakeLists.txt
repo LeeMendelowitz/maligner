@@ -54,6 +54,4 @@ message(STATUS "MALIGNER_LIB_DIR : ${MALIGNER_LIB_DIR}")
 message(STATUS "MALIGNER_BIN_DIR : ${MALIGNER_BIN_DIR}")
 
 include_directories(${MALIGNER_BINARY_DIR}/src/dp ${MALIGNER_BINARY_DIR}/src/kmer_match)
-
 add_subdirectory (src)
-

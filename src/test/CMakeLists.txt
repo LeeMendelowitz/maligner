@@ -15,6 +15,11 @@ set(test_scorematrix_ijkl_src "test_scorematrix_ijkl.cpp")
 add_executable(test_scorematrix_ijkl ${test_scorematrix_ijkl_src})
 target_link_libraries(test_scorematrix_ijkl dp common)
 
+set(test_scorematrix_shape_src "test_scorematrix_shape.cpp")
+add_executable(test_scorematrix_shape ${test_scorematrix_shape_src})
+target_link_libraries(test_scorematrix_shape dp common)
+
+
 add_executable(test_maligner_dp "test_maligner_dp.cpp")
 target_link_libraries(test_maligner_dp dp kmer_match common)
 
@@ -22,4 +27,4 @@ add_executable(test_maligner_dp_get_all "test_maligner_dp_get_all.cpp")
 target_link_libraries(test_maligner_dp_get_all dp kmer_match common)
 
 # install directory
-install(TARGETS test_scorematrix test_scorematrix_ijkl test_maligner_dp test_maligner_dp_get_all DESTINATION "${MALIGNER_BIN_DIR}")
+install(TARGETS test_scorematrix test_scorematrix_ijkl test_scorematrix_shape test_maligner_dp test_maligner_dp_get_all DESTINATION "${MALIGNER_BIN_DIR}")

@@ -1,3 +1,10 @@
+// Test whether the shape of the score matrix is important for the iteration.
+// ScoreMatrix is still column order.
+// For example: try 100 x 1000000 vs 10000 x 10000
+//
+// A ScoreCell is 32 bytes, so a column of 100 is 32kb, a scorematrix of 10000 is 3200kb.
+// A scorematrix of 3200kb is likely to have more cache misses?
+
 #include <iostream>
 #include <algorithm>
 #include <vector>
@@ -33,9 +40,16 @@ int main(int argc, char* argv[]) {
   using namespace std;
 
   Timer timer;
-  
-  size_t num_cols = 50000;
+
   size_t num_rows = 100;
+  size_t num_cols = 10000;
+
+
+  size_t num_rows2 = 1000;
+  size_t num_cols2 = 1000;
+
+
+
   size_t row_delta = 5;
   size_t col_delta = 5;
 
@@ -54,67 +68,19 @@ int main(int argc, char* argv[]) {
   timer.start();
   ScoreCellVec& sm_data = sm.getData();
   for(int i = 0; i < sm_data.size(); i++) {
-    sm_data[i].score_ = i;
+    sm_data[i].score_ = 0.0001;
   }
   timer.end();
 
   cerr << "Set score values..." <<  timer << "\n";
 
 
-  ///////////////////////////////////////////////////////////
-  // Try to go straight across without using get cell
-  {
-    cerr << "col row col row, straight across.\n"
-         << "(" << num_rows << "x" << num_cols <<")\n";
-    double sum = 0.0;
-    timer.start();
-    for(int itrial = 0; itrial < num_trials; itrial++) {
-
-      for(size_t col = 0; col < num_cols; col++) {
-        size_t col_offset = col*num_rows;
-
-        int max_col_delta = min(col_delta, col);
-        for(size_t row = 0; row < num_rows; row++) {
-
-          int max_row_delta = min(row_delta, row);
-
-            #if DEBUG > 0
-            std::cerr << " col: " << col
-                      << " row: " << row 
-                      << " max_col_delta: " << max_col_delta 
-                      << " max_row_delta: " << max_row_delta
-                      << "\n";
-            #endif
-          for(int k = 1; k <= max_col_delta; k++) {
-            size_t col_offset_delta = k*num_rows;
-          for(int l = 1; l <= max_row_delta; l++) {
-
-              #if DEBUG > 0
-              std::cerr << " col: " << col
-                        << " row: " << row 
-                        << " k: " << k
-                        << " l: " << l
-                        << " row_sel: " << row - l
-                        << " col_sel: " << col - k << "\n";
-              #endif
-
-              const ScoreCell* cell = &sm_data[col_offset - col_offset_delta + row - l];         
-              sum += cell->score_;
-            }
-          }
-        }
-      }
-
-    }
-    timer.end();
-    cerr << "sum=" << sum << "\n";
-    cerr << "done: " << timer << "\n";
-  }
+  
   cerr << "*******************************************************\n";
   //////////////////////////////////////////////////////////////
   {
     cerr << "col row col row using get cell\n"
-         << "(" << num_rows << "x" << num_cols <<")\n";
+       << "(" << sm.getNumRows() << "x" << sm.getNumCols() <<") size=" << sm.getSize() << "\n";
     double sum = 0.0;
     timer.start();
     for(int itrial = 0; itrial < num_trials; itrial++) {
@@ -157,17 +123,21 @@ int main(int argc, char* argv[]) {
     cerr << "done iterator down columns: " << timer << "\n";
   }
   cerr << "*******************************************************\n";
-
+  //////////////////////////////////////////////////////////////
   {
-    cerr << "col row row col\n" 
-         << "(" << num_rows << "x" << num_cols <<")\n";
+    sm.resize(num_rows2, num_cols2);
+    for(int i = 0; i < sm_data.size(); i++) {
+      sm_data[i].score_ = 0.0001;
+    }
+    cerr << "col row col row using get cell\n"
+       << "(" << sm.getNumRows() << "x" << sm.getNumCols() <<") size=" << sm.getSize() << "\n";
     double sum = 0.0;
     timer.start();
     for(int itrial = 0; itrial < num_trials; itrial++) {
 
-      for(size_t col = 0; col < num_cols; col++) {
+      for(size_t col = 0; col < num_cols2; col++) {
         int max_col_delta = min(col_delta, col);
-        for(size_t row = 0; row < num_rows; row++) {
+        for(size_t row = 0; row < num_rows2; row++) {
 
           int max_row_delta = min(row_delta, row);
 
@@ -178,10 +148,8 @@ int main(int argc, char* argv[]) {
                       << " max_row_delta: " << max_row_delta
                       << "\n";
             #endif
-
-          for(int l = 1; l <= max_row_delta; l++) {
           for(int k = 1; k <= max_col_delta; k++) {
-            
+          for(int l = 1; l <= max_row_delta; l++) {
 
               #if DEBUG > 0
               std::cerr << " col: " << col
@@ -202,56 +170,10 @@ int main(int argc, char* argv[]) {
     }
     timer.end();
     cerr << "sum=" << sum << "\n";
-    cerr << "column row row column: " << timer << "\n";
+    cerr << "done iterator down columns: " << timer << "\n";
   }
-  cerr << "*******************************************************\n";
 
-  //////////////////////////////////////////////////////////////
-  {
-    cerr << "(row col row col)\n"
-         << "(" << num_rows << "x" << num_cols <<")\n";
-    double sum = 0.0;
-    timer.start();
-    for(int itrial = 0; itrial < num_trials; itrial++) {
-
-      for(size_t row = 0; row < num_rows; row++) {
-        int max_row_delta = min(row_delta, row);
-        for(size_t col = 0; col < num_cols; col++) {
-          int max_col_delta = min(col_delta, col);
-
-          #if DEBUG > 0
-            std::cerr << " col: " << col
-                      << " row: " << row 
-                      << " max_col_delta: " << max_col_delta 
-                      << " max_row_delta: " << max_row_delta
-                      << "\n";
-          #endif
-
-          for(int k = 1; k <= max_row_delta; k++) {
-            for(int l = 1; l <= max_col_delta; l++) {
-
-              #if DEBUG > 0
-              std::cerr << " col: " << col
-                        << " row: " << row 
-                        << " k: " << k
-                        << " l: " << l
-                        << " row_sel: " << row - k
-                        << " col_sel: " << col - l << "\n";
-              #endif
-
-              const ScoreCell* cell = sm.getCell(row - k, col - l);
-              sum += cell->score_;
-            }
-          }
-        }
-      }
-
-    }
-    timer.end();
-    cerr << "sum=" << sum << "\n";
-    cerr << "done iterator across rows: " << timer << "\n";
-  }
-  cerr << "*******************************************************\n";
+  
 
   return EXIT_SUCCESS;
 
