@@ -1,15 +1,16 @@
+#include <iostream>
+#include <vector>
+#include <utility>
+#include <memory>
+#include <string>
+#include <cassert>
+#include <queue>
 
 #include "ScoreMatrix.h"
 #include "ScoreCell.h"
 #include "types.h"
 #include "alignment.h"
 #include "map_data.h"
-
-#include <iostream>
-#include <vector>
-#include <utility>
-#include <memory>
-#include <string>
 
 namespace maligner_dp {
 
@@ -116,9 +117,14 @@ namespace maligner_dp {
   // Note this just bundles non-const pointers
   // to external objects into a single object
 
+  template<class ScoreMatrixType>
   class AlignTask {
-    
+
+    typedef ScoreMatrixType* ScoreMatrixPtr;
+
   public:
+
+
 
     AlignTask(MapDataPtr qmd, MapDataPtr rmd,
               const std::vector<int>* q,
@@ -178,11 +184,11 @@ namespace maligner_dp {
     AlignmentVec* alignments; // Alignment vector to append all found alignments to.
     bool is_forward; // true if the alignment is forward in the reference, false otherwise.
     AlignOpts * align_opts;
+
   };
 
-  std::ostream& print_align_task(std::ostream& os, const AlignTask& task);
-
-
+  template<class ScoreMatrixType>
+  std::ostream& print_align_task(std::ostream& os, const AlignTask<ScoreMatrixType>& task);
 
 
   ////////////////////////////////
@@ -196,35 +202,54 @@ namespace maligner_dp {
     The ScoreMatrix should already have the same number of columns as the reference,
     and should have enough rows to accomodate the query.
   */
-  void fill_score_matrix(const AlignTask& task);
-  void fill_score_matrix_using_partials(const AlignTask& align_task);
-  void fill_score_matrix_using_partials_with_cell_queue(const AlignTask& align_task);
-  void fill_score_matrix_using_partials_with_cell_mark(const AlignTask& align_task);
-  void fill_score_matrix_using_partials_no_size_penalty(const AlignTask& align_task);
-  void fill_score_matrix_using_partials_with_size_penalty_class(const AlignTask& align_task);
+  template<class ScoreMatrixType>
+  void fill_score_matrix(const AlignTask<ScoreMatrixType>& task);
+
+  template<class ScoreMatrixType>
+  void fill_score_matrix_using_partials(const AlignTask<ScoreMatrixType>& align_task);
+
+  template<class ScoreMatrixType>
+  void fill_score_matrix_using_partials_with_cell_queue(const AlignTask<ScoreMatrixType>& align_task);
+
+  template<class ScoreMatrixType>
+  void fill_score_matrix_using_partials_with_cell_mark(const AlignTask<ScoreMatrixType>& align_task);
+
+  template<class ScoreMatrixType>
+  void fill_score_matrix_using_partials_no_size_penalty(const AlignTask<ScoreMatrixType>& align_task);
+
+  template<class ScoreMatrixType>
+  void fill_score_matrix_using_partials_with_size_penalty_class(const AlignTask<ScoreMatrixType>& align_task);
+
 
   // Build the trail which starts at pCell by following its backpointers.
   void build_trail(ScoreCell* pCell, ScoreCellPVec& trail);
 
   // Create a vector of query chunks and reference chunks for the given trail.
-  void build_chunk_trail(const AlignTask& task, ScoreCellPVec& trail, ChunkVec& query_chunks, ChunkVec& ref_chunks);
+  template<class ScoreMatrixType>
+  void build_chunk_trail(const AlignTask<ScoreMatrixType>& task, ScoreCellPVec& trail, ChunkVec& query_chunks, ChunkVec& ref_chunks);
 
   // Print the vector of query chunks and reference chunks.
   void print_chunk_trail(const ChunkVec& query_chunks, const ChunkVec& ref_chunks);
 
   // Build the trail for the best alignment.
-  bool get_best_alignment_trail(const AlignTask& task, ScoreCellPVec& trail);
+  template<class ScoreMatrixType>
+  bool get_best_alignment_trail(const AlignTask<ScoreMatrixType>& task, ScoreCellPVec& trail);
 
   // Get the best alignments and store them in the task.
-  int get_best_alignments(const AlignTask& task);
-  int get_best_alignments_try_all(const AlignTask& task);
+  template<class ScoreMatrixType>
+  int get_best_alignments(const AlignTask<ScoreMatrixType>& task);
+
+  template<class ScoreMatrixType>
+  int get_best_alignments_try_all(const AlignTask<ScoreMatrixType>& task);
 
   // Make and return an alignment from the trail through the
   // score matrix.
-  Alignment alignment_from_trail(const AlignTask& task, ScoreCellPVec& trail);
+  template<class ScoreMatrixType>
+  Alignment alignment_from_trail(const AlignTask<ScoreMatrixType>& task, ScoreCellPVec& trail);
 
   // Build an alignment by tracing back from ScoreCell.
-  Alignment alignment_from_cell(const AlignTask& task, ScoreCell* p_cell);
+  template<class ScoreMatrixType>
+  Alignment alignment_from_cell(const AlignTask<ScoreMatrixType>& task, ScoreCell* p_cell);
 
   PartialSums make_partial_sums(const IntVec& frags, const int missed_sites);
   PartialSumsPtr make_partial_sums_new(const IntVec& frags, const int missed_sites);
@@ -235,9 +260,14 @@ namespace maligner_dp {
   /////////////////////////////////////////
 
   // Fill score matrix, find best alignment, and return it.
-  Alignment make_best_alignment(const AlignTask& task);
-  Alignment make_best_alignment_using_partials(const AlignTask& task);
-  int make_best_alignments_using_partials(const AlignTask& task);
+  template<class ScoreMatrixType>
+  Alignment make_best_alignment(const AlignTask<ScoreMatrixType>& task);
+
+  template<class ScoreMatrixType>
+  Alignment make_best_alignment_using_partials(const AlignTask<ScoreMatrixType>& task);
+
+  template<class ScoreMatrixType>
+  int make_best_alignments_using_partials(const AlignTask<ScoreMatrixType>& task);
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -303,6 +333,36 @@ namespace maligner_dp {
 
   };
 
+  class SizingPenalty {
+  public:
+
+    SizingPenalty(int ref_size, const AlignOpts& align_opts) {
+
+      ref_size_ = ref_size;
+      sd_ = align_opts.sd_rate * ref_size_;
+      if( sd_ < align_opts.min_sd ) {
+        sd_ = align_opts.min_sd;
+      }
+      sd_1_ = 1.0 / sd_;
+
+    }
+
+    double operator()(int query_size) {
+      double delta = query_size - ref_size_;
+      double penalty = delta*sd_1_;
+      return penalty*penalty;
+    }
+
+  // private:
+    int ref_size_;
+    double sd_;
+    double sd_1_;
+
+  };
+
 }
+
+// Bring in the definitions of templated functions
+#include "templated_align_functions.h"
 
 

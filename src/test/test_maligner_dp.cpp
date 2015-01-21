@@ -48,6 +48,9 @@ using namespace maligner_dp;
 // using maligner_dp::AlignOpts;
 using lmm_utils::Timer;
 
+typedef ScoreMatrix<row_order_tag> ScoreMatrixType;
+typedef AlignTask<ScoreMatrixType> AlignTaskType;
+
 struct MapWrapper {
 
   MapWrapper(const Map& m, int num_missed_sites) :
@@ -110,7 +113,7 @@ int main(int argc, char* argv[]) {
  cerr << "Wrapped " << map_db.size() << " reference maps.\n";
 
  // Generate a single ScoreMatrix to use throughout this program.
- ScoreMatrix<column_order_tag> sm;
+ ScoreMatrixType sm;
  MapReader query_map_reader(maligner_dp::opt::query_maps_file);
  Map query_map;
  AlignmentVec alns;
@@ -143,7 +146,7 @@ int main(int argc, char* argv[]) {
         << " " << timer << "\n";
       // Temporary loop to see speed without resizing
       // for(int i =0; i <5; i++) {
-        AlignTask task(&qmw.md_, &rmw.md_,
+        AlignTaskType task(&qmw.md_, &rmw.md_,
           &qmw.m_.frags_, &rmw.m_.frags_, 
           &qmw.ps_, &rmw.ps_,
           0,
