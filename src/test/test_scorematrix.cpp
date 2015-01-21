@@ -35,76 +35,155 @@ int main(int argc, char* argv[]) {
   Timer timer;
   
   size_t num_cols = 50000;
-  size_t num_rows = 50;
+  size_t num_rows = 100;
   const int num_trials = 100;
 
-  timer.start();
-  ScoreMatrix<column_order_tag> sm(num_rows, num_cols);
-  
-  timer.end();
-
-  cerr << "Made score matrix: " << timer << "\n";
-
-  timer.start();
-  ScoreCellVec& sm_data = sm.getData();
-  for(int i = 0; i < sm_data.size(); i++) {
-    sm_data[i].score_ = i;
-  }
-  timer.end();
-
-  cerr << "Set score values..." <<  timer << "\n";
-
-
-  //////////////////////////////////////////////////////////////
   {
-    cerr << "Iterating straight across...";
-    double sum = 0.0;    
+    cerr << "**************************************************\n"
+         << "Column Score Matrix\n"
+         << "**************************************************\n";
+
     timer.start();
-    for(int itrial = 0; itrial < num_trials; itrial++) {
-      for(size_t i = 0; i < sm_data.size(); i++) {
-        sum += sm_data[i].score_;
-      }
+    ScoreMatrix<column_order_tag> sm(num_rows, num_cols);
+    timer.end();
+
+    cerr << "Made score matrix: " << timer << "\n";
+
+    timer.start();
+    ScoreCellVec& sm_data = sm.getData();
+    for(int i = 0; i < sm_data.size(); i++) {
+      sm_data[i].score_ = i;
     }
     timer.end();
-    cerr << "sum=" << sum << "\n";
-    cerr << "done iterator straight across: " << timer << "\n";
-  }
-  //////////////////////////////////////////////////////////////
+
+    cerr << "Set score values..." <<  timer << "\n";
+
 
     //////////////////////////////////////////////////////////////
-  {
-    cerr << "Iterating down columns";
-    double sum = 0.0;
-    timer.start();
-    for(int itrial = 0; itrial < num_trials; itrial++) {
-      for(size_t col = 0; col < num_cols; col++) {
-        for(size_t row = 0; row < num_rows; row++) {
-          const ScoreCell* cell = sm.getCell(row, col);
-          sum += cell->score_;
+    {
+      cerr << "Iterating straight across...";
+      double sum = 0.0;    
+      timer.start();
+      for(int itrial = 0; itrial < num_trials; itrial++) {
+        for(size_t i = 0; i < sm_data.size(); i++) {
+          sum += sm_data[i].score_;
         }
       }
+      timer.end();
+      cerr << "sum=" << sum << "\n";
+      cerr << "done iterator straight across: " << timer << "\n";
     }
-    timer.end();
-    cerr << "sum=" << sum << "\n";
-    cerr << "done iterator down columns: " << timer << "\n";
+    //////////////////////////////////////////////////////////////
+
+      //////////////////////////////////////////////////////////////
+    {
+      cerr << "Iterating down columns";
+      double sum = 0.0;
+      timer.start();
+      for(int itrial = 0; itrial < num_trials; itrial++) {
+        for(size_t col = 0; col < num_cols; col++) {
+          for(size_t row = 0; row < num_rows; row++) {
+            const ScoreCell* cell = sm.getCell(row, col);
+            sum += cell->score_;
+          }
+        }
+      }
+      timer.end();
+      cerr << "sum=" << sum << "\n";
+      cerr << "done iterator down columns: " << timer << "\n";
+    }
+
+    //////////////////////////////////////////////////////////////
+    {
+      cerr << "Iterating across rows";
+      double sum = 0.0;
+      timer.start();
+      for(int itrial = 0; itrial < num_trials; itrial++) {
+        for(size_t row = 0; row < num_rows; row++) {
+          for(size_t col = 0; col < num_cols; col++) {
+            const ScoreCell* cell = sm.getCell(row, col);
+            sum += cell->score_;
+          }
+        }
+      }
+      timer.end();
+      cerr << "sum=" << sum << "\n";
+      cerr << "done iterator across rows: " << timer << "\n";
+    }
   }
 
-  //////////////////////////////////////////////////////////////
   {
-    cerr << "Iterating across rows";
-    double sum = 0.0;
+    cerr << "**************************************************\n"
+         << "Row Score Matrix\n"
+         << "**************************************************\n";
+
     timer.start();
-    for(int itrial = 0; itrial < num_trials; itrial++) {
-      for(size_t row = 0; row < num_rows; row++) {
-        for(size_t col = 0; col < num_cols; col++) {
-          const ScoreCell* cell = sm.getCell(row, col);
-          sum += cell->score_;
-        }
-      }
+    ScoreMatrix<row_order_tag> sm(num_rows, num_cols);
+    timer.end();
+
+    cerr << "Made score matrix: " << timer << "\n";
+
+    timer.start();
+    ScoreCellVec& sm_data = sm.getData();
+    for(int i = 0; i < sm_data.size(); i++) {
+      sm_data[i].score_ = i;
     }
     timer.end();
-    cerr << "sum=" << sum << "\n";
-    cerr << "done iterator across rows: " << timer << "\n";
+
+    cerr << "Set score values..." <<  timer << "\n";
+
+
+    //////////////////////////////////////////////////////////////
+    {
+      cerr << "Iterating straight across...";
+      double sum = 0.0;    
+      timer.start();
+      for(int itrial = 0; itrial < num_trials; itrial++) {
+        for(size_t i = 0; i < sm_data.size(); i++) {
+          sum += sm_data[i].score_;
+        }
+      }
+      timer.end();
+      cerr << "sum=" << sum << "\n";
+      cerr << "done iterator straight across: " << timer << "\n";
+    }
+    //////////////////////////////////////////////////////////////
+
+      //////////////////////////////////////////////////////////////
+    {
+      cerr << "Iterating down columns";
+      double sum = 0.0;
+      timer.start();
+      for(int itrial = 0; itrial < num_trials; itrial++) {
+        for(size_t col = 0; col < num_cols; col++) {
+          for(size_t row = 0; row < num_rows; row++) {
+            const ScoreCell* cell = sm.getCell(row, col);
+            sum += cell->score_;
+          }
+        }
+      }
+      timer.end();
+      cerr << "sum=" << sum << "\n";
+      cerr << "done iterator down columns: " << timer << "\n";
+    }
+
+    //////////////////////////////////////////////////////////////
+    {
+      cerr << "Iterating across rows";
+      double sum = 0.0;
+      timer.start();
+      for(int itrial = 0; itrial < num_trials; itrial++) {
+        for(size_t row = 0; row < num_rows; row++) {
+          for(size_t col = 0; col < num_cols; col++) {
+            const ScoreCell* cell = sm.getCell(row, col);
+            sum += cell->score_;
+          }
+        }
+      }
+      timer.end();
+      cerr << "sum=" << sum << "\n";
+      cerr << "done iterator across rows: " << timer << "\n";
+    }
   }
 
   return EXIT_SUCCESS;
