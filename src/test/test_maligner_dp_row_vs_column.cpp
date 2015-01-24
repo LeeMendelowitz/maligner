@@ -1,5 +1,5 @@
 // Run maligner and perform alignments in both row mode and column mode.
-// Assert that the alignments are the same. Compare alignment times.
+// Assert that the alignments matrixces are filled out the same.
 
 #include <iostream>
 #include <algorithm>
@@ -10,6 +10,7 @@
 #include <fstream>
 #include <chrono>
 #include <getopt.h>
+#include <exception>
 
 // kmer_match includes
 #include "map.h"
@@ -50,6 +51,22 @@ using namespace maligner_dp;
 // using maligner_dp::make_partial_sums;
 // using maligner_dp::AlignOpts;
 using lmm_utils::Timer;
+
+class ScoreMatrixMismatchError: public std::exception
+{
+  virtual const char* what() const throw()
+  {
+    return "ScoreMatrices do not match!";
+  }
+};
+
+template<class SM1, class SM2>
+void check_score_matrix(SM1& sm1, SM2& sm2) {
+  if (! (sm1 == sm2)) {
+    throw ScoreMatrixMismatchError();
+  }
+}
+
 
 typedef ScoreMatrix<row_order_tag> RowScoreMatrix;
 typedef ScoreMatrix<column_order_tag> ColumnScoreMatrix;
@@ -149,7 +166,7 @@ int main(int argc, char* argv[]) {
 
       timer.end();
 
-      AlignTask<RowScoreMatrix> task_row(&qmw.md_, &rmw.md_,
+      AlignTask<RowScoreMatrix, Chi2SizingPenalty> task_row(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
         &qmw.ps_, &rmw.ps_,
         0,
@@ -158,7 +175,7 @@ int main(int argc, char* argv[]) {
         align_opts
       );
 
-      AlignTask<ColumnScoreMatrix> task_col(&qmw.md_, &rmw.md_,
+      AlignTask<ColumnScoreMatrix, Chi2SizingPenalty> task_col(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
         &qmw.ps_, &rmw.ps_,
         0,
@@ -167,7 +184,7 @@ int main(int argc, char* argv[]) {
         align_opts
       );
 
-      AlignTask<RowScoreMatrix> task_row2(&qmw.md_, &rmw.md_,
+      AlignTask<RowScoreMatrix, Chi2SizingPenalty> task_row2(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
         &qmw.ps_, &rmw.ps_,
         0,
@@ -176,7 +193,7 @@ int main(int argc, char* argv[]) {
         align_opts
       );
 
-      AlignTask<ColumnScoreMatrix> task_col2(&qmw.md_, &rmw.md_,
+      AlignTask<ColumnScoreMatrix, Chi2SizingPenalty> task_col2(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
         &qmw.ps_, &rmw.ps_,
         0,
@@ -230,6 +247,12 @@ int main(int argc, char* argv[]) {
         << "\t1: " << (sm_row == sm_col) << "\n"
         << "\t2: " << (sm_row2 == sm_col2) << "\n"
         << "\t3: " << (sm_row == sm_row2) << "\n";
+
+      check_score_matrix(sm_col, sm_col2);
+      check_score_matrix(sm_row, sm_row2);
+      check_score_matrix(sm_col, sm_row);
+      check_score_matrix(sm_col2, sm_row2);
+
 
     }
     query_timer.end();

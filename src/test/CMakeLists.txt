@@ -26,6 +26,10 @@ target_link_libraries(test_maligner_dp dp kmer_match common)
 add_executable(test_maligner_dp_row_vs_column "test_maligner_dp_row_vs_column.cpp")
 target_link_libraries(test_maligner_dp_row_vs_column dp kmer_match common)
 
+add_executable(test_maligner_dp_sizing_penalty "test_maligner_dp_sizing_penalty.cpp")
+target_link_libraries(test_maligner_dp_sizing_penalty dp kmer_match common)
+
+
 add_executable(test_maligner_dp_get_all "test_maligner_dp_get_all.cpp")
 target_link_libraries(test_maligner_dp_get_all dp kmer_match common)
 
@@ -37,4 +41,5 @@ install(TARGETS
   test_maligner_dp
   test_maligner_dp_get_all
   test_maligner_dp_row_vs_column
+  test_maligner_dp_sizing_penalty
   DESTINATION "${MALIGNER_BIN_DIR}")

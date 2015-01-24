@@ -50,7 +50,7 @@ using namespace maligner_dp;
 using lmm_utils::Timer;
 
 typedef ScoreMatrix<row_order_tag> ScoreMatrixType;
-typedef AlignTask<ScoreMatrixType> AlignTaskType;
+typedef AlignTask<ScoreMatrixType, Chi2SizingPenalty> AlignTaskType;
 
 struct MapWrapper {
 

@@ -52,7 +52,7 @@ using kmer_match::MapReader;
 using lmm_utils::Timer;
 
 typedef ScoreMatrix<row_order_tag> ScoreMatrixType;
-typedef AlignTask<ScoreMatrixType> AlignTaskType;
+typedef AlignTask<ScoreMatrixType, Chi2SizingPenalty> AlignTaskType;
 
 struct MapWrapper {
 
