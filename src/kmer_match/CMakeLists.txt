@@ -1,6 +1,10 @@
 # #include headers from this folder
 # include_directories(${UTIL_SOURCE_DIR}/include)
 
+include_directories(
+  ${MALIGNER_SOURCE_DIR}/src/common
+)
+
 # source files
 set(KMER_MATCH_SOURCES
   "error_model.cpp"

@@ -5,6 +5,7 @@
 #include <string>
 #include <cassert>
 #include <queue>
+#include <ostream>
 
 #include "ScoreMatrix.h"
 #include "ScoreCell.h"
@@ -105,6 +106,9 @@ namespace maligner_dp {
     DoubleVec ref_miss_penalties;
 
   };
+
+  std::ostream& operator<<(std::ostream& os, const AlignOpts& ao);
+
 
   double sizing_penalty(int query_size, int ref_size, const AlignOpts& align_opts);
 
@@ -207,6 +211,12 @@ namespace maligner_dp {
 
   template<class ScoreMatrixType>
   void fill_score_matrix_using_partials(const AlignTask<ScoreMatrixType>& align_task);
+
+  template<class ScoreMatrixType>
+  void fill_score_matrix_using_partials(const AlignTask<ScoreMatrixType>& align_task, row_order_tag);
+
+  template<class ScoreMatrixType>
+  void fill_score_matrix_using_partials(const AlignTask<ScoreMatrixType>& align_task, column_order_tag);
 
   template<class ScoreMatrixType>
   void fill_score_matrix_using_partials_with_cell_queue(const AlignTask<ScoreMatrixType>& align_task);

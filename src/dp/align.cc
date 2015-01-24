@@ -169,4 +169,27 @@ namespace maligner_dp {
     return p_partial_sums;
   }
 
+  std::ostream& operator<<(std::ostream& os, const AlignOpts& ao) {
+      
+      os << "AlignOpts:"
+         <<  "\n\t query_miss_penalty: " << ao.query_miss_penalty
+         << "\n\t ref_miss_penalty: " << ao.ref_miss_penalty
+         << "\n\t query_max_misses: " << ao.query_max_misses
+         << "\n\t ref_max_misses: " << ao.ref_max_misses
+         << "\n\t sd_rate: " << ao.sd_rate
+         << "\n\t min_sd: " << ao.min_sd
+         << "\n\t max_chunk_sizing_error: " << ao.max_chunk_sizing_error
+         << "\n\t max_alignment_seeds: " << ao.max_alignment_seeds
+         << "\n\t alignments_per_reference: " << ao.alignments_per_reference 
+         << "\n\t min_alignment_spacing: " << ao.min_alignment_spacing 
+         << "\n\t neighbor_delta: " << ao.neighbor_delta 
+         << "\n\t rescale_query: " << ao.rescale_query
+         << "\n\t query_is_bounded: " << ao.query_is_bounded 
+         << "\n\t ref_is_bounded: " << ao.ref_is_bounded
+         << "\n";
+      return os;
+  }
+
+
+
 }

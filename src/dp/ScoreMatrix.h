@@ -12,11 +12,13 @@ ideally given a capacity large enough to handle any alignment problem
 it will see.
 
 **************************************************************/
+#include <vector>
+#include <memory>
+#include <iostream>
 
 #include "ScoreCell.h"
 #include "types.h"
-#include <vector>
-#include <memory>
+
 
 namespace maligner_dp {
 
@@ -64,6 +66,9 @@ namespace maligner_dp {
         double getMaxScoreByRow(size_t row) const;
         size_t countColor(ScoreCellColor col) const;
 
+        template<class OtherOrderTag>
+        bool operator==(const ScoreMatrix<OtherOrderTag>& sm_o);
+
     private:
         size_t numRows_;
         size_t numCols_;
@@ -86,10 +91,6 @@ namespace maligner_dp {
     typedef ScoreMatrix<column_order_tag>* ScoreMatrixPtr;
     typedef ScoreMatrix<column_order_tag> ColumnScoreMatrix;
     typedef ScoreMatrix<row_order_tag> RowScoreMatrix;
-
-
-    std::ostream& operator<<(std::ostream& os, ScoreMatrix<column_order_tag>& mat);
-
 
     ////////////////////////////////////////////////////////////
     template<class OrderTag>
@@ -303,7 +304,25 @@ namespace maligner_dp {
     }
 
     template<class OrderTag>
-    std::ostream& operator<<(std::ostream& os, ScoreMatrix<OrderTag>& mat) {
+    template<class OtherOrderTag>
+    bool ScoreMatrix<OrderTag>::operator==(const ScoreMatrix<OtherOrderTag>& sm_o) {
+
+        bool dim_match = (getNumCols() == sm_o.getNumCols()) && (getNumRows() == sm_o.getNumRows());
+        if (!dim_match) { std::cout << "Dimensions don't match!\n"; return false; }
+        size_t m = getNumRows();
+        size_t n = getNumCols();
+        for(size_t i = 0; i < m; i++) {
+            for(size_t j = 0; j < n; j++) {
+                const ScoreCell* p1 = getCell(i, j);
+                const ScoreCell* p2 = sm_o.getCell(i, j);
+                if ( !(*p1 == *p2) ) { std::cout << "Cells don't match! 1: " << *p1 << ", 2: " << *p2 << "\n"; return false; }
+            }
+        }
+        return true;
+    }
+
+    template<class OrderTag>
+    std::ostream& operator<<(std::ostream& os, const ScoreMatrix<OrderTag>& mat) {
         const size_t nrow = mat.getNumRows();
         const size_t ncol = mat.getNumCols();
         for (size_t i = 0; i < nrow; i++) {

@@ -54,15 +54,33 @@ namespace maligner_dp {
             return IntPair(q_, r_);
         }
 
-        bool operator==(const ScoreCell& other) const {
-            return (key() == other.key());
-        } 
+        bool operator==(const ScoreCell& o) const {
+
+            const ScoreCell* b1 = backPointer_;
+            const ScoreCell* b2 = o.backPointer_;
+
+            bool coord_score_match = (q_ == o.q_) && 
+                                     (r_ == o.r_) &&
+                                     (score_ == o.score_) &&
+                                     (b1 == nullptr) == (b2 == nullptr);
+            
+            if (!coord_score_match) return false;
+
+            // Check that the cells pointed to match in coordinates.
+            if (b1 != nullptr) {
+                if (b1->q_ != b2->q_ || b1->r_ != b2->r_) return false;
+            }
+
+            return true;
+
+        }  
 
         void reset();
 
         void setColor(ScoreCellColor color) {
             color_ = color;
         }
+
 
         int q_;
         int r_;
