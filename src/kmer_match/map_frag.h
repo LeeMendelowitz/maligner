@@ -9,6 +9,8 @@
 
 namespace kmer_match {
   
+  using namespace maligner_maps;
+
   enum MapFragStatus {VALID, INVALID};
 
   /////////////////////////////////////////////////////////////////
@@ -18,6 +20,7 @@ namespace kmer_match {
   decrement it to determine reverse map.
   */
   class MapFragForward {
+
   public:
 
     MapFragForward() = delete; // No default constructor

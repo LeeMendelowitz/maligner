@@ -8,8 +8,8 @@ include_directories(
 # source files
 set(KMER_MATCH_SOURCES
   "error_model.cpp"
-  "map.cpp"
-  "map_reader.cpp"
+  # "map.cpp"
+  # "map_reader.cpp"
   "map_chunk.cpp"
   "map_chunk_db.cpp"
   "map_frag.cpp"

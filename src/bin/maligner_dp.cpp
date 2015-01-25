@@ -40,35 +40,17 @@ using std::unordered_map;
 // in order to perform DP alignments.
 using namespace kmer_match;
 using namespace maligner_dp;
-// using kmer_match::Map;
+using namespace maligner_maps;
 
-// using maligner_dp::MapData;
-// using maligner_dp::PartialSums;
-// using maligner_dp::ScoreMatrix
-// using maligner_dp::make_partial_sums;
-// using maligner_dp::AlignOpts;
+
 using lmm_utils::Timer;
 
 typedef ScoreMatrix<row_order_tag> ScoreMatrixType;
 typedef AlignTask<ScoreMatrixType, Chi2SizingPenalty> AlignTaskType;
 
-struct MapWrapper {
 
-  MapWrapper(const Map& m, int num_missed_sites) :
-    m_(m),
-    md_(m_.name_, m_.frags_.size()),
-    ps_(make_partial_sums(m_.frags_, num_missed_sites))
-  {
 
-  }
-
-  Map m_;
-  MapData md_;
-  PartialSums ps_;
-
-};
-
-typedef unordered_map<string, MapWrapper> MapWrapperDB;
+typedef unordered_map<string, RefMapWrapper> RefMapDB;
 
 int main(int argc, char* argv[]) {
 
@@ -79,18 +61,6 @@ int main(int argc, char* argv[]) {
   print_args(std::cerr);
 
   Timer timer;
-
-  // cerr << "................................................\n"
-  //      << "MALIGNER settings:\n"
-  //      << "\tquery_maps_file: " << maligner_dp::opt::query_maps_file << "\n"
-  //      << "\tref_maps_file: " << maligner_dp::opt::ref_maps_file << "\n"
-  //      << "\tmax. consecutive unmatched sites: " << maligner_dp::opt::max_unmatched_sites << "\n"
-  //      << "\tmax. unmatched rate: " << maligner_dp::opt::max_unmatched_rate << "\n"
-  //      << "\trelative_error: " << maligner_dp::opt::rel_error << "\n"
-  //      << "\tabsolute_error: " << maligner_dp::opt::min_abs_error << "\n"
-  //      << "\tminimum query frags: " << maligner_dp::opt::min_frag << "\n"
-  //      << "\tmax matches per query: " << maligner_dp::opt::max_match << "\n"
-  //      << "................................................\n\n";
 
   AlignOpts align_opts(maligner_dp::opt::query_miss_penalty,
                        maligner_dp::opt::ref_miss_penalty,
@@ -110,12 +80,15 @@ int main(int argc, char* argv[]) {
   cerr << "Read " << ref_maps.size() << " reference maps.\n";
 
   // Store reference maps in an unordered map.
-  MapWrapperDB map_db;
+  RefMapDB ref_map_db;
   for(auto i = ref_maps.begin(); i != ref_maps.end(); i++) {
-    map_db.insert( MapWrapperDB::value_type(i->name_, MapWrapper(*i, maligner_dp::opt::ref_max_misses)) );
+    ref_map_db.insert( RefMapDB::value_type(i->name_,
+        RefMapWrapper(*i, maligner_dp::opt::ref_max_misses,
+                          maligner_dp::opt::sd_rate,
+                          maligner_dp::opt::min_sd)) );
   }
 
- cerr << "Wrapped " << map_db.size() << " reference maps.\n";
+ cerr << "Wrapped " << ref_map_db.size() << " reference maps.\n";
 
  // Generate a single ScoreMatrix to use throughout this program.
  ScoreMatrixType sm;
@@ -133,41 +106,44 @@ int main(int argc, char* argv[]) {
 
     const IntVec& query_frags_forward = query_map.frags_;
     const IntVec query_frags_reverse(query_frags_forward.rbegin(), query_frags_forward.rend());
-    PartialSums qps_forward = make_partial_sums(query_frags_forward, align_opts.query_max_misses);
-    PartialSums qps_reverse = make_partial_sums(query_frags_reverse, align_opts.query_max_misses);
+    PartialSums qps_forward(query_frags_forward, align_opts.query_max_misses);
+    PartialSums qps_reverse(query_frags_reverse, align_opts.query_max_misses);
 
-
-    MapWrapper qmw(query_map,align_opts.query_max_misses);
+    const MapWrapper qmw(query_map, align_opts.query_max_misses);
 
     const size_t num_query_frags = query_map.frags_.size();
 
     Timer query_timer;
     query_timer.start();
 
-    for(MapWrapperDB::iterator ref_map_iter = map_db.begin();
-        ref_map_iter != map_db.end();
+    for(auto ref_map_iter = ref_map_db.begin();
+        ref_map_iter != ref_map_db.end();
         ref_map_iter++) {
 
 
-      MapWrapper& rmw = ref_map_iter->second;
+      const RefMapWrapper& rmw = ref_map_iter->second;
       const size_t num_ref_frags = rmw.m_.frags_.size();
       // sm.resize(num_query_frags + 1, num_ref_frags + 1);
 
       // const IntVec* p_frags_forward = &query_frags_forward;
       // const IntVec* p_frags_reverse = &query_frags_reverse;
 
-      AlignTaskType task_forward(&qmw.md_, &rmw.md_,
+      AlignTaskType task_forward(const_cast<MapData*>(&qmw.md_),
+        const_cast<MapData*>(&rmw.md_),
         &query_frags_forward, &rmw.m_.frags_, 
         &qps_forward, &rmw.ps_,
+        &rmw.sd_inv_2_,
         0, // ref_offset
         &sm, &all_alignments,
         true, // is_forward
         align_opts
       );
 
-      AlignTaskType task_reverse(&qmw.md_, &rmw.md_,
+      AlignTaskType task_reverse(const_cast<MapData*>(&qmw.md_),
+        const_cast<MapData*>(&rmw.md_),
         &query_frags_reverse, &rmw.m_.frags_, 
         &qps_reverse, &rmw.ps_,
+        &rmw.sd_inv_2_,
         0, // ref_offset
         &sm, &all_alignments,
         false, // is_forward

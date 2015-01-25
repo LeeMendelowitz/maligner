@@ -35,6 +35,7 @@
 
 using std::string;
 using std::unordered_map;
+using namespace maligner_maps;
 // using namespace std;
 
 #include "maligner_dp_includes.h"
@@ -71,23 +72,17 @@ void check_score_matrix(SM1& sm1, SM2& sm2) {
 typedef ScoreMatrix<row_order_tag> RowScoreMatrix;
 typedef ScoreMatrix<column_order_tag> ColumnScoreMatrix;
 
-struct MapWrapper {
 
-  MapWrapper(const Map& m, int num_missed_sites) :
-    m_(m),
-    md_(m_.name_, m_.frags_.size()),
-    ps_(make_partial_sums(m_.frags_, num_missed_sites))
-  {
+typedef unordered_map<string, RefMapWrapper> RefMapWrapperDB;
 
+
+void print_partial_sums(const PartialSums& ps, size_t num_frags, int max_misses) {
+  for(size_t i = 0; i < num_frags; i++) {
+    for(int miss = 0; miss < max_misses + 1; miss++) {
+      std::cerr << "i: " << i << " miss: " << miss << " " << ps(i, miss) << "\n";
+    }
   }
-
-  Map m_;
-  MapData md_;
-  PartialSums ps_;
-
-};
-
-typedef unordered_map<string, MapWrapper> MapWrapperDB;
+}
 
 int main(int argc, char* argv[]) {
 
@@ -127,15 +122,18 @@ int main(int argc, char* argv[]) {
   cerr << "Read " << ref_maps.size() << " reference maps.\n";
 
   // Store reference maps in an unordered map.
-  MapWrapperDB map_db;
+  RefMapWrapperDB map_db;
   for(auto i = ref_maps.begin(); i != ref_maps.end(); i++) {
-    map_db.insert( MapWrapperDB::value_type(i->name_, MapWrapper(*i, maligner_dp::opt::ref_max_misses)) );
+    map_db.insert( RefMapWrapperDB::value_type(i->name_, RefMapWrapper(*i,
+      maligner_dp::opt::ref_max_misses,
+      maligner_dp::opt::sd_rate,
+      maligner_dp::opt::min_sd)) );
   }
 
  cerr << "Wrapped " << map_db.size() << " reference maps.\n";
 
- RowScoreMatrix sm_row, sm_row2;
- ColumnScoreMatrix sm_col, sm_col2;
+ RowScoreMatrix sm_row, sm_row2, sm_row3;
+ ColumnScoreMatrix sm_col, sm_col2, sm_col3;
 
  MapReader query_map_reader(maligner_dp::opt::query_maps_file);
  Map query_map;
@@ -143,32 +141,25 @@ int main(int argc, char* argv[]) {
 
  while(query_map_reader.next(query_map)) {
 
-    MapWrapper qmw(query_map,align_opts.query_max_misses);
+    QueryMapWrapper qmw(query_map,align_opts.query_max_misses);
+
+    print_partial_sums(qmw.ps_forward_, qmw.m_.frags_.size(), align_opts.query_max_misses);
 
     const size_t num_query_frags = query_map.frags_.size();
 
     Timer query_timer;
     query_timer.start();
 
-    for(MapWrapperDB::iterator ref_map_iter = map_db.begin();
+    for(auto ref_map_iter = map_db.begin();
         ref_map_iter != map_db.end();
         ref_map_iter++) {
 
-      MapWrapper& rmw = ref_map_iter->second;
+      RefMapWrapper& rmw = ref_map_iter->second;
       const size_t num_ref_frags = rmw.m_.frags_.size();
-
-      timer.start();
-
-      sm_row.resize(num_query_frags + 1, num_ref_frags + 1);
-      sm_row2.resize(num_query_frags + 1, num_ref_frags + 1);
-      sm_col.resize(num_query_frags + 1, num_ref_frags + 1);
-      sm_col2.resize(num_query_frags + 1, num_ref_frags + 1);
-
-      timer.end();
 
       AlignTask<RowScoreMatrix, Chi2SizingPenalty> task_row(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
-        &qmw.ps_, &rmw.ps_,
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_2_,
         0,
         &sm_row, &alns,
         true, //is_forward
@@ -177,7 +168,7 @@ int main(int argc, char* argv[]) {
 
       AlignTask<ColumnScoreMatrix, Chi2SizingPenalty> task_col(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
-        &qmw.ps_, &rmw.ps_,
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_2_,
         0,
         &sm_col, &alns,
         true, //is_forward
@@ -186,7 +177,7 @@ int main(int argc, char* argv[]) {
 
       AlignTask<RowScoreMatrix, Chi2SizingPenalty> task_row2(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
-        &qmw.ps_, &rmw.ps_,
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_2_,
         0,
         &sm_row2, &alns,
         true, //is_forward
@@ -195,12 +186,31 @@ int main(int argc, char* argv[]) {
 
       AlignTask<ColumnScoreMatrix, Chi2SizingPenalty> task_col2(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
-        &qmw.ps_, &rmw.ps_,
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_2_,
         0,
         &sm_col2, &alns,
         true, //is_forward
         align_opts
       );
+
+      AlignTask<RowScoreMatrix, Chi2SizingPenalty> task_row3(&qmw.md_, &rmw.md_,
+        &qmw.m_.frags_, &rmw.m_.frags_, 
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_2_,
+        0,
+        &sm_row3, &alns,
+        true, //is_forward
+        align_opts
+      );
+
+      AlignTask<ColumnScoreMatrix, Chi2SizingPenalty> task_col3(&qmw.md_, &rmw.md_,
+        &qmw.m_.frags_, &rmw.m_.frags_, 
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_2_,
+        0,
+        &sm_col3, &alns,
+        true, //is_forward
+        align_opts
+      );
+
 
       std::cout << "Aligning " << query_map.name_ << " to " << rmw.m_.name_ << "\n";
 
@@ -216,12 +226,12 @@ int main(int argc, char* argv[]) {
       fill_score_matrix_using_partials_with_breaks(task_row2);
       timer.end();
       std::cout << "fill_score_matrix_using_partials_with_breaks, row order: " << timer << "\n";
+      
+      timer.start();
+      fill_score_matrix_with_breaks(task_row3);
+      timer.end();
+      std::cout << "fill_score_matrix_with_breaks, row order: " << timer << "\n";
 
-      // print_filled_by_row(std::cout, sm_row);
-      // std::cout << "percent filled last row\t" << double(sm_row.countFilledByRow(sm_row.getNumRows()-1))/sm_row.getNumCols() << "\n";
-      // std::cout << "percent filled\t" << sm_row.percentFilled() << "\n";
-
-      // std::cout << sm_row << "\n";
 
       //////////////////////////////////////////////////////
       // ALIGN BY COLUMN
@@ -236,22 +246,24 @@ int main(int argc, char* argv[]) {
       timer.end();
       std::cout << "fill_score_matrix_using_partials_with_breaks, col order: " << timer << "\n";
 
-      // print_filled_by_row(std::cout, sm_col);
-      // std::cout << "percent filled last row\t" << double(sm_col.countFilledByRow(sm_col.getNumRows()-1))/sm_col.getNumCols() << "\n";
-      // std::cout << "percent filled\t" << sm_col.percentFilled() << "\n";   
-      // std::cout << "done.\n";
-      // std::cout << sm_col << "\n";
+      timer.start();
+      fill_score_matrix_using_partials_with_breaks(task_col3);
+      timer.end();
+      std::cout << "fill_score_matrix_with_breaks, col order: " << timer << "\n";
+
 
       std::cout << "Row and column matrices match:\n"
-        << "\t0: " << (sm_col == sm_col2) << "\n"
-        << "\t1: " << (sm_row == sm_col) << "\n"
-        << "\t2: " << (sm_row2 == sm_col2) << "\n"
-        << "\t3: " << (sm_row == sm_row2) << "\n";
+        << "\ta: " << (sm_col == sm_col2) << "\n"
+        << "\tb: " << (sm_col == sm_col3) << "\n"
+        << "\tc: " << (sm_row == sm_row2) << "\n"
+        << "\td: " << (sm_row == sm_row3) << "\n"
+        << "\te: " << (sm_row == sm_col) << "\n";
 
       check_score_matrix(sm_col, sm_col2);
+      check_score_matrix(sm_col, sm_col3);
       check_score_matrix(sm_row, sm_row2);
+      check_score_matrix(sm_row, sm_row3);
       check_score_matrix(sm_col, sm_row);
-      check_score_matrix(sm_col2, sm_row2);
 
 
     }

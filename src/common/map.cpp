@@ -10,7 +10,8 @@
 using namespace std;
 
 
-namespace kmer_match {
+namespace maligner_maps {
+
   //////////////////////////////////////////////////////
   // Map default constructor
   Map::Map(const std::string& name, int size, const FragVec& frags) :

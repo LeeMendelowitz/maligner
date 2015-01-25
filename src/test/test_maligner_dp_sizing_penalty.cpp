@@ -37,6 +37,7 @@
 
 using std::string;
 using std::unordered_map;
+using namespace maligner_maps;
 // using namespace std;
 
 #include "maligner_dp_includes.h"
@@ -57,47 +58,35 @@ using lmm_utils::Timer;
 typedef ScoreMatrix<row_order_tag> RowScoreMatrix;
 typedef ScoreMatrix<column_order_tag> ColumnScoreMatrix;
 
-struct MapWrapper {
-
-  MapWrapper(const Map& m, int num_missed_sites) :
-    m_(m),
-    md_(m_.name_, m_.frags_.size()),
-    ps_(make_partial_sums(m_.frags_, num_missed_sites))
-  {
-
-  }
-
-  Map m_;
-  MapData md_;
-  PartialSums ps_;
-
-};
-
-typedef unordered_map<string, MapWrapper> MapWrapperDB;
+typedef unordered_map<string, RefMapWrapper> RefMapWrapperDB;
 
 template<class ScoreMatrixType, class SizingPenaltyType>
-void align_to_all_ref(MapWrapperDB& ref_map_db,
-                      MapWrapper& qmw,
+void align_to_all_ref(RefMapWrapperDB& ref_map_db,
+                      QueryMapWrapper& qmw,
                       ScoreMatrixType* sm,
                       AlignmentVec& alns,
                       SizingPenaltyType,
                       AlignOpts& align_opts)
 {
-
+  // Align the query to all references, but only in the forward direction
   const size_t num_query_frags = qmw.m_.frags_.size();
-  for(MapWrapperDB::iterator ref_map_iter = ref_map_db.begin();
+  for(RefMapWrapperDB::iterator ref_map_iter = ref_map_db.begin();
           ref_map_iter != ref_map_db.end();
           ref_map_iter++) {
 
-      MapWrapper& rmw = ref_map_iter->second;
+      RefMapWrapper& rmw = ref_map_iter->second;
       const size_t num_ref_frags = rmw.m_.frags_.size();
 
       sm->resize(num_query_frags + 1, num_ref_frags + 1);
 
       AlignTask<ScoreMatrixType, SizingPenaltyType> align_task (
-        &qmw.md_, &rmw.md_,
-        &qmw.m_.frags_, &rmw.m_.frags_, 
-        &qmw.ps_, &rmw.ps_,
+        &qmw.md_,
+        &rmw.md_,
+        &qmw.m_.frags_,
+        &rmw.m_.frags_, 
+        &qmw.ps_forward_,
+        &rmw.ps_,
+        &rmw.sd_inv_2_,
         sm, &alns,
         true, //is_forward
         align_opts
@@ -108,9 +97,6 @@ void align_to_all_ref(MapWrapperDB& ref_map_db,
   }
 
 }
-
-
-
 
 
 int main(int argc, char* argv[]) {
@@ -135,7 +121,7 @@ int main(int argc, char* argv[]) {
   // Override the max_chunk_sizing_error, because we need the ScoreMatrix to be densely populated
   // to compare the effect of using Chi2 Sizing error vs no sizing error. The sizing error can bound
   // the search space when max_chunk_sizing_error is set.
-  align_opts.max_chunk_sizing_error = std::numeric_limits<double>::max();
+  //align_opts.max_chunk_sizing_error = std::numeric_limits<double>::max();
   
   cerr << align_opts << "\n";
   
@@ -144,12 +130,15 @@ int main(int argc, char* argv[]) {
   cerr << "Read " << ref_maps.size() << " reference maps.\n";
 
   // Store reference maps in an unordered map.
-  MapWrapperDB map_db;
+  RefMapWrapperDB ref_map_db;
   for(auto i = ref_maps.begin(); i != ref_maps.end(); i++) {
-    map_db.insert( MapWrapperDB::value_type(i->name_, MapWrapper(*i, maligner_dp::opt::ref_max_misses)) );
+    ref_map_db.insert( RefMapWrapperDB::value_type(i->name_,
+      RefMapWrapper(*i, maligner_dp::opt::ref_max_misses,
+        maligner_dp::opt::sd_rate,
+        maligner_dp::opt::min_sd)) );
   }
 
- cerr << "Wrapped " << map_db.size() << " reference maps.\n";
+ cerr << "Wrapped " << ref_map_db.size() << " reference maps.\n";
 
  RowScoreMatrix sm_row;
  ColumnScoreMatrix sm_col;
@@ -160,29 +149,29 @@ int main(int argc, char* argv[]) {
 
  while(query_map_reader.next(query_map)) {
 
-    MapWrapper qmw(query_map,align_opts.query_max_misses);
+    QueryMapWrapper qmw(query_map, align_opts.query_max_misses);
 
     Timer query_timer;
 
     std::cout << "******************************************************" << std::endl;
 
     query_timer.start();
-    align_to_all_ref(map_db, qmw, &sm_row, alns, Chi2SizingPenalty(), align_opts);
+    align_to_all_ref(ref_map_db, qmw, &sm_row, alns, Chi2SizingPenalty(), align_opts);
     query_timer.end();
     std::cout << qmw.m_.name_ << " Row, chi2 sizing error: " << query_timer << std::endl;
 
     query_timer.start();
-    align_to_all_ref(map_db, qmw, &sm_row, alns, NoSizingPenalty(), align_opts);
+    align_to_all_ref(ref_map_db, qmw, &sm_row, alns, NoSizingPenalty(), align_opts);
     query_timer.end();
     std::cout << qmw.m_.name_ << " Row, no sizing error: " << query_timer << std::endl;
 
     query_timer.start();
-    align_to_all_ref(map_db, qmw, &sm_col, alns, Chi2SizingPenalty(), align_opts);
+    align_to_all_ref(ref_map_db, qmw, &sm_col, alns, Chi2SizingPenalty(), align_opts);
     query_timer.end();
     std::cout << qmw.m_.name_ << " Column, chi2 sizing error: " << query_timer << std::endl;
 
     query_timer.start();
-    align_to_all_ref(map_db, qmw, &sm_col, alns, NoSizingPenalty(), align_opts);
+    align_to_all_ref(ref_map_db, qmw, &sm_col, alns, NoSizingPenalty(), align_opts);
     query_timer.end();
     std::cout << qmw.m_.name_ << " Column, no sizing error: " << query_timer << std::endl;
 

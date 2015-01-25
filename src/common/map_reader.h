@@ -4,7 +4,7 @@
 #include <fstream>
 #include "map.h"
 
-namespace kmer_match {
+namespace maligner_maps {
   
   class ReadMapException : public std::exception
   {

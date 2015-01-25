@@ -31,6 +31,7 @@
 
 using std::string;
 using std::unordered_map;
+using namespace maligner_maps;
 // using namespace std;
 
 #include "maligner_dp_includes.h"
@@ -44,33 +45,13 @@ using kmer_match::MapVec;
 using kmer_match::read_maps;
 using kmer_match::MapReader;
 
-// using maligner_dp::MapData;
-// using maligner_dp::PartialSums;
-// using maligner_dp::ScoreMatrix
-// using maligner_dp::make_partial_sums;
-// using maligner_dp::AlignOpts;
 using lmm_utils::Timer;
 
 typedef ScoreMatrix<row_order_tag> ScoreMatrixType;
 typedef AlignTask<ScoreMatrixType, Chi2SizingPenalty> AlignTaskType;
 
-struct MapWrapper {
 
-  MapWrapper(const Map& m, int num_missed_sites) :
-    m_(m),
-    md_(m_.name_, m_.frags_.size()),
-    ps_(make_partial_sums(m_.frags_, num_missed_sites))
-  {
-
-  }
-
-  Map m_;
-  MapData md_;
-  PartialSums ps_;
-
-};
-
-typedef unordered_map<string, MapWrapper> MapWrapperDB;
+typedef unordered_map<string, RefMapWrapper> RefMapWrapperDB;
 
 int main(int argc, char* argv[]) {
 
@@ -108,12 +89,15 @@ int main(int argc, char* argv[]) {
   cerr << "Read " << ref_maps.size() << " reference maps.\n";
 
   // Store reference maps in an unordered map.
-  MapWrapperDB map_db;
+  RefMapWrapperDB ref_map_db;
   for(auto i = ref_maps.begin(); i != ref_maps.end(); i++) {
-    map_db.insert( MapWrapperDB::value_type(i->name_, MapWrapper(*i, maligner_dp::opt::ref_max_misses)) );
+    ref_map_db.insert( RefMapWrapperDB::value_type(i->name_,
+      RefMapWrapper(*i, maligner_dp::opt::ref_max_misses,
+        maligner_dp::opt::sd_rate,
+        maligner_dp::opt::min_sd)) );
   }
 
- cerr << "Wrapped " << map_db.size() << " reference maps.\n";
+ cerr << "Wrapped " << ref_map_db.size() << " reference maps.\n";
 
  // Generate a single ScoreMatrix to use throughout this program.
  ScoreMatrixType sm;
@@ -126,24 +110,24 @@ int main(int argc, char* argv[]) {
  // get all of the alignments.
  while(query_map_reader.next(query_map)) {
 
-    MapWrapper qmw(query_map,align_opts.query_max_misses);
+    QueryMapWrapper qmw(query_map,align_opts.query_max_misses);
 
     const size_t num_query_frags = query_map.frags_.size();
 
     // Timer query_timer;
     // query_timer.start();
-    for(MapWrapperDB::iterator ref_map_iter = map_db.begin();
-        ref_map_iter != map_db.end();
+    for(RefMapWrapperDB::iterator ref_map_iter = ref_map_db.begin();
+        ref_map_iter != ref_map_db.end();
         ref_map_iter++) {
 
 
-      MapWrapper& rmw = ref_map_iter->second;
+      RefMapWrapper& rmw = ref_map_iter->second;
       const size_t num_ref_frags = rmw.m_.frags_.size();
 
       // Only align in the forward direction. 
       AlignTaskType task(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
-        &qmw.ps_, &rmw.ps_,
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_2_,
         0,
         &sm, &alns,
         true, //is_forward

@@ -6,7 +6,7 @@
 #include <iostream>
 #include <iterator>
 
-namespace kmer_match {
+namespace maligner_maps {
   
   typedef std::vector<int> IntVec;
   typedef int FragSize;

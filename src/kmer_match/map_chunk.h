@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "map.h"
+using namespace maligner_maps;
 
 namespace kmer_match {
   

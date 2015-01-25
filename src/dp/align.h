@@ -12,23 +12,186 @@
 #include "types.h"
 #include "alignment.h"
 #include "map_data.h"
+#include "map.h"
 
 namespace maligner_dp {
 
-  typedef std::vector<IntVec> PartialSums;
   using std::shared_ptr;
+  using namespace maligner_maps;
 
-  // Using shared pointers:
-  // typedef std::shared_ptr< PartialSums > PartialSumsPtr;
-  // typedef std::shared_ptr< MapData > MapDataPtr;
-  // typedef std::shared_ptr< Alignment > AlignmentPtr;
-  // typedef std::vector< AlignmentPtr > AlignmentPVec;
-  // typedef std::shared_ptr< AlignmentPVec > AlignmentPVecPtr;
-
-  // Using raw pointers:
-  typedef  PartialSums* PartialSumsPtr;
   typedef  MapData* MapDataPtr;
 
+
+  class PartialSums {
+    // This precomputes chunk lengths to assist in speeding up dynamic programming.
+    // It behaves as a 2D array with chunk lengths, indexed the following way:
+    // ps(i, j): The length of the chunk of j fragments ending with fragment i.
+    //
+    // Example:
+    //     -----------|-----------|-----------|-----|-----
+    //      f[i-2]      f[i-1]     f[i]
+    //
+    // ps(i, 0) = f[i]
+    // ps(i, 1) = f[i] + f[i-1]
+    // ps(i, 2) = f[i] + f[i-1] + f[i-2]
+    //
+    // This indexing may be counterintuitive, but it works more seamlessly with the dynamic programming
+
+    friend class SDInv2;
+    IntVec d_;
+    const size_t m_;
+
+  public:
+
+    struct forward_tag {};
+    struct reverse_tag {};
+
+    PartialSums(const IntVec& d, int max_miss) : m_(max_miss + 1) {
+      fill_forward(d, max_miss); 
+    }
+
+    PartialSums(const IntVec& d, int max_miss, forward_tag) : m_(max_miss + 1) {
+      fill_forward(d, max_miss);
+    }
+
+    PartialSums(const IntVec& d, int max_miss, reverse_tag) : m_(max_miss + 1) {
+      fill_reverse(d, max_miss);
+    }
+
+    int operator()(size_t i, size_t num_miss) const {
+      return d_[i*m_ + num_miss];
+    }
+
+  private:
+
+    void fill_forward(const IntVec& d, int max_miss) {
+      const size_t n = d.size();
+      d_ = IntVec(n*m_);
+
+      for(size_t s = 0; s < n; s++) {
+
+        size_t offset = s*m_;
+        
+        // Constraints: s - i >= 0 -> i <= s -> i < s + 1
+        // i < m_
+        const size_t L = min(m_, s + 1);
+        int a = 0;
+        for(size_t i = 0; i < L; i++) {
+          a += d[s - i];
+          d_[offset+i] = a;
+        }
+
+      }
+
+    }
+
+    void fill_reverse(const IntVec& d, int max_miss) {
+      const size_t n = d.size();
+      d_ = IntVec(n*m_);
+
+      for(size_t s = 0; s < n; s++) {
+
+        const size_t sr = n - s - 1; // Extract right to left from d
+        size_t offset = s*m_; // but fill d_ left to right
+      
+        // Constraints: sr - i >= 0 -> i <= sr -> i < sr + 1
+        // i < m_
+        const size_t L = min(m_, sr + 1);
+        int a = 0;
+        for(size_t i = 0; i < L; i++) {
+          a += d[sr - i];
+          d_[offset+i] = a;
+        }
+
+      }
+
+    }
+
+  };
+
+  class SDInv2 {
+
+    // Precompute 1/(sd^2) for each reference chunk
+
+    public:
+      SDInv2(const PartialSums& ps, double sd_rate, double min_sd) :
+        d_(ps.d_.size()),
+        m_(ps.m_) {
+
+          const size_t n = d_.size();
+          for(size_t i = 0; i < n; i++) {
+            int ref_size = ps.d_[i];
+            double sd = sd_rate * ref_size;
+            if (sd < min_sd) { sd = min_sd; }
+            double sd_1 = 1.0/sd;
+            d_[i] = sd_1*sd_1;
+          }
+
+     }     
+
+    DoubleVec d_;
+    const size_t m_;
+  };
+  
+
+  ////////////////////////////////////////////////////////////
+  // These wrappers around a maligner_maps::Map
+  // compute the MapData (i.e. metadata)
+  // and potentially PartialSums and SDInv2, 
+  // depending on which wrapper is used.
+  // This is a convenience to bundle all map data together
+
+  struct MapWrapper {
+
+    MapWrapper(const Map& m, int num_missed_sites) :
+      m_(m),
+      md_(m_.name_, m_.frags_.size())
+    {
+
+    }
+
+    Map m_;
+    MapData md_;
+
+  };
+
+  struct QueryMapWrapper {
+
+    QueryMapWrapper(const Map& m, int num_missed_sites) :
+        m_(m),
+        md_(m_.name_, m_.frags_.size()),
+        ps_forward_(m_.frags_, num_missed_sites, PartialSums::forward_tag()),
+        ps_reverse_(m_.frags_, num_missed_sites, PartialSums::reverse_tag())
+      {
+
+      }
+
+      Map m_;
+      MapData md_;
+      PartialSums ps_forward_;
+      PartialSums ps_reverse_;
+
+  };
+
+  struct RefMapWrapper {
+
+    RefMapWrapper(const Map& m, int num_missed_sites, double sd_rate, double min_sd) :
+      m_(m),
+      md_(m_.name_, m_.frags_.size()),
+      ps_(m_.frags_, num_missed_sites),
+      sd_inv_2_(ps_, sd_rate, min_sd )
+    {
+
+    }
+
+    Map m_;
+    MapData md_;
+    PartialSums ps_;
+    SDInv2 sd_inv_2_;
+
+  };
+  //////////////////////////////////////////////////////////////
+    
 
   class AlignOpts {
 
@@ -67,19 +230,15 @@ namespace maligner_dp {
     {
 
       // Initialize query_miss_penalties array
-      for(int i = 0, val = 0;
-          i < query_max_misses + 1;
-          val += query_miss_penalty, ++i)
+      for(int i = 0;i < query_max_misses + 1; ++i)
       {
-        query_miss_penalties[i] = val;
+        query_miss_penalties[i] = i*query_miss_penalty;
       }
 
       // Initialize ref_miss_penalties array
-      for(int i = 0, val = 0;
-          i < ref_max_misses + 1;
-          val += ref_miss_penalty, ++i)
+      for(int i = 0; i < ref_max_misses + 1; ++i)
       {
-        ref_miss_penalties[i] = val;
+        ref_miss_penalties[i] = i*ref_miss_penalty;
       }
 
     };
@@ -161,11 +320,13 @@ namespace maligner_dp {
 
 
 
-    AlignTask(MapDataPtr qmd, MapDataPtr rmd,
+    AlignTask(const MapDataPtr qmd,
+              const MapDataPtr rmd,
               const std::vector<int>* q,
               const std::vector<int>* r,
-              PartialSumsPtr qps,
-              PartialSumsPtr rps,
+              const PartialSums* qps,
+              const PartialSums* rps,
+              const SDInv2* rsd,
               ScoreMatrixPtr m,
               AlignmentVec * alns,
               bool is_forward_in,
@@ -176,17 +337,20 @@ namespace maligner_dp {
       ref(r),
       query_partial_sums(qps),
       ref_partial_sums(rps),
+      ref_sd_inv_2(rsd),
       ref_offset(0),
       mat(m),
       alignments(alns),
       is_forward(is_forward_in),
       align_opts(&ao) { }
 
-    AlignTask(MapDataPtr qmd, MapDataPtr rmd,
+    AlignTask(const MapDataPtr qmd,
+              const MapDataPtr rmd,
               const std::vector<int>* q,
               const std::vector<int>* r,
-              PartialSumsPtr qps,
-              PartialSumsPtr rps,
+              const PartialSums* qps,
+              const PartialSums* rps,
+              const SDInv2* rsd,
               int ref_offset_in,
               ScoreMatrixPtr m,
               AlignmentVec * alns,
@@ -198,6 +362,7 @@ namespace maligner_dp {
       ref(r),
       query_partial_sums(qps),
       ref_partial_sums(rps),
+      ref_sd_inv_2(rsd),
       ref_offset(ref_offset_in),
       mat(m),
       alignments(alns),
@@ -205,12 +370,13 @@ namespace maligner_dp {
       align_opts(&ao)
     { }
 
-    MapDataPtr query_map_data;
-    MapDataPtr ref_map_data;
+    const MapDataPtr query_map_data;
+    const MapDataPtr ref_map_data;
     const std::vector<int>* query; // query fragments
     const std::vector<int>* ref; // reference fragments
-    PartialSumsPtr query_partial_sums;
-    PartialSumsPtr ref_partial_sums;
+    const PartialSums* query_partial_sums;
+    const PartialSums* ref_partial_sums;
+    const SDInv2* ref_sd_inv_2; // 1.0/(sd^2) precomputed for each reference chunk.
     int ref_offset; // index of the first fragment in ref. This will be nonzero if aligning to slice of reference.
     ScoreMatrixPtr mat;
     AlignmentVec* alignments; // Alignment vector to append all found alignments to.
@@ -260,6 +426,9 @@ namespace maligner_dp {
   void fill_score_matrix_using_partials_with_size_penalty_class(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task);
 
 
+
+
+
   // Build the trail which starts at pCell by following its backpointers.
   void build_trail(ScoreCell* pCell, ScoreCellPVec& trail);
 
@@ -291,7 +460,7 @@ namespace maligner_dp {
   Alignment alignment_from_cell(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task, ScoreCell* p_cell);
 
   PartialSums make_partial_sums(const IntVec& frags, const int missed_sites);
-  PartialSumsPtr make_partial_sums_new(const IntVec& frags, const int missed_sites);
+  PartialSums* make_partial_sums_new(const IntVec& frags, const int missed_sites);
 
 
   /////////////////////////////////////////

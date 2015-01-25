@@ -10,6 +10,8 @@
 #include "map_frag.h"
 
 namespace kmer_match {
+
+  using namespace maligner_maps;
   
   typedef std::pair<int, int> IntPair;
   typedef std::vector<IntPair> IntPairVec;

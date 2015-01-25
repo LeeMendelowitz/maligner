@@ -8,6 +8,7 @@
 
 using namespace std;
 using namespace kmer_match;
+using namespace maligner_maps;
 
 namespace kmer_match {
 

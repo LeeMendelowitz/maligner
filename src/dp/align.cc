@@ -19,7 +19,6 @@ using std::cerr;
 #define DEBUG 0
 #define GET_BEST_DEBUG 0
 #define BUILD_TRAIL_DEBUG 0
-#define FILL_DEBUG 0
 #define BREAKS_DEBUG 0
 #define RESCALE_DEBUG 0
 #define NEIGHBORHOOD_DEBUG 0
@@ -100,73 +99,6 @@ namespace maligner_dp {
 
     }
 
-  }
-
-  
-  // Make partial sums of the preceeding fragment sizes, up to (missed_sites + 1) fragments.
-  PartialSums make_partial_sums(const IntVec& frags, const int missed_sites) {
-  /*
-
-    Consider fragments with indices i and fragment sizes f
-    ...|---------|----------|--------|...
-         i-2        i-1        i
-         f_(i-2)    f_(i-1)   f_(i)
-
-    The partial sums fragment i for the case missed_sites = 2 will be:
-     [ f_i, f_i + f_(i-1), f_i + f_(i-1) + f(i-2)] 
-
-   */
-    const IntVec zero_sums(missed_sites + 1, 0);
-    const int num_frags = frags.size();
-
-    PartialSums partial_sums(num_frags, zero_sums);
-
-    for (int i = 0; i < num_frags; i++) {
-      IntVec& ps = partial_sums[i];
-      const int lower_index = i - missed_sites; // inclusive
-      int ind = 0;
-      int cur_sum = 0;
-      for (int j = i, ind = 0; j >= lower_index; j--, ind++) {
-        if (j < 0) break;
-        cur_sum += frags[j];
-        ps[ind] = cur_sum;
-      }
-    }
-
-    return partial_sums;
-  }
-
-  // Make partial sums of the preceeding fragment sizes, up to (missed_sites + 1) fragments.
-  PartialSumsPtr make_partial_sums_new(const IntVec& frags, const int missed_sites) {
-  /*
-
-    Consider fragments with indices i and fragment sizes f
-    ...|---------|----------|--------|...
-         i-2        i-1        i
-         f_(i-2)    f_(i-1)   f_(i)
-
-    The partial sums fragment i for the case missed_sites = 2 will be:
-     [ f_i, f_i + f_(i-1), f_i + f_(i-1) + f(i-2)] 
-
-   */
-    const IntVec zero_sums(missed_sites + 1, 0);
-    const int num_frags = frags.size();
-
-    PartialSumsPtr p_partial_sums = PartialSumsPtr( new PartialSums(num_frags, zero_sums) );
-
-    for (int i = 0; i < num_frags; i++) {
-      IntVec& ps = (*p_partial_sums)[i];
-      const int lower_index = i - missed_sites; // inclusive
-      int ind = 0;
-      int cur_sum = 0;
-      for (int j = i, ind = 0; j >= lower_index; j--, ind++) {
-        if (j < 0) break;
-        cur_sum += frags[j];
-        ps[ind] = cur_sum;
-      }
-    }
-
-    return p_partial_sums;
   }
 
   std::ostream& operator<<(std::ostream& os, const AlignOpts& ao) {
