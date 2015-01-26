@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
       // Only align in the forward direction. 
       AlignTaskType task(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
-        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_2_,
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_,
         0,
         &sm, &alns,
         true, //is_forward

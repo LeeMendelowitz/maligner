@@ -971,7 +971,7 @@ template<class ScoreMatrixType, class SizingPenaltyType>
     const IntVec& ref = *align_task.ref;
     const PartialSums& query_partial_sums = *align_task.query_partial_sums;
     const PartialSums& ref_partial_sums = *align_task.ref_partial_sums;
-    const SDInv2& sd_inv_2 = *align_task.ref_sd_inv_2;
+    const SDInv& sd_inv = *align_task.ref_sd_inv;
     const DoubleVec& ref_miss_penalties = align_opts.ref_miss_penalties;
     const DoubleVec& query_miss_penalties = align_opts.query_miss_penalties;
 
@@ -1050,7 +1050,7 @@ template<class ScoreMatrixType, class SizingPenaltyType>
           int ref_miss = j - l - 1; // sites in reference unaligned to query
           double ref_miss_penalty = ref_miss_penalties[ref_miss];
           int ref_size = ref_partial_sums(j-1, ref_miss);
-          double chi2_denom = sd_inv_2(j-1, ref_miss);
+          double chi2_denom = sd_inv(j-1, ref_miss);
 
           for(int k = i-1; k >= k0; k--) {
 
@@ -1076,7 +1076,8 @@ template<class ScoreMatrixType, class SizingPenaltyType>
             double size_penalty = 0.0;
             if (!is_ref_boundary && (!is_query_boundary || query_size > ref_size)) {
               double delta = query_size - ref_size;
-              size_penalty = delta*delta*chi2_denom;
+              size_penalty = delta*chi2_denom;
+              size_penalty = size_penalty * size_penalty;
             }
         
 
@@ -1173,7 +1174,7 @@ template<class ScoreMatrixType, class SizingPenaltyType>
     const IntVec& ref = *align_task.ref;
     const PartialSums& query_partial_sums = *align_task.query_partial_sums;
     const PartialSums& ref_partial_sums = *align_task.ref_partial_sums;
-    const SDInv2& sd_inv_2 = *align_task.ref_sd_inv_2;
+    const SDInv& sd_inv = *align_task.ref_sd_inv;
     const DoubleVec& ref_miss_penalties = align_opts.ref_miss_penalties;
     const DoubleVec& query_miss_penalties = align_opts.query_miss_penalties;
 
@@ -1259,7 +1260,7 @@ template<class ScoreMatrixType, class SizingPenaltyType>
             int ref_miss = j - l - 1; // sites in reference unaligned to query
             double ref_miss_penalty = ref_miss_penalties[ref_miss];
             int ref_size = ref_partial_sums(j-1, ref_miss);
-            double chi2_denom = sd_inv_2(j-1, ref_miss);
+            double chi2_denom = sd_inv(j-1, ref_miss);
         
             #if FILL_DEBUG > 0
             cerr << "i: " << i
@@ -1277,7 +1278,8 @@ template<class ScoreMatrixType, class SizingPenaltyType>
             double size_penalty = 0.0;
             if (!is_ref_boundary && (!is_query_boundary || query_size > ref_size)) {
               double delta = query_size - ref_size;
-              size_penalty = delta*delta*chi2_denom;     
+              size_penalty = delta*chi2_denom;    
+              size_penalty = size_penalty*size_penalty; 
             }
 
 
@@ -1368,7 +1370,7 @@ template<class ScoreMatrixType, class SizingPenaltyType>
     const IntVec& ref = *align_task.ref;
     const PartialSums& query_partial_sums = *align_task.query_partial_sums;
     const PartialSums& ref_partial_sums = *align_task.ref_partial_sums;
-    const SDInv2& sd_inv_2 = *align_task.ref_sd_inv_2;
+    const SDInv& sd_inv = *align_task.ref_sd_inv;
     const DoubleVec& ref_miss_penalties = align_opts.ref_miss_penalties;
     const DoubleVec& query_miss_penalties = align_opts.query_miss_penalties;
 
@@ -1445,7 +1447,7 @@ template<class ScoreMatrixType, class SizingPenaltyType>
           int ref_miss = j - l - 1; // sites in reference unaligned to query
           double ref_miss_penalty = ref_miss_penalties[ref_miss];
           int ref_size = ref_partial_sums(j-1, ref_miss);
-          double chi2_denom = sd_inv_2(j-1, ref_miss);
+          double chi2_denom = sd_inv(j-1, ref_miss);
       
           for(int k = i-1; k >= k0; k--) {
 
@@ -1472,7 +1474,8 @@ template<class ScoreMatrixType, class SizingPenaltyType>
             double size_penalty = 0.0;
             if (!is_ref_boundary && (!is_query_boundary || query_size > ref_size)) {
               double delta = query_size - ref_size;
-              size_penalty = delta*delta*chi2_denom;     
+              size_penalty = delta*chi2_denom;     
+              size_penalty = size_penalty*size_penalty;
             }
 
 
@@ -1483,11 +1486,11 @@ template<class ScoreMatrixType, class SizingPenaltyType>
               num_breaks++;
             #endif
             
-            // Ref chunk only grows inside this loop.
+            // Query chunk only grows inside this loop.
             // Break if the query chunk is already too big for the reference
             if (size_penalty > align_opts.max_chunk_sizing_error) {
 
-              if (ref_size > query_size) {
+              if (query_size > ref_size) {
 
                   #if FILL_DEBUG > 0
                     std::cerr << "BREAK!\n";
@@ -1621,7 +1624,7 @@ template<class ScoreMatrixType, class SizingPenaltyType>
     for (int j = 1; j < n; j++) {
 
       int l0 = (j > align_opts.ref_max_misses + 1) ? j - align_opts.ref_max_misses - 1 : 0;
-      int ref_size = 0;
+      
       
       for (int i = 1; i < m; i++) {
 
@@ -1636,16 +1639,20 @@ template<class ScoreMatrixType, class SizingPenaltyType>
 
         int k0 = (i > align_opts.query_max_misses) ? i - align_opts.query_max_misses - 1 : 0;
 
+        int ref_size = 0;
         for(int l = j-1; l >= l0; l--) {
 
+          ref_size += ref[l];
           const bool is_ref_boundary = !align_opts.ref_is_bounded && (l == 0 || j == n - 1);
 
           int ref_miss = j - l - 1; // sites in reference unaligned to query
           double ref_miss_penalty = ref_miss * align_opts.ref_miss_penalty;
-          ref_size += ref[l];
+          
 
           int query_size = 0;
           for(int k = i-1; k >= k0; k--) {
+
+            query_size += query[k];
 
             #if FILL_DEBUG > 0
             cerr << "i: " << i
@@ -1662,7 +1669,7 @@ template<class ScoreMatrixType, class SizingPenaltyType>
 
             int query_miss = i - k - 1; // sites in query unaligned to reference
             double query_miss_penalty = query_miss * align_opts.query_miss_penalty;
-            query_size += query[k];
+            
 
             // Add sizing penalty only if this is not a boundary fragment.
             double size_penalty = 0.0;
@@ -1830,21 +1837,21 @@ template<class ScoreMatrixType, class SizingPenaltyType>
         int query_size = 0;
         for(int k = i-1; k >= k0; k--) {
 
+          query_size += query[k];
           const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || k == m - 1);
 
           int query_miss = i - k - 1; // sites in query unaligned to reference
           double query_miss_penalty = query_miss * align_opts.query_miss_penalty;
-          query_size += query[k];
-
+          
           int ref_size = 0;
           for(int l = j-1; l >= l0; l--) {
 
+            ref_size += ref[l];
             const bool is_ref_boundary = !align_opts.ref_is_bounded && (l == 0 || j == n - 1);
 
             int ref_miss = j - l - 1; // sites in reference unaligned to query
             double ref_miss_penalty = ref_miss * align_opts.ref_miss_penalty;
-            ref_size += ref[l];
-
+            
         
             #if FILL_DEBUG > 0
             cerr << "i: " << i

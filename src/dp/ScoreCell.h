@@ -58,10 +58,11 @@ namespace maligner_dp {
 
             const ScoreCell* b1 = backPointer_;
             const ScoreCell* b2 = o.backPointer_;
+            const double TOL = 1E-9;
 
             bool coord_score_match = (q_ == o.q_) && 
                                      (r_ == o.r_) &&
-                                     (score_ == o.score_) &&
+                                     (abs(score_ - o.score_) < TOL) &&
                                      (b1 == nullptr) == (b2 == nullptr);
             
             if (!coord_score_match) return false;

@@ -161,7 +161,7 @@ namespace maligner_dp {
               const std::vector<int>* r,
               const PartialSums* qps,
               const PartialSums* rps,
-              const SDInv2* rsd,
+              const SDInv* rsd,
               ScoreMatrixPtr m,
               AlignmentVec * alns,
               bool is_forward_in,
@@ -172,7 +172,7 @@ namespace maligner_dp {
       ref(r),
       query_partial_sums(qps),
       ref_partial_sums(rps),
-      ref_sd_inv_2(rsd),
+      ref_sd_inv(rsd),
       ref_offset(0),
       mat(m),
       alignments(alns),
@@ -185,7 +185,7 @@ namespace maligner_dp {
               const std::vector<int>* r,
               const PartialSums* qps,
               const PartialSums* rps,
-              const SDInv2* rsd,
+              const SDInv* rsd,
               int ref_offset_in,
               ScoreMatrixPtr m,
               AlignmentVec * alns,
@@ -197,7 +197,7 @@ namespace maligner_dp {
       ref(r),
       query_partial_sums(qps),
       ref_partial_sums(rps),
-      ref_sd_inv_2(rsd),
+      ref_sd_inv(rsd),
       ref_offset(ref_offset_in),
       mat(m),
       alignments(alns),
@@ -211,7 +211,7 @@ namespace maligner_dp {
     const std::vector<int>* ref; // reference fragments
     const PartialSums* query_partial_sums;
     const PartialSums* ref_partial_sums;
-    const SDInv2* ref_sd_inv_2; // 1.0/(sd^2) precomputed for each reference chunk.
+    const SDInv* ref_sd_inv; // 1.0/(sd^2) precomputed for each reference chunk.
     int ref_offset; // index of the first fragment in ref. This will be nonzero if aligning to slice of reference.
     ScoreMatrixPtr mat;
     AlignmentVec* alignments; // Alignment vector to append all found alignments to.

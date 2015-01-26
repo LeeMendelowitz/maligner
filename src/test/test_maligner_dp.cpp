@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
           &qmw.m_.frags_, &rmw.m_.frags_, 
           &qmw.ps_forward_,
           &rmw.ps_,
-          &rmw.sd_inv_2_,
+          &rmw.sd_inv_,
           0,
           &sm, &alns,
           true, //is_forward

@@ -130,7 +130,7 @@ void align_to_all_ref(RefMapWrapperDB& ref_map_db,
         &rmw.m_.frags_, 
         &qmw.ps_forward_,
         &rmw.ps_,
-        &rmw.sd_inv_2_,
+        &rmw.sd_inv_,
         sm, &alns,
         true, //is_forward
         align_opts
@@ -211,11 +211,6 @@ int main(int argc, char* argv[]) {
     std::cout << qmw.m_.name_ << " Row, chi2 sizing error: " << query_timer << std::endl;
 
     query_timer.start();
-    align_to_all_ref(ref_map_db, qmw, &sm_col, alns, Chi2SizingPenalty(), align_opts, fill_with_partials_breaks);
-    query_timer.end();
-    std::cout << qmw.m_.name_ << " Column, chi2 sizing error: " << query_timer << std::endl;
-
-    query_timer.start();
     align_to_all_ref(ref_map_db, qmw, &sm_row, alns, NoSizingPenalty(), align_opts, fill_hardcode);
     query_timer.end();
     std::cout << qmw.m_.name_ << " Row, hardcode sizing error: " << query_timer << std::endl;
@@ -225,6 +220,10 @@ int main(int argc, char* argv[]) {
     query_timer.end();
     std::cout << qmw.m_.name_ << " Row, hardcode_ijlk sizing error: " << query_timer << std::endl;
 
+    query_timer.start();
+    align_to_all_ref(ref_map_db, qmw, &sm_col, alns, Chi2SizingPenalty(), align_opts, fill_with_partials_breaks);
+    query_timer.end();
+    std::cout << qmw.m_.name_ << " Column, chi2 sizing error: " << query_timer << std::endl;
 
     query_timer.start();
     align_to_all_ref(ref_map_db, qmw, &sm_col, alns, NoSizingPenalty(), align_opts, fill_hardcode);
@@ -232,15 +231,15 @@ int main(int argc, char* argv[]) {
     std::cout << qmw.m_.name_ << " Column, hardcode sizing error: " << query_timer << std::endl;
 
 
-    query_timer.start();
-    align_to_all_ref(ref_map_db, qmw, &sm_row, alns, NoSizingPenalty(), align_opts, fill_with_partials_breaks);
-    query_timer.end();
-    std::cout << qmw.m_.name_ << " Row, no sizing error: " << query_timer << std::endl;
+    // query_timer.start();
+    // align_to_all_ref(ref_map_db, qmw, &sm_row, alns, NoSizingPenalty(), align_opts, fill_with_partials_breaks);
+    // query_timer.end();
+    // std::cout << qmw.m_.name_ << " Row, no sizing error: " << query_timer << std::endl;
 
-    query_timer.start();
-    align_to_all_ref(ref_map_db, qmw, &sm_col, alns, NoSizingPenalty(), align_opts, fill_with_partials_breaks);
-    query_timer.end();
-    std::cout << qmw.m_.name_ << " Column, no sizing error: " << query_timer << std::endl;
+    // query_timer.start();
+    // align_to_all_ref(ref_map_db, qmw, &sm_col, alns, NoSizingPenalty(), align_opts, fill_with_partials_breaks);
+    // query_timer.end();
+    // std::cout << qmw.m_.name_ << " Column, no sizing error: " << query_timer << std::endl;
 
 
 

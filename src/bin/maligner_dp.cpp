@@ -132,7 +132,7 @@ int main(int argc, char* argv[]) {
         const_cast<MapData*>(&rmw.md_),
         &query_frags_forward, &rmw.m_.frags_, 
         &qps_forward, &rmw.ps_,
-        &rmw.sd_inv_2_,
+        &rmw.sd_inv_,
         0, // ref_offset
         &sm, &all_alignments,
         true, // is_forward
@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
         const_cast<MapData*>(&rmw.md_),
         &query_frags_reverse, &rmw.m_.frags_, 
         &qps_reverse, &rmw.ps_,
-        &rmw.sd_inv_2_,
+        &rmw.sd_inv_,
         0, // ref_offset
         &sm, &all_alignments,
         false, // is_forward

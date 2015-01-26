@@ -18,7 +18,7 @@ namespace maligner_dp {
     //
     // This indexing may be counterintuitive, but it works more seamlessly with the dynamic programming
 
-    friend class SDInv2;
+    friend class SDInv;
     IntVec d_;
     const size_t m_;
 
@@ -90,12 +90,12 @@ namespace maligner_dp {
 
   };
 
-  class SDInv2 {
+  class SDInv {
 
-    // Precompute 1/(sd^2) for each reference chunk
+    // Precompute 1/(sd) for each reference chunk
 
     public:
-      SDInv2(const PartialSums& ps, double sd_rate, double min_sd) :
+      SDInv(const PartialSums& ps, double sd_rate, double min_sd) :
         d_(ps.d_.size()),
         m_(ps.m_) {
 
@@ -105,7 +105,7 @@ namespace maligner_dp {
             double sd = sd_rate * ref_size;
             if (sd < min_sd) { sd = min_sd; }
             double sd_1 = 1.0/sd;
-            d_[i] = sd_1*sd_1;
+            d_[i] = sd_1;
           }
 
       }     

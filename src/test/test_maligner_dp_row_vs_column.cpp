@@ -132,8 +132,8 @@ int main(int argc, char* argv[]) {
 
  cerr << "Wrapped " << map_db.size() << " reference maps.\n";
 
- RowScoreMatrix sm_row, sm_row2, sm_row3;
- ColumnScoreMatrix sm_col, sm_col2, sm_col3;
+ RowScoreMatrix sm_row, sm_row2, sm_row3, sm_row4, sm_row5;
+ ColumnScoreMatrix sm_col, sm_col2, sm_col3, sm_col4;
 
  MapReader query_map_reader(maligner_dp::opt::query_maps_file);
  Map query_map;
@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
 
     QueryMapWrapper qmw(query_map,align_opts.query_max_misses);
 
-    print_partial_sums(qmw.ps_forward_, qmw.m_.frags_.size(), align_opts.query_max_misses);
+    // print_partial_sums(qmw.ps_forward_, qmw.m_.frags_.size(), align_opts.query_max_misses);
 
     const size_t num_query_frags = query_map.frags_.size();
 
@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
 
       AlignTask<RowScoreMatrix, Chi2SizingPenalty> task_row(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
-        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_2_,
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_,
         0,
         &sm_row, &alns,
         true, //is_forward
@@ -168,7 +168,7 @@ int main(int argc, char* argv[]) {
 
       AlignTask<ColumnScoreMatrix, Chi2SizingPenalty> task_col(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
-        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_2_,
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_,
         0,
         &sm_col, &alns,
         true, //is_forward
@@ -177,7 +177,7 @@ int main(int argc, char* argv[]) {
 
       AlignTask<RowScoreMatrix, Chi2SizingPenalty> task_row2(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
-        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_2_,
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_,
         0,
         &sm_row2, &alns,
         true, //is_forward
@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
 
       AlignTask<ColumnScoreMatrix, Chi2SizingPenalty> task_col2(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
-        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_2_,
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_,
         0,
         &sm_col2, &alns,
         true, //is_forward
@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
 
       AlignTask<RowScoreMatrix, Chi2SizingPenalty> task_row3(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
-        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_2_,
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_,
         0,
         &sm_row3, &alns,
         true, //is_forward
@@ -204,18 +204,46 @@ int main(int argc, char* argv[]) {
 
       AlignTask<ColumnScoreMatrix, Chi2SizingPenalty> task_col3(&qmw.md_, &rmw.md_,
         &qmw.m_.frags_, &rmw.m_.frags_, 
-        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_2_,
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_,
         0,
         &sm_col3, &alns,
         true, //is_forward
         align_opts
       );
 
+      AlignTask<RowScoreMatrix, Chi2SizingPenalty> task_row4(&qmw.md_, &rmw.md_,
+        &qmw.m_.frags_, &rmw.m_.frags_, 
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_,
+        0,
+        &sm_row4, &alns,
+        true, //is_forward
+        align_opts
+      );
+
+      AlignTask<RowScoreMatrix, Chi2SizingPenalty> task_row5(&qmw.md_, &rmw.md_,
+        &qmw.m_.frags_, &rmw.m_.frags_, 
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_,
+        0,
+        &sm_row5, &alns,
+        true, //is_forward
+        align_opts
+      );
+
+      AlignTask<ColumnScoreMatrix, Chi2SizingPenalty> task_col4(&qmw.md_, &rmw.md_,
+        &qmw.m_.frags_, &rmw.m_.frags_, 
+        &qmw.ps_forward_, &rmw.ps_, &rmw.sd_inv_,
+        0,
+        &sm_col4, &alns,
+        true, //is_forward
+        align_opts
+      );
+
+
 
       std::cout << "Aligning " << query_map.name_ << " to " << rmw.m_.name_ << "\n";
 
 
-      //////////////////////////////////////////////////////
+      ////////////////////////////////////////////////////
       // ALIGN BY ROW
       timer.start();
       fill_score_matrix_using_partials(task_row);
@@ -232,6 +260,18 @@ int main(int argc, char* argv[]) {
       timer.end();
       std::cout << "fill_score_matrix_with_breaks, row order: " << timer << "\n";
 
+      timer.start();
+      fill_score_matrix_using_partials_with_breaks_hardcode_penalty(task_row4);
+      timer.end();
+      std::cout << "fill_score_matrix_using_partials_with_breaks_hardcode_penalty, row order: " << timer << "\n";
+
+      timer.start();
+      fill_score_matrix_using_partials_with_breaks_hardcode_penalty_ijlk(task_row5);
+      timer.end();
+      std::cout << "fill_score_matrix_using_partials_with_breaks_hardcode_penalty_ijlk, row order: " << timer << "\n";
+
+
+
 
       //////////////////////////////////////////////////////
       // ALIGN BY COLUMN
@@ -247,22 +287,36 @@ int main(int argc, char* argv[]) {
       std::cout << "fill_score_matrix_using_partials_with_breaks, col order: " << timer << "\n";
 
       timer.start();
-      fill_score_matrix_using_partials_with_breaks(task_col3);
+      fill_score_matrix_with_breaks(task_col3);
       timer.end();
       std::cout << "fill_score_matrix_with_breaks, col order: " << timer << "\n";
+      
+      timer.start();
+      fill_score_matrix_using_partials_with_breaks_hardcode_penalty(task_col4);
+      timer.end();
+      std::cout << "fill_score_matrix_using_partials_with_breaks_hardcode_penalty, col order: " << timer << "\n";
+
 
 
       std::cout << "Row and column matrices match:\n"
         << "\ta: " << (sm_col == sm_col2) << "\n"
         << "\tb: " << (sm_col == sm_col3) << "\n"
+        << "\tb2: " << (sm_col == sm_col4) << "\n"
         << "\tc: " << (sm_row == sm_row2) << "\n"
         << "\td: " << (sm_row == sm_row3) << "\n"
+        << "\tf: " << (sm_row == sm_row4) << "\n"
+        << "\tg: " << (sm_row == sm_row5) << "\n"
         << "\te: " << (sm_row == sm_col) << "\n";
 
       check_score_matrix(sm_col, sm_col2);
       check_score_matrix(sm_col, sm_col3);
+      check_score_matrix(sm_col, sm_col4);
+
       check_score_matrix(sm_row, sm_row2);
       check_score_matrix(sm_row, sm_row3);
+      check_score_matrix(sm_row, sm_row4);
+      check_score_matrix(sm_row, sm_row5);
+
       check_score_matrix(sm_col, sm_row);
 
 
