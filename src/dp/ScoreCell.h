@@ -11,6 +11,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <ostream>
+#include <cmath>
 
 #include "globals.h"
 
@@ -62,7 +63,7 @@ namespace maligner_dp {
 
             bool coord_score_match = (q_ == o.q_) && 
                                      (r_ == o.r_) &&
-                                     (abs(score_ - o.score_) < TOL) &&
+                                     (std::abs(score_ - o.score_) < TOL) &&
                                      (b1 == nullptr) == (b2 == nullptr);
             
             if (!coord_score_match) return false;
