@@ -1,7 +1,7 @@
 #ifndef TEMPLATED_ALN_FUNC
 #define TEMPLATED_ALN_FUNC
 
-#define FILL_DEBUG 1
+#define FILL_DEBUG 0
 
 #include <limits>
 #include <algorithm>
@@ -171,6 +171,9 @@ namespace maligner_dp {
 
   } // fill_score_matrix
 
+
+  ////////////////////////////////////////////////////////////////
+  // Dispatcher functions
   template<class ScoreMatrixType, class SizingPenaltyType>
   void fill_score_matrix_using_partials(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task) {
     typename ScoreMatrixType::order_tag order;
@@ -188,6 +191,14 @@ namespace maligner_dp {
     typename ScoreMatrixType::order_tag order;
     fill_score_matrix_with_breaks(align_task, order);
   }
+
+  template<class ScoreMatrixType, class SizingPenaltyType>
+  void fill_score_matrix_using_partials_with_breaks_hardcode_penalty(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task) {
+    typename ScoreMatrixType::order_tag order;
+    fill_score_matrix_using_partials_with_breaks_hardcode_penalty(align_task, order);
+  }
+  ////////////////////////////////////////////////////////////////
+
 
   template<class ScoreMatrixType, class SizingPenaltyType>
   void fill_score_matrix_using_partials(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task, 
@@ -757,7 +768,7 @@ template<class ScoreMatrixType, class SizingPenaltyType>
     */
 
     #if FILL_DEBUG > 0
-      cerr << "\n\nfill_score_matrix_using_partials row_order_tag" << "\n";
+      cerr << "\n\nfill_score_matrix_using_partials_with_breaks row_order_tag" << "\n";
     #endif
 
     // Unpack the alignment task
@@ -951,7 +962,7 @@ template<class ScoreMatrixType, class SizingPenaltyType>
     */
 
     #if FILL_DEBUG > 0
-      cerr << "\n\nfill_score_matrix_using_partials_with_breaks column_order_tag" << "\n";
+      cerr << "\n\nfill_score_matrix_using_partials_with_breaks_hardcode_penalty column_order_tag" << "\n";
     #endif
 
     // Unpack the alignment task
@@ -960,6 +971,7 @@ template<class ScoreMatrixType, class SizingPenaltyType>
     const IntVec& ref = *align_task.ref;
     const PartialSums& query_partial_sums = *align_task.query_partial_sums;
     const PartialSums& ref_partial_sums = *align_task.ref_partial_sums;
+    const SDInv2& sd_inv_2 = *align_task.ref_sd_inv_2;
     const DoubleVec& ref_miss_penalties = align_opts.ref_miss_penalties;
     const DoubleVec& query_miss_penalties = align_opts.query_miss_penalties;
 
@@ -1038,6 +1050,7 @@ template<class ScoreMatrixType, class SizingPenaltyType>
           int ref_miss = j - l - 1; // sites in reference unaligned to query
           double ref_miss_penalty = ref_miss_penalties[ref_miss];
           int ref_size = ref_partial_sums(j-1, ref_miss);
+          double chi2_denom = sd_inv_2(j-1, ref_miss);
 
           for(int k = i-1; k >= k0; k--) {
 
@@ -1062,7 +1075,8 @@ template<class ScoreMatrixType, class SizingPenaltyType>
             // Add sizing penalty only if this is not a boundary fragment.
             double size_penalty = 0.0;
             if (!is_ref_boundary && (!is_query_boundary || query_size > ref_size)) {
-              size_penalty = align_task.sizing_penalty(query_size, ref_size, align_opts);
+              double delta = query_size - ref_size;
+              size_penalty = delta*delta*chi2_denom;
             }
         
 
@@ -1143,14 +1157,14 @@ template<class ScoreMatrixType, class SizingPenaltyType>
 
 
   template<class ScoreMatrixType, class SizingPenaltyType>
-  void fill_score_matrix_using_partials_with_hardcode_penalty(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task, 
+  void fill_score_matrix_using_partials_with_breaks_hardcode_penalty(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task, 
     row_order_tag) {
     /*
     Fill score matrix using partial sums
     */
 
     #if FILL_DEBUG > 0
-      cerr << "\n\nfill_score_matrix_using_partials row_order_tag" << "\n";
+      cerr << "\n\nfill_score_matrix_using_partials_with_breaks_hardcode_penalty row_order_tag" << "\n";
     #endif
 
     // Unpack the alignment task
@@ -1159,8 +1173,10 @@ template<class ScoreMatrixType, class SizingPenaltyType>
     const IntVec& ref = *align_task.ref;
     const PartialSums& query_partial_sums = *align_task.query_partial_sums;
     const PartialSums& ref_partial_sums = *align_task.ref_partial_sums;
+    const SDInv2& sd_inv_2 = *align_task.ref_sd_inv_2;
     const DoubleVec& ref_miss_penalties = align_opts.ref_miss_penalties;
     const DoubleVec& query_miss_penalties = align_opts.query_miss_penalties;
+
 
     ScoreMatrixType& mat = *align_task.mat;
 
@@ -1243,7 +1259,7 @@ template<class ScoreMatrixType, class SizingPenaltyType>
             int ref_miss = j - l - 1; // sites in reference unaligned to query
             double ref_miss_penalty = ref_miss_penalties[ref_miss];
             int ref_size = ref_partial_sums(j-1, ref_miss);
-
+            double chi2_denom = sd_inv_2(j-1, ref_miss);
         
             #if FILL_DEBUG > 0
             cerr << "i: " << i
@@ -1260,8 +1276,8 @@ template<class ScoreMatrixType, class SizingPenaltyType>
             // Add sizing penalty only if this is not a boundary fragment.
             double size_penalty = 0.0;
             if (!is_ref_boundary && (!is_query_boundary || query_size > ref_size)) {
-              size_penalty = align_task.sizing_penalty(query_size, ref_size, align_opts);
-                   
+              double delta = query_size - ref_size;
+              size_penalty = delta*delta*chi2_denom;     
             }
 
 
@@ -1335,6 +1351,203 @@ template<class ScoreMatrixType, class SizingPenaltyType>
     #endif
 
   } // fill_score_matrix_using_partials_with_breaks_hardcode_penalty, row_order
+
+  template<class ScoreMatrixType, class SizingPenaltyType>
+  void fill_score_matrix_using_partials_with_breaks_hardcode_penalty_ijlk(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task) {
+    /*
+    Fill score matrix using partial sums
+    */
+
+    #if FILL_DEBUG > 0
+      cerr << "\n\nfill_score_matrix_using_partials_with_breaks_hardcode_penalty_ijlk" << "\n";
+    #endif
+
+    // Unpack the alignment task
+    AlignOpts& align_opts = *align_task.align_opts;
+    const IntVec& query = *align_task.query;
+    const IntVec& ref = *align_task.ref;
+    const PartialSums& query_partial_sums = *align_task.query_partial_sums;
+    const PartialSums& ref_partial_sums = *align_task.ref_partial_sums;
+    const SDInv2& sd_inv_2 = *align_task.ref_sd_inv_2;
+    const DoubleVec& ref_miss_penalties = align_opts.ref_miss_penalties;
+    const DoubleVec& query_miss_penalties = align_opts.query_miss_penalties;
+
+
+    ScoreMatrixType& mat = *align_task.mat;
+
+    const int m = query.size() + 1;
+    const int n = ref.size() + 1;
+    mat.resize(m, n);
+
+    // Note: Number of rows may be different from m if matrix is padded with extra rows.
+    const int num_rows = mat.getNumRows();
+
+    assert((int) mat.getNumCols() >= n);
+    assert((int) mat.getNumRows() >= m);
+
+    #if FILL_DEBUG > 0
+    cerr << "m: " << m
+         << " n: " << n
+         << " num_rows: " << num_rows
+         << " num_cols: " << mat.getNumCols()
+         << "\n";
+    #endif
+
+    // Initialize the first row
+    for (int j = 0; j < n; j++) {
+      ScoreCell* pCell = mat.getCell(0,j);
+      pCell->score_ = 0.0;
+      pCell->backPointer_ = nullptr;
+    }
+
+    // Initialize the first column
+    for (int i = 1; i < m; i++ ) {
+      ScoreCell* pCell = mat.getCell(i,0);
+      pCell->score_ = -INF;
+      pCell->backPointer_ = nullptr;
+    }
+
+    // Initialize the body of the matrix.
+    for (int i = 1; i < m; i++) {
+      for (int j = 1; j < n; j++) {
+        ScoreCell* pCell = mat.getCell(i, j);
+        pCell->score_ = -INF;
+        pCell->backPointer_ = nullptr;
+      }
+    }
+
+    #if FILL_DEBUG > 0
+    int num_breaks = 0;
+    #endif
+
+    
+    for (int i = 1; i < m; i++) {
+
+      int k0 = (i > align_opts.query_max_misses) ? i - align_opts.query_max_misses - 1 : 0;
+
+      for (int j = 1; j < n; j++) {
+      
+        int l0 = (j > align_opts.ref_max_misses + 1) ? j - align_opts.ref_max_misses - 1 : 0;
+
+        ScoreCell* pCell = mat.getCell(i, j);
+
+        // Try all allowable extensions
+
+        ScoreCell* backPointer = nullptr;
+        double best_score = -INF;
+        int best_ref_miss = std::numeric_limits<int>::max();
+        int best_query_miss = std::numeric_limits<int>::max();
+
+        for(int l = j-1; l >= l0; l--) {
+
+          const bool is_ref_boundary = !align_opts.ref_is_bounded && (l == 0 || j == n - 1);
+
+          int ref_miss = j - l - 1; // sites in reference unaligned to query
+          double ref_miss_penalty = ref_miss_penalties[ref_miss];
+          int ref_size = ref_partial_sums(j-1, ref_miss);
+          double chi2_denom = sd_inv_2(j-1, ref_miss);
+      
+          for(int k = i-1; k >= k0; k--) {
+
+            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || k == m - 1);
+
+            int query_miss = i - k - 1; // sites in query unaligned to reference
+            double query_miss_penalty = query_miss_penalties[query_miss];
+            //double query_miss_penalty = query_miss * align_opts.query_miss_penalty;
+            int query_size = query_partial_sums(i-1, query_miss);
+      
+            #if FILL_DEBUG > 0
+            cerr << "i: " << i
+                 << " j: " << j
+                 << " k: " << k
+                 << " l: " << l
+                 << "\n";
+            #endif
+
+            ScoreCell* pTarget = mat.getCell(k, l);
+            if (pTarget->score_ == -INF) continue;
+
+
+            // Add sizing penalty only if this is not a boundary fragment.
+            double size_penalty = 0.0;
+            if (!is_ref_boundary && (!is_query_boundary || query_size > ref_size)) {
+              double delta = query_size - ref_size;
+              size_penalty = delta*delta*chi2_denom;     
+            }
+
+
+            #if FILL_DEBUG > 0
+              std::cerr << "penalties: " << size_penalty << " " << query_miss_penalty << " " << ref_miss_penalty << " " << query_miss << " " << ref_miss << " " 
+                        << "query_size: " << query_size << " "
+                        << "ref_size: " << ref_size << "\n";
+              num_breaks++;
+            #endif
+            
+            // Ref chunk only grows inside this loop.
+            // Break if the query chunk is already too big for the reference
+            if (size_penalty > align_opts.max_chunk_sizing_error) {
+
+              if (ref_size > query_size) {
+
+                  #if FILL_DEBUG > 0
+                    std::cerr << "BREAK!\n";
+                    num_breaks++;
+                  #endif
+                break;
+              }
+
+              continue;
+
+            }
+
+            double chunk_score = -size_penalty - query_miss_penalty - ref_miss_penalty;
+            double this_score = chunk_score + pTarget->score_;
+
+            // Test whether this score is better. Break ties consistently, by 
+            // first minimizing reference misses. If tied there, minimize query misses.
+            bool this_is_better {false};
+            if(this_score > best_score) {
+              this_is_better = true;
+            } else if (this_score == best_score) {
+              this_is_better = (ref_miss < best_ref_miss) || 
+                               (ref_miss == best_ref_miss && query_miss < best_query_miss);
+            }
+
+            #if FILL_DEBUG > 0
+             std::cerr << this_is_better << "\n"
+                       << "\t" << SAFE_WRITE(backPointer) << " " << best_score << " " << best_ref_miss << " " << best_query_miss << " " << "\n"
+                       << "\t" << SAFE_WRITE(pTarget) << " " << this_score << " " << ref_miss << " " << query_miss << "\n";
+            #endif
+
+
+            if (this_is_better) {
+
+              backPointer = pTarget;
+              best_score = this_score;
+              best_ref_miss = ref_miss;
+              best_query_miss = query_miss;
+
+            }
+
+          } // for int k
+        } // for int l
+
+        // Assign the backpointer and score to pCell
+        if (backPointer) {
+          pCell->backPointer_ = backPointer;
+          pCell->score_ = best_score;
+        }
+
+      } // for int i
+    } // for int j
+    
+    #if FILL_DEBUG > 0
+      std::cout << "num breaks: " << num_breaks << "\n";
+    #endif
+
+  } // fill_score_matrix_using_partials_with_breaks_hardcode_penalty, row_order
+
+
 
 template<class ScoreMatrixType, class SizingPenaltyType>
   void fill_score_matrix_with_breaks(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task, 
@@ -1722,36 +1935,6 @@ template<class ScoreMatrixType, class SizingPenaltyType>
     #endif
 
   } // fill_score_matrix_with_breaks, row_order
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2199,13 +2382,6 @@ template<class ScoreMatrixType, class SizingPenaltyType>
     #endif
 
   } // fill_score_matrix_using_partials
-
-
-
-
-
-
-
 
 
   template<class ScoreMatrixType, class SizingPenaltyType>
@@ -2804,7 +2980,7 @@ template<class ScoreMatrixType, class SizingPenaltyType>
     return num_alignments;
   }
 
-    // trail: starts from end of alignment
+  // trail: starts from end of alignment
   template<class ScoreMatrixType, class SizingPenaltyType>
   void build_chunk_trail(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task, ScoreCellPVec& trail, ChunkVec& query_chunks, ChunkVec& ref_chunks) {
 
@@ -2974,7 +3150,6 @@ template<class ScoreMatrixType, class SizingPenaltyType>
       aln.rescale_matched_chunks(align_opts);
     }
     return aln;
-
   }
 
   // Fill score matrix, find best alignment, and return it.
@@ -3000,7 +3175,6 @@ template<class ScoreMatrixType, class SizingPenaltyType>
       aln.rescale_matched_chunks(align_opts);
     }
     return aln;
-
   }
 
   //////////////////////////////////////////////////////////
