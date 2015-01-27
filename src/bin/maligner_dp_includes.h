@@ -19,6 +19,8 @@ static const char *USAGE_MESSAGE =
 "      -r,--ref-miss-penalty            Reference unmatched site penalty\n"
 "      --query-max-misses               Query maximum consecutive unmatched\n"
 "      --ref-max-misses                 Reference maximum consecutive unmatched\n"
+"      --query-max-miss-rate            Maximum rate of unmatched sites in the query\n"
+"      --ref-max-miss-rate              Maximum rate of unmatched sites in the reference\n"
 "      --sd-rate                        Standard deviation rate.\n"
 "      --min-sd                         Minimum standard deviation (bp)\n"
 "      --max-chunk-sizing-error         \n"
@@ -41,6 +43,8 @@ namespace maligner_dp {
       static double sd_rate = 0.05;
       static double min_sd = 500.0;
       static double max_chunk_sizing_error = 16.0;
+      static double ref_max_miss_rate = 0.50;
+      static double query_max_miss_rate = 0.25;
       static int alignments_per_reference = 100;
       static int min_alignment_spacing = 10;
       static int neighbor_delta = 0;
@@ -61,7 +65,9 @@ enum {
   OPT_MAX_CHUNK_SIZING_ERROR,
   OPT_ALIGNMENTS_PER_REFERENCE,
   OPT_MAX_ALIGNMENT_SEEDS,
-  OPT_MAX_ALIGNMENTS
+  OPT_MAX_ALIGNMENTS,
+  OPT_REF_MAX_MISS_RATE,
+  OPT_QUERY_MAX_MISS_RATE
 };
 
 static const struct option longopts[] = {
@@ -70,6 +76,8 @@ static const struct option longopts[] = {
     { "ref-miss-penalty", required_argument, NULL, 'r'},
     { "query-max-misses", required_argument, NULL, OPT_QUERY_MAX_MISSES},
     { "ref-max-misses", required_argument, NULL, OPT_REF_MAX_MISSES},
+    { "query-max-miss-rate", required_argument, NULL, OPT_QUERY_MAX_MISS_RATE},
+    { "ref-max-miss-rate", required_argument, NULL, OPT_REF_MAX_MISS_RATE},
     { "sd-rate", required_argument, NULL, OPT_SD_RATE},
     { "min-sd", required_argument, NULL, OPT_MIN_SD},
     { "max-chunk-sizing-error", required_argument, NULL, OPT_MAX_CHUNK_SIZING_ERROR},
@@ -93,6 +101,10 @@ void parse_args(int argc, char** argv)
         {
             case 'q': arg >> opt::query_miss_penalty; break;
             case 'r': arg >> opt::ref_miss_penalty; break;
+            case OPT_QUERY_MAX_MISSES: arg >> opt::query_max_misses; break;
+            case OPT_REF_MAX_MISSES: arg >> opt::ref_max_misses; break;
+            case OPT_QUERY_MAX_MISS_RATE: arg >> opt::query_max_miss_rate; break;
+            case OPT_REF_MAX_MISS_RATE: arg >> opt::ref_max_miss_rate; break;
             case OPT_SD_RATE: arg >> opt::sd_rate; break;
             case OPT_MIN_SD: arg >> opt::min_sd; break;
             case OPT_MAX_CHUNK_SIZING_ERROR: arg >> opt::max_chunk_sizing_error; break;
@@ -140,6 +152,16 @@ void parse_args(int argc, char** argv)
       die = true;
     }
 
+    if(opt::query_max_miss_rate < 0.0) {
+      std::cerr << "Query max miss rate must be non-negative.\n";
+      die = true;
+    }
+
+    if(opt::ref_max_miss_rate < 0.0) {
+      std::cerr << "Reference max miss rate must be non-negative.\n";
+      die = true;
+    }
+
     if(opt::query_max_misses < 0) {
       std::cerr << "Query max misses must be positive\n";
       die = true;
@@ -174,6 +196,8 @@ std::ostream& print_args(std::ostream& os) {
      << "\tref_miss_penalty: " << ref_miss_penalty << "\n"
      << "\tquery_max_misses: " << query_max_misses << "\n"
      << "\tref_max_misses: " << ref_max_misses << "\n"
+     << "\tquery_max_miss_rate: " << query_max_miss_rate << "\n"
+     << "\tref_max_miss_rate: " << ref_max_miss_rate << "\n"
      << "\tsd_rate: " << sd_rate << "\n"
      << "\tmin_sd: " << min_sd << "\n"
      << "\tmax_chunk_sizing_error: " << max_chunk_sizing_error << "\n"

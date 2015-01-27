@@ -148,6 +148,10 @@ void align_to_all_ref(RefMapWrapperDB& ref_map_db,
 
       align_func(align_task);
 
+      // Print filled by row.
+      std::cout << qmw.m_.name_ << " " << rmw.m_.name_ << "\n";
+      print_filled_by_row(std::cout, *sm);
+
   }
 
 }
@@ -182,6 +186,7 @@ int main(int argc, char* argv[]) {
   //align_opts.max_chunk_sizing_error = std::numeric_limits<double>::max();
 
   cerr << align_opts << "\n";
+  cerr << "sizeof(ScoreCell): " << sizeof(ScoreCell) << "\n";
 
   // Build a database of reference maps. 
   MapVec ref_maps(read_maps(maligner_dp::opt::ref_maps_file));
@@ -217,51 +222,27 @@ int main(int argc, char* argv[]) {
     Timer query_timer;
 
     std::cout << "******************************************************" << std::endl;
+    std::cout << "fill hardcode max miss:\n";
 
-
-    query_timer.start();
-    align_to_all_ref(ref_map_db, qmw, &sm_row, alns, Chi2SizingPenalty(), align_opts, fill_with_partials_breaks);
-    query_timer.end();
-    std::cout << qmw.m_.name_ << " Row, chi2 sizing error: " << query_timer << std::endl;
-
-    query_timer.start();
-    align_to_all_ref(ref_map_db, qmw, &sm_row, alns, NoSizingPenalty(), align_opts, fill_hardcode);
-    query_timer.end();
-    std::cout << qmw.m_.name_ << " Row, hardcode sizing error: " << query_timer << std::endl;
-
-    query_timer.start();
-    align_to_all_ref(ref_map_db, qmw, &sm_row, alns, NoSizingPenalty(), align_opts, fill_hardcode_ijlk);
-    query_timer.end();
-    std::cout << qmw.m_.name_ << " Row, hardcode_ijlk sizing error: " << query_timer << std::endl;
+    // Resize score matrix here to avoid penalizing the resize cost when timing the alignment
+    // methods
+    size_t num_cols = sm_row.getNumCols();
+    sm_row.resize(qmw.num_frags()+1, num_cols);
 
     query_timer.start();
     align_to_all_ref(ref_map_db, qmw, &sm_row, alns, NoSizingPenalty(), align_opts, fill_hardcode_max_miss);
     query_timer.end();
-    std::cout << qmw.m_.name_ << " Row, hardcode_max_miss sizing error: " << query_timer << std::endl;
+    std::cout << qmw.m_.name_ << " row hardcode_max_miss sizing error " << query_timer << std::endl;
 
 
-    query_timer.start();
-    align_to_all_ref(ref_map_db, qmw, &sm_col, alns, Chi2SizingPenalty(), align_opts, fill_with_partials_breaks);
-    query_timer.end();
-    std::cout << qmw.m_.name_ << " Column, chi2 sizing error: " << query_timer << std::endl;
+    std::cout << "******************************************************" << std::endl;
+    std::cout << "fill hardcode:\n";
 
     query_timer.start();
-    align_to_all_ref(ref_map_db, qmw, &sm_col, alns, NoSizingPenalty(), align_opts, fill_hardcode);
+    align_to_all_ref(ref_map_db, qmw, &sm_row, alns, NoSizingPenalty(), align_opts, fill_hardcode);
     query_timer.end();
-    std::cout << qmw.m_.name_ << " Column, hardcode sizing error: " << query_timer << std::endl;
-
-
-    // query_timer.start();
-    // align_to_all_ref(ref_map_db, qmw, &sm_row, alns, NoSizingPenalty(), align_opts, fill_with_partials_breaks);
-    // query_timer.end();
-    // std::cout << qmw.m_.name_ << " Row, no sizing error: " << query_timer << std::endl;
-
-    // query_timer.start();
-    // align_to_all_ref(ref_map_db, qmw, &sm_col, alns, NoSizingPenalty(), align_opts, fill_with_partials_breaks);
-    // query_timer.end();
-    // std::cout << qmw.m_.name_ << " Column, no sizing error: " << query_timer << std::endl;
-
-
+    std::cout << qmw.m_.name_ << "  row hardcode sizing error " << query_timer << std::endl;
+    
 
     alns.clear();
       

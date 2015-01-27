@@ -32,6 +32,8 @@ namespace maligner_dp {
         ScoreCell() :
             q_(-1),
             r_(-1),
+            qm_(0),
+            rm_(0),
             backPointer_(nullptr),
             color_(ScoreCellColor::WHITE)
         { };
@@ -39,6 +41,8 @@ namespace maligner_dp {
         ScoreCell(int q, int r) :
             q_(q),
             r_(r),
+            qm_(0),
+            rm_(0),
             backPointer_(nullptr),
             color_(ScoreCellColor::WHITE)
         { };
@@ -46,6 +50,8 @@ namespace maligner_dp {
         ScoreCell(IntPair ip) :
             q_(ip.first),
             r_(ip.second),
+            qm_(0),
+            rm_(0),
             backPointer_(nullptr),
             color_(ScoreCellColor::WHITE)
         { };
@@ -63,6 +69,8 @@ namespace maligner_dp {
 
             bool coord_score_match = (q_ == o.q_) && 
                                      (r_ == o.r_) &&
+                                     (qm_ == o.qm_) &&
+                                     (rm_ == o.rm_) &&
                                      (std::abs(score_ - o.score_) < TOL) &&
                                      (b1 == nullptr) == (b2 == nullptr);
             
@@ -86,9 +94,13 @@ namespace maligner_dp {
 
         int q_;
         int r_;
+        int qm_; // cumulative query misses
+        int rm_; // cumulative reference misses
         double score_;
         ScoreCell * backPointer_; // back pointer for DP solution path
         ScoreCellColor color_;
+
+        friend std::ostream& operator<<(std::ostream&, const ScoreCell& cell);
     };
 
 
@@ -96,6 +108,8 @@ namespace maligner_dp {
     {
         q_ = -1;
         r_ = -1;
+        qm_ = 0;
+        rm_ = 0;
         backPointer_ = nullptr;
         score_ = -INF;
         color_ = ScoreCellColor::WHITE;

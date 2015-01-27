@@ -108,6 +108,8 @@ namespace maligner_dp {
          << "\n\t ref_miss_penalty: " << ao.ref_miss_penalty
          << "\n\t query_max_misses: " << ao.query_max_misses
          << "\n\t ref_max_misses: " << ao.ref_max_misses
+         << "\n\t query_max_miss_rate: " << ao.query_max_miss_rate
+         << "\n\t ref_max_miss_rate: " << ao.ref_max_miss_rate
          << "\n\t sd_rate: " << ao.sd_rate
          << "\n\t min_sd: " << ao.min_sd
          << "\n\t max_chunk_sizing_error: " << ao.max_chunk_sizing_error

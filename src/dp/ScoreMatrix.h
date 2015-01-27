@@ -116,6 +116,7 @@ namespace maligner_dp {
         for (size_t i = 0; i < numRows_; i++) {
             for (size_t j = 0; j < numCols_; j++) {
                 ScoreCell * pCell = getCell(i, j);
+                pCell->reset();
                 pCell->q_ = i;
                 pCell->r_ = j;
                 pCell->backPointer_ = nullptr;
@@ -131,6 +132,7 @@ namespace maligner_dp {
         for (size_t j = 0; j < numCols_; j++) {
             for (size_t i = 0; i < numRows_; i++) {
                 ScoreCell * pCell = getCell(i, j);
+                pCell->reset();
                 pCell->q_ = i;
                 pCell->r_ = j;
                 pCell->backPointer_ = nullptr;

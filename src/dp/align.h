@@ -39,12 +39,14 @@ namespace maligner_dp {
               double sd_rate_in,
               double min_sd_in,
               double max_chunk_sizing_error_in,
-              int max_alignment_seeds_in = 1000,
-              int alignments_per_reference_in = 1,
-              int min_alignment_spacing_in = 1,
-              int neighborhood_delta_in = 0,
-              bool query_is_bounded_in = true,
-              bool ref_is_bounded_in = false) : 
+              double ref_max_miss_rate_in,
+              double query_max_miss_rate_in,
+              int max_alignment_seeds_in,
+              int alignments_per_reference_in,
+              int min_alignment_spacing_in,
+              int neighborhood_delta_in,
+              bool query_is_bounded_in,
+              bool ref_is_bounded_in) : 
       query_miss_penalty(query_miss_penality_in), // penalty for having a site in query unaligned to reference
       ref_miss_penalty(ref_miss_penalty_in), // penalty for having a site in reference unaligned to query
       query_max_misses(query_max_misses_in),
@@ -52,6 +54,8 @@ namespace maligner_dp {
       sd_rate(sd_rate_in), // Fraction of reference fragment to use as standard deviation
       min_sd(min_sd_in), // minimum standard deviation imposed in sizing error model, bp
       max_chunk_sizing_error(max_chunk_sizing_error_in),
+      ref_max_miss_rate(ref_max_miss_rate_in),
+      query_max_miss_rate(query_max_miss_rate_in),
       max_alignment_seeds(max_alignment_seeds_in),
       alignments_per_reference(alignments_per_reference_in),
       min_alignment_spacing(min_alignment_spacing_in),
@@ -85,6 +89,8 @@ namespace maligner_dp {
     double sd_rate;
     double min_sd;
     double max_chunk_sizing_error;
+    double ref_max_miss_rate; // Maximum unmatched site rate in the reference
+    double query_max_miss_rate; // Maximum unmatched site rate in the query
     int max_alignment_seeds;
 
     int alignments_per_reference; // max number of alignments per reference
@@ -177,7 +183,7 @@ namespace maligner_dp {
       mat(m),
       alignments(alns),
       is_forward(is_forward_in),
-      align_opts(&ao) { }
+      align_opts(&ao) { compute_max_misses(); }
 
     AlignTask(const MapDataPtr qmd,
               const MapDataPtr rmd,
@@ -203,7 +209,7 @@ namespace maligner_dp {
       alignments(alns),
       is_forward(is_forward_in),
       align_opts(&ao)
-    { }
+    { compute_max_misses(); }
 
     const MapDataPtr query_map_data;
     const MapDataPtr ref_map_data;
@@ -212,12 +218,30 @@ namespace maligner_dp {
     const PartialSums* query_partial_sums;
     const PartialSums* ref_partial_sums;
     const SDInv* ref_sd_inv; // 1.0/(sd^2) precomputed for each reference chunk.
+    int query_max_total_misses;
+    int ref_max_total_misses;
     int ref_offset; // index of the first fragment in ref. This will be nonzero if aligning to slice of reference.
     ScoreMatrixPtr mat;
     AlignmentVec* alignments; // Alignment vector to append all found alignments to.
     bool is_forward; // true if the alignment is forward in the reference, false otherwise.
     SizingPenaltyType sizing_penalty;
     AlignOpts * align_opts;
+
+    //////////////////////////////////////////
+    // Compute the maximum number of allowed misses, given the 
+    // settings for query_max_miss_rate and ref_max_miss_rate.
+    void compute_max_misses() {
+
+      int num_query_sites = query_map_data->is_bounded_ ? query->size() + 1: query->size()-1;
+      query_max_total_misses = int(align_opts->query_max_miss_rate * num_query_sites);
+
+      // Compute an upper bound on the number of allowed reference misses. It depends
+      // on the number of sites in the query.
+      const double ref_max_miss_rate = align_opts->ref_max_miss_rate;
+      ref_max_total_misses = ref_max_miss_rate / (1 - ref_max_miss_rate) * num_query_sites;
+
+
+    };
 
   };
 

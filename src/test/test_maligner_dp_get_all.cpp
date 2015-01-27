@@ -71,6 +71,7 @@ int main(int argc, char* argv[]) {
   //      << "\tmax matches per query: " << maligner_dp::opt::max_match << "\n"
   //      << "................................................\n\n";
 
+
   AlignOpts align_opts(maligner_dp::opt::query_miss_penalty,
                        maligner_dp::opt::ref_miss_penalty,
                        maligner_dp::opt::query_max_misses,
@@ -78,6 +79,9 @@ int main(int argc, char* argv[]) {
                        maligner_dp::opt::sd_rate,
                        maligner_dp::opt::min_sd,
                        maligner_dp::opt::max_chunk_sizing_error,
+                       maligner_dp::opt::ref_max_miss_rate,
+                       maligner_dp::opt::query_max_miss_rate,
+                       maligner_dp::opt::alignments_per_reference,
                        maligner_dp::opt::alignments_per_reference,
                        maligner_dp::opt::min_alignment_spacing,
                        maligner_dp::opt::neighbor_delta,
