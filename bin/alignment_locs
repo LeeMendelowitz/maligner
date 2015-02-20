@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+"""Extract alignment starting/ending locations from a maligner dp alignments_file"""
+
+
+import argparse
+from itertools import islice
+import os, sys
+import numpy as np
+import pandas
+from pandas import DataFrame
+
+from malignpy.common import wrap_file_function, logging_utils
+
+logger = logging_utils.create_logger('alignment_locs')
+
+
+parser = argparse.ArgumentParser(description="""Select alignment starting/ending locations from a maligner dp alignments file""")
+parser.add_argument('alns_file', metavar='ALIGNMENTS_FILE', type=str,
+                   help='Alignments file. Use "-" for STDIN')
+parser.add_argument('ref_maps', metavar='REF_MAP_FILE', type=str,
+                   help='Reference map file.')
+parser.add_argument('query_maps', metavar='QUERY_MAP_FILE', type=str,
+                   help='Query map file.')
+parser.add_argument('-o', '--output', metavar='OUTPUT_FILE', help = "Output file name. (Default: STDOUT)")
+
+
+
+@wrap_file_function('r', 'w')
+def alignment_locs(aln_file, output_file, query_map_dict, ref_map_dict):
+  
+  header = aln_file.next().split()
+  inds = [0, 1, 2, 13]
+
+  header = '\t'.join(('query_map', 'ref_map', 'orientation', 'query_start', 'query_end', 'ref_start', 'ref_end'))
+  aln_file.write(header + '\n')
+  for l in aln_file:
+
+    # Quick crude parsing 
+    fields = l.split()
+    q_map = fields[0]
+    ref_map = fields[1]
+    orientation = fields[2]
+    chunk_string = fields[13]
+
+    chunks = chunk_string.split(';')
+    chunkl = chunks[0].split(',')
+    chunkr = chunks[-1].split(',')
+
+    query_start = chunkl[0]
+    query_end = chunkr[1]
+    if orientation == 'F':
+      ref_start = chunkl[3]
+      ref_end = chunkr[5]
+    else:
+      ref_start = chunkr[3]
+      ref_end = chunkl[5]
+
+    aln_file.write('\t'.join(q_map, r_map, orientation, query_start, query_end, ref_start, ref_end) + '\n')
+
+
+if __name__ == '__main__':
+
+  args = parser.parse_args()
+
+  output_file = args.output if args.output is not None else sys.stdout
+  input_file = args.alns_file if (args.alns_file is not None and args.alns_file != '-') else sys.stdin
+
+  logger.info('Alignment file: %s', "STDIN" if input_file == sys.stdin else args.alns_file)
+  logger.info('Query map file: %s', args.query_maps)
+  logger.info('Ref maps file: %s', args.ref_maps)
+  logger.info('Output file: %s', 'STDOUT' if args.output is None else args.output)
+
+  # Note: This may be a problem for large maps files.
+  logger.info('reading query maps')
+  query_map_dict = read_maps(args.query_maps)
+
+  logger.info('reading ref maps')
+  ref_map_dict = read_maps(args.ref_maps)
+
+  alignment_locs(input_file, output_file, query_map_dict, ref_map_dict)

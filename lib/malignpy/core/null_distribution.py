@@ -18,12 +18,10 @@ import pandas
 from datetime import datetime
 
 from malignpy.maps.SOMAMap import SOMAMap
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+from malignpy.common.logging_utils import create_logger
 
-def stdout(msg):
-  sys.stdout.write(msg)
-  sys.stdout.flush()
+logger = create_logger(__name__)
+
 
 class ReturnObj(object):
   pass
@@ -262,7 +260,7 @@ class NullModelSimulator(object):
   def generate_random_frags(self, N):
     """
     Generate random restriction fragments through simulation, using the 
-    nick probability in self.controls.
+    nick probability in self.controls (query_miss_probability)
     """
     miss_prob = self.controls.query_miss_probability
     hit_prob = 1.0 - miss_prob
@@ -331,6 +329,29 @@ class NullModelSimulator(object):
     ret = ReturnObj()
     ret.sizes = chunk_lengths
     return ret
+
+  @classmethod
+  def fragment_distribution_by_hit_prob(cls, nick_probs = np.arange(0.025, 1 + 1E-6, 0.025), ref_frags = None, N = 1000000):
+    """Simulate different N-map fragment distributions for different nicking probabilities, and return summary statistics
+    as of the resulting fragment distribution.
+    """
+    from numpy import median, mean
+
+    sim_results = []
+
+    for p in nick_probs:
+      logger.info("Simulating fragments for hit_probability = {:.6f}".format(p))
+      query_miss_prob = 1.0 - p
+      controls = NullModelControls(query_miss_probability = query_miss_prob, num_frags = N)
+      null_simulator = cls(ref_frags, controls)
+      ret = null_simulator.generate_random_frags(N) # Simulate random fragments
+      d = {'hit_prob' : p,
+           'median_frag' : median(ret.sizes),
+           'mean_frag' : mean(ret.sizes) }
+      sim_results.append(d)
+
+    return pandas.DataFrame(sim_results)    
+
 
   def simulate_null_distribution(self):
     """
