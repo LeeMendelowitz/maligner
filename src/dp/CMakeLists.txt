@@ -21,7 +21,7 @@ set(DP_SOURCES
 add_library(dp STATIC ${DP_SOURCES})
 
 # install directory
-install(TARGETS dp ARCHIVE DESTINATION "${MALIGNER_LIB_DIR}")
+# install(TARGETS dp ARCHIVE DESTINATION "${MALIGNER_LIB_DIR}")
 
 # CAN ATTEMPT TO BUILD THE PYTHON LIBRARY WITH HELP FROM THIS:
 # http://stackoverflow.com/questions/5851016/boost-python-and-cmake-link-and-load-errors

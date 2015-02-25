@@ -6,6 +6,7 @@
 #include <cassert>
 #include <queue>
 #include <ostream>
+#include <limits>
 
 #include "ScoreMatrix.h"
 #include "ScoreCell.h"
@@ -238,8 +239,10 @@ namespace maligner_dp {
       // Compute an upper bound on the number of allowed reference misses. It depends
       // on the number of sites in the query.
       const double ref_max_miss_rate = align_opts->ref_max_miss_rate;
-      ref_max_total_misses = ref_max_miss_rate / (1 - ref_max_miss_rate) * num_query_sites;
 
+      ref_max_total_misses = (ref_max_miss_rate < 1.0 ) ?
+        (ref_max_miss_rate / (1 - ref_max_miss_rate) * num_query_sites) :
+        std::numeric_limits<int>::max();
 
     };
 

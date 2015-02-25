@@ -8,7 +8,7 @@ set(COMMON_SRC "timer.cpp" "map.cpp" "map_reader.cpp")
 add_library(common STATIC ${COMMON_SRC})
 
 # install directory
-install(TARGETS common ARCHIVE DESTINATION "${MALIGNER_LIB_DIR}")
+# install(TARGETS common ARCHIVE DESTINATION "${MALIGNER_LIB_DIR}")
 
 # CAN ATTEMPT TO BUILD THE PYTHON LIBRARY WITH HELP FROM THIS:
 # http://stackoverflow.com/questions/5851016/boost-python-and-cmake-link-and-load-errors

@@ -20,4 +20,4 @@ set(KMER_MATCH_SOURCES
 add_library(kmer_match STATIC ${KMER_MATCH_SOURCES})
 
 # install directory
-install(TARGETS kmer_match ARCHIVE DESTINATION "${MALIGNER_LIB_DIR}")
+# install(TARGETS kmer_match ARCHIVE DESTINATION "${MALIGNER_LIB_DIR}")
