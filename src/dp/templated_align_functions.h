@@ -1,7 +1,7 @@
 #ifndef TEMPLATED_ALN_FUNC
 #define TEMPLATED_ALN_FUNC
 
-#define FILL_DEBUG 0  
+#define FILL_DEBUG 0
 
 #include <limits>
 #include <algorithm>
@@ -3093,7 +3093,7 @@ namespace maligner_dp {
     const size_t num_seeds = alignment_seeds.size();
     int num_seeds_selected = 0;
     for (int s = 0;
-         s < num_seeds && num_seeds_selected < align_opts.max_alignment_seeds;
+         s < num_seeds && num_seeds_selected < align_opts.alignments_per_reference;
          s++)
     {
 
@@ -3456,6 +3456,7 @@ namespace maligner_dp {
     os << "align_task:\n"
        << "\tquery: " << task.query << "\n"
        << "\tref: " << task.ref << "\n"
+       << "\tis_forward: " << task.is_forward << "\n"
        << std::endl;
 
     return os;

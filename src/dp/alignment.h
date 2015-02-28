@@ -7,6 +7,8 @@
 #include "map_data.h"
 #include "matched_chunk.h"
 
+#define ALIGNMENT_CLASS_DEBUG 0
+
 namespace maligner_dp {
 
   using std::size_t;
@@ -40,6 +42,12 @@ namespace maligner_dp {
       query_scaling_factor(1.0),
       is_forward(is_forward__)
     {
+      #if ALIGNMENT_CLASS_DEBUG > 0
+      {
+        std::cerr << "Constructing alignment class. is_forward: " << is_forward__ << "\n";
+
+      }
+      #endif
       summarize();
     }
 
@@ -78,7 +86,7 @@ namespace maligner_dp {
       return 0;
     }
 
-    void flip_query_coords();
+    
 
     // Attributes
     MapData query_map_data;
@@ -105,6 +113,10 @@ namespace maligner_dp {
     double query_scaling_factor;
     bool is_forward;
     bool is_valid;
+
+    private:
+
+    void flip_query_coords();
 
   };
 
@@ -142,10 +154,31 @@ namespace maligner_dp {
 
       is_valid = !matched_chunks.empty();
 
+      #if ALIGNMENT_CLASS_DEBUG > 0
+      {
+        std::cerr << "Aligment before flip. is_forward: " << is_forward << " chunk_string: ";
+        for(auto& mc : rescaled_matched_chunks) {
+          std::cerr << mc << ";";
+        }
+        std::cerr << "\n";
+      }
+      #endif
+
       // Fix query coordinates to match forward coordinates of query
       if(!is_forward) {
         flip_query_coords(); 
       }
+
+      #if ALIGNMENT_CLASS_DEBUG > 0
+      {
+        std::cerr << "Aligment after flip. is_forward: " << is_forward << " chunk_string: ";
+        for(auto& mc : rescaled_matched_chunks) {
+          std::cerr << mc << ";";
+        }
+        std::cerr << "\n";
+      }
+      #endif
+
 
       std::size_t l(matched_chunks.size());
       for (std::size_t i = 0; i < l; i++) {
@@ -199,22 +232,50 @@ namespace maligner_dp {
 
   // Flip the query coordinates in every matched chunk
   inline void Alignment::flip_query_coords() {
-    const size_t num_chunks {matched_chunks.size()};
+
+    #if ALIGNMENT_CLASS_DEBUG > 0
+    {
+      std::cerr << "IN FLIP QUERY_COORDS\n";
+    }
+    #endif
+
+    size_t num_chunks {matched_chunks.size()};
     const size_t num_query_frags = query_map_data.num_frags_;
+
     for (size_t i = 0; i < num_chunks; i++) {
 
-      MatchedChunk& mc1 = matched_chunks[i];
-      MatchedChunk& mc2 = rescaled_matched_chunks[i];
+      // Had an embarassing bug here when using references.
+      // So we use pointers instead and are careful not to use bracked to protect the scope
+      // of local variables used to flip coordinates.
+      //
+      // Reason why references are dangerous:
+      //
+      //     Chunk& qc = matched_chunks[0].query_chunk;
+      //     [ do stuff to qc]
+      //     qc = rescaled_matched_chunks[0].query_chunk. // OOPS! Does a copy assign to matched_chunks[0].query_chunk!
+      //
+      // Pointers are safer:
+      //     Chunk * qc = &matched_chunks[0].query_chunk;
+      //     [do stuff to qc]
+      //     qc = &rescaled_matched_chunks[0].query_chunk; // OK!
+      //
+      {
+        MatchedChunk * mc = &matched_chunks[i];
+        Chunk * qc = &mc->query_chunk;
 
-      Chunk& qc = mc1.query_chunk;
-      std::swap(qc.start, qc.end);
-      qc.start = num_query_frags - qc.start;
-      qc.end = num_query_frags - qc.end;
+        std::swap(qc->start, qc->end);
+        qc->start = num_query_frags - qc->start;
+        qc->end = num_query_frags - qc->end;
+      }
 
-      qc = mc2.query_chunk;
-      std::swap(qc.start, qc.end);
-      qc.start = num_query_frags - qc.start;
-      qc.end = num_query_frags - qc.end;
+      {
+        MatchedChunk * mc = &rescaled_matched_chunks[i];
+        Chunk * qc = &mc->query_chunk;
+
+        std::swap(qc->start, qc->end);
+        qc->start = num_query_frags - qc->start;
+        qc->end = num_query_frags - qc->end;
+      }
 
     }
   }

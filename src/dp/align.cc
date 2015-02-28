@@ -113,7 +113,6 @@ namespace maligner_dp {
          << "\n\t sd_rate: " << ao.sd_rate
          << "\n\t min_sd: " << ao.min_sd
          << "\n\t max_chunk_sizing_error: " << ao.max_chunk_sizing_error
-         << "\n\t max_alignment_seeds: " << ao.max_alignment_seeds
          << "\n\t alignments_per_reference: " << ao.alignments_per_reference 
          << "\n\t min_alignment_spacing: " << ao.min_alignment_spacing 
          << "\n\t neighbor_delta: " << ao.neighbor_delta 

@@ -170,7 +170,6 @@ int main(int argc, char* argv[]) {
                        maligner_dp::opt::ref_max_miss_rate,
                        maligner_dp::opt::query_max_miss_rate,
                        maligner_dp::opt::alignments_per_reference,
-                       maligner_dp::opt::alignments_per_reference,
                        maligner_dp::opt::min_alignment_spacing,
                        maligner_dp::opt::neighbor_delta,
                        maligner_dp::opt::query_is_bounded,

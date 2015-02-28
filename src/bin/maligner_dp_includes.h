@@ -24,7 +24,7 @@ static const char *USAGE_MESSAGE =
 "      --sd-rate                        Standard deviation rate.\n"
 "      --min-sd                         Minimum standard deviation (bp)\n"
 "      --max-chunk-sizing-error         \n"
-"      --alignments-per-reference       \n"
+"      --max-alignments-per-reference       \n"
 "      --max-alignments                 Max. number of alignments to output\n";
 
 
@@ -50,7 +50,6 @@ namespace maligner_dp {
       static int neighbor_delta = 0;
       static bool query_is_bounded = false;
       static bool ref_is_bounded = false;
-      static int max_alignment_seeds = 1000; // Max number of cells to seed alignments from for each reference
       static int max_alignments = 100;
 
   }
@@ -64,7 +63,6 @@ enum {
   OPT_MIN_SD,
   OPT_MAX_CHUNK_SIZING_ERROR,
   OPT_ALIGNMENTS_PER_REFERENCE,
-  OPT_MAX_ALIGNMENT_SEEDS,
   OPT_MAX_ALIGNMENTS,
   OPT_REF_MAX_MISS_RATE,
   OPT_QUERY_MAX_MISS_RATE
@@ -81,7 +79,7 @@ static const struct option longopts[] = {
     { "sd-rate", required_argument, NULL, OPT_SD_RATE},
     { "min-sd", required_argument, NULL, OPT_MIN_SD},
     { "max-chunk-sizing-error", required_argument, NULL, OPT_MAX_CHUNK_SIZING_ERROR},
-    { "alignments-per-reference", required_argument, NULL, OPT_ALIGNMENTS_PER_REFERENCE},
+    { "max-alignments-per-reference", required_argument, NULL, OPT_ALIGNMENTS_PER_REFERENCE},
     { "max-alignments", required_argument, NULL, OPT_MAX_ALIGNMENTS},
     { "help",     no_argument,       NULL, 'h' },
     { "version",  no_argument,       NULL, 'v'},

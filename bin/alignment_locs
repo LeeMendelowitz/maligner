@@ -10,6 +10,7 @@ import pandas
 from pandas import DataFrame
 
 from malignpy.common import wrap_file_function, logging_utils
+from malignpy.maps.utils import read_maps
 
 logger = logging_utils.create_logger('alignment_locs')
 
@@ -32,30 +33,31 @@ def alignment_locs(aln_file, output_file, query_map_dict, ref_map_dict):
   inds = [0, 1, 2, 13]
 
   header = '\t'.join(('query_map', 'ref_map', 'orientation', 'query_start', 'query_end', 'ref_start', 'ref_end'))
-  aln_file.write(header + '\n')
+  output_file.write(header + '\n')
   for l in aln_file:
 
     # Quick crude parsing 
     fields = l.split()
-    q_map = fields[0]
+    query_map = fields[0]
     ref_map = fields[1]
     orientation = fields[2]
     chunk_string = fields[13]
 
-    chunks = chunk_string.split(';')
+    chunks = chunk_string.split(';')[:-1] # Remove trailer
     chunkl = chunks[0].split(',')
     chunkr = chunks[-1].split(',')
 
-    query_start = chunkl[0]
-    query_end = chunkr[1]
-    if orientation == 'F':
-      ref_start = chunkl[3]
-      ref_end = chunkr[5]
-    else:
-      ref_start = chunkr[3]
-      ref_end = chunkl[5]
+    ref_start = chunkl[3]
+    ref_end = chunkr[4]
 
-    aln_file.write('\t'.join(q_map, r_map, orientation, query_start, query_end, ref_start, ref_end) + '\n')
+    if orientation == 'F':
+      query_start = chunkl[0]
+      query_end = chunkr[1]
+    else:
+      query_start = chunkr[0]
+      query_end = chunkl[1]
+
+    output_file.write('\t'.join((query_map, ref_map, orientation, query_start, query_end, ref_start, ref_end)) + '\n')
 
 
 if __name__ == '__main__':
@@ -77,4 +79,5 @@ if __name__ == '__main__':
   logger.info('reading ref maps')
   ref_map_dict = read_maps(args.ref_maps)
 
+  logger.info('done. Extracting alignment locations... (patience)')
   alignment_locs(input_file, output_file, query_map_dict, ref_map_dict)

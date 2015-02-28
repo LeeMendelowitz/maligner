@@ -42,7 +42,6 @@ namespace maligner_dp {
               double max_chunk_sizing_error_in,
               double ref_max_miss_rate_in,
               double query_max_miss_rate_in,
-              int max_alignment_seeds_in,
               int alignments_per_reference_in,
               int min_alignment_spacing_in,
               int neighborhood_delta_in,
@@ -57,7 +56,6 @@ namespace maligner_dp {
       max_chunk_sizing_error(max_chunk_sizing_error_in),
       ref_max_miss_rate(ref_max_miss_rate_in),
       query_max_miss_rate(query_max_miss_rate_in),
-      max_alignment_seeds(max_alignment_seeds_in),
       alignments_per_reference(alignments_per_reference_in),
       min_alignment_spacing(min_alignment_spacing_in),
       neighbor_delta(neighborhood_delta_in), // Return alignments within +/- neighbor_delta ref. fragments
@@ -92,7 +90,6 @@ namespace maligner_dp {
     double max_chunk_sizing_error;
     double ref_max_miss_rate; // Maximum unmatched site rate in the reference
     double query_max_miss_rate; // Maximum unmatched site rate in the query
-    int max_alignment_seeds;
 
     int alignments_per_reference; // max number of alignments per reference
     int min_alignment_spacing; // minimum amount of spacing between multiple accepted

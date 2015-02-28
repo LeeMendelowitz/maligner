@@ -72,7 +72,6 @@ int main(int argc, char* argv[]) {
                        maligner_dp::opt::ref_max_miss_rate,
                        maligner_dp::opt::query_max_miss_rate,
                        maligner_dp::opt::alignments_per_reference,
-                       maligner_dp::opt::alignments_per_reference,
                        maligner_dp::opt::min_alignment_spacing,
                        maligner_dp::opt::neighbor_delta,
                        maligner_dp::opt::query_is_bounded,
@@ -131,27 +130,39 @@ int main(int argc, char* argv[]) {
       // const IntVec* p_frags_forward = &query_frags_forward;
       // const IntVec* p_frags_reverse = &query_frags_reverse;
 
-      AlignTaskType task_forward(const_cast<MapData*>(&qmw.md_),
+      AlignTaskType task_forward(
+        const_cast<MapData*>(&qmw.md_),
         const_cast<MapData*>(&rmw.md_),
-        &query_frags_forward, &rmw.m_.frags_, 
-        &qps_forward, &rmw.ps_,
+        &query_frags_forward,
+        &rmw.m_.frags_, 
+        &qps_forward,
+        &rmw.ps_,
         &rmw.sd_inv_,
         0, // ref_offset
-        &sm, &all_alignments,
+        &sm,
+        &all_alignments,
         true, // is_forward
         align_opts
       );
 
-      AlignTaskType task_reverse(const_cast<MapData*>(&qmw.md_),
+      AlignTaskType task_reverse(
+        const_cast<MapData*>(&qmw.md_),
         const_cast<MapData*>(&rmw.md_),
-        &query_frags_reverse, &rmw.m_.frags_, 
-        &qps_reverse, &rmw.ps_,
+        &query_frags_reverse,
+        &rmw.m_.frags_, 
+        &qps_reverse,
+        &rmw.ps_,
         &rmw.sd_inv_,
         0, // ref_offset
-        &sm, &all_alignments,
+        &sm,
+        &all_alignments,
         false, // is_forward
         align_opts
       );
+
+
+      // std::cerr << "Align task forward: "; print_align_task(std::cerr, task_forward);
+      // std::cerr << "Align task reverse: "; print_align_task(std::cerr, task_reverse);
 
       // std::cerr << "Aligning " << query_map.name_ << " to " << rmw.m_.name_ << "\n";
       Timer timer;
@@ -192,6 +203,7 @@ int main(int argc, char* argv[]) {
  }
  
 
+  std::cerr << "maligner_dp done.\n";
   return EXIT_SUCCESS;
 
 }

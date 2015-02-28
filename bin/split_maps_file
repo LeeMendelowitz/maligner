@@ -27,7 +27,7 @@ def count_lines(fp):
 def split(map_file_path, num_pieces, output_dir = None):
 
   map_file_path = os.path.abspath(map_file_path)
-  output_dir, fn = os.path.split(map_file_path)
+  _, fn = os.path.split(map_file_path)
   bn, _ = os.path.splitext(fn)
   if not output_dir:
     output_dir = os.getcwd()

@@ -248,6 +248,8 @@ int main(int argc, char* argv[]) {
   auto end_time = chrono::steady_clock::now();
   cerr << chrono::duration <double, milli> (end_time - start_time).count() << " ms" << endl;
 
+
+  std::cerr << "maligner done.\n";
   return EXIT_SUCCESS;
 
 }
