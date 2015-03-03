@@ -1,7 +1,7 @@
 # Copy files from here to the binary directory.
 set( FILES_TO_INSTALL
   convert_maps filter_alignments sample_maps_file
-  split_maps_file summarize_maps_file alignment_locs
+  split_maps_file summarize_maps_file alignment_locs alignment_chunks alignmnet_summary_stats
 )
 
 install(FILES ${FILES_TO_INSTALL}
