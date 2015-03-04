@@ -34,30 +34,36 @@ def alignment_locs(aln_file, output_file, query_map_dict, ref_map_dict):
 
   header = '\t'.join(('query_map', 'ref_map', 'orientation', 'query_start', 'query_end', 'ref_start', 'ref_end'))
   output_file.write(header + '\n')
-  for l in aln_file:
+  for line_num,l in enumerate(aln_file):
 
-    # Quick crude parsing 
-    fields = l.split()
-    query_map = fields[0]
-    ref_map = fields[1]
-    orientation = fields[2]
-    chunk_string = fields[13]
+    try:
 
-    chunks = chunk_string.split(';')[:-1] # Remove trailer
-    chunkl = chunks[0].split(',')
-    chunkr = chunks[-1].split(',')
+      # Quick crude parsing 
+      fields = l.split()
+      query_map = fields[0]
+      ref_map = fields[1]
+      orientation = fields[2]
+      chunk_string = fields[13]
 
-    ref_start = chunkl[3]
-    ref_end = chunkr[4]
+      chunks = chunk_string.split(';')[:-1] # Remove trailer
+      chunkl = chunks[0].split(',')
+      chunkr = chunks[-1].split(',')
 
-    if orientation == 'F':
-      query_start = chunkl[0]
-      query_end = chunkr[1]
-    else:
-      query_start = chunkr[0]
-      query_end = chunkl[1]
+      ref_start = chunkl[3]
+      ref_end = chunkr[4]
 
-    output_file.write('\t'.join((query_map, ref_map, orientation, query_start, query_end, ref_start, ref_end)) + '\n')
+      if orientation == 'F':
+        query_start = chunkl[0]
+        query_end = chunkr[1]
+      else:
+        query_start = chunkr[0]
+        query_end = chunkl[1]
+
+      output_file.write('\t'.join((query_map, ref_map, orientation, query_start, query_end, ref_start, ref_end)) + '\n')
+
+    except Exception as e:
+      logger.error('Caught Exception on parsing file on line %i: %s'%(line_num, e))
+      raise e
 
 
 if __name__ == '__main__':
