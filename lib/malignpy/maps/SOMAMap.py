@@ -68,6 +68,12 @@ class SOMAMap(object):
         if len(self.frags) != self.numFrags:
             raise Exception('SOMAMap attributes are inconsistent!')
 
+    @property
+    def name(self):
+        return self.mapId
+
+    
+
 
 #########################################################
 # Smooth a map by removing small restriction fragments.

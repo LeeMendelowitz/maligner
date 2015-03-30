@@ -22,6 +22,10 @@ parser.add_argument('alns_file', metavar='ALIGNMENTS_FILE', type=str,
 #                    help='Reference map file.')
 # parser.add_argument('query_maps', metavar='QUERY_MAP_FILE', type=str,
 #                    help='Query map file.')
+parser.add_argument('-q', '--query-miss-penalty', type = float, default = 18.0)
+parser.add_argument('-r', '--ref-miss-penalty', type = float, default = 3.0)
+parser.add_argument('--min-sd', type = float, default = 500)
+parser.add_argument('--sd-rate', type = float, default = 0.05)
 parser.add_argument('--chunk_string', action='store_true',
                    help='Output chunk string. By default chunk string not included in output')
 parser.add_argument('-o', '--output', metavar='OUTPUT_FILE', help = "Output file name. (Default: STDOUT)")
@@ -29,7 +33,7 @@ parser.add_argument('-o', '--output', metavar='OUTPUT_FILE', help = "Output file
 
 
 @wrap_file_function('r', 'w')
-def alignment_summary_stats(aln_file, output_file, chunk_string = False):
+def alignment_summary_stats(aln_file, output_file, query_miss_penalty, ref_miss_penalty, sd_rate, min_sd, chunk_string = False):
   
   _ = aln_file.next().split() # ignore input header
 
@@ -44,7 +48,10 @@ def alignment_summary_stats(aln_file, output_file, chunk_string = False):
   for aln_num,l in enumerate(aln_file):
 
     aln = Alignment(l)
-    aln.compute_stats()
+    aln.compute_stats(query_miss_penalty = query_miss_penalty,
+                      ref_miss_penalty   = ref_miss_penalty,
+                      min_sd = min_sd,
+                      sd_rate = sd_rate)
 
     output = '\t'.join(str(getattr(aln, k)) for k in output_fields) + "\n"
     output_file.write(output)
@@ -59,8 +66,8 @@ if __name__ == '__main__':
   logger.info('Alignment file: %s', "STDIN" if input_file == sys.stdin else args.alns_file)
   # logger.info('Query map file: %s', args.query_maps)
   # logger.info('Ref maps file: %s', args.ref_maps)
-  logger.info('Output file: %s', 'STDOUT' if args.output is None else args.output)
-
+  logger.info('Output file: %s', 'STDOUT' if args.output is None else args.output)  
 
   logger.info('Computing alignment statistics... (patience)')
-  alignment_summary_stats(input_file, output_file, args.chunk_string)
+  alignment_summary_stats(input_file, output_file,
+    args.query_miss_penalty, args.ref_miss_penalty, args.sd_rate, args.min_sd, args.chunk_string)

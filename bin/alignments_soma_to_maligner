@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Convert SOMA alignments to the maligner format"""
-
+import xml.etree.cElementTree as ET
 import argparse
 from itertools import islice
 import os, sys
@@ -11,6 +11,7 @@ from pandas import DataFrame
 from malignpy.common import wrap_file_function, logging_utils
 from malignpy.maps.utils import read_maps
 from malignpy.core.maligner_dp_alignments import Alignment
+from malignpy.schwartz.parse_soma_alignments import (AlignmentWriter, get_all_maps, iter_alignments)
 
 logger = logging_utils.create_logger('alignments_soma_to_maligner')
 
@@ -18,19 +19,48 @@ logger = logging_utils.create_logger('alignments_soma_to_maligner')
 parser = argparse.ArgumentParser(description="""Convert SOMA alignments to the maligner format""")
 parser.add_argument('alns_file', metavar='ALIGNMENTS_FILE', type=str,
                    help='Alignments file. Use "-" for STDIN')
-# parser.add_argument('ref_maps', metavar='REF_MAP_FILE', type=str,
-#                    help='Reference map file.')
-# parser.add_argument('query_maps', metavar='QUERY_MAP_FILE', type=str,
-#                    help='Query map file.')
 parser.add_argument('-o', '--output', metavar='OUTPUT_FILE', help = "Output file name. (Default: STDOUT)")
-
+parser.add_argument('-q', '--query-miss-penalty', type=float, default=18)
+parser.add_argument('-r', '--ref-miss-penalty', type=float, default=3)
+parser.add_argument('--sd-rate', type=float, default=0.05, help="sd. rate used to compute sizing error. Default: 0.05")
+parser.add_argument('--min-sd', type=float, default=500.0, help = "Minimum sd rate used in computing siziner error score Default: 1000")
 
 
 @wrap_file_function('r', 'w')
-def alignment_chunks(aln_file, output_file):
-  pass
+def convert_soma_to_maligner(input_soma_file, output_maligner_file,
+  query_miss_penalty, ref_miss_penalty, sd_rate, min_sd):
 
-if __name__ == '__main__':
+  aln_writer = AlignmentWriter()
+
+  # Get the root node
+  tree = ET.parse(input_soma_file)
+  root = tree.getroot()
+
+  logger.info("Reading maps from soma alignment file (patience)...")
+
+  # Read all of the maps in the file
+  maps = get_all_maps(root)
+  
+  logger.info("Read %i query maps"%len(maps.query_maps))
+  logger.info("Read %i ref maps"%len(maps.reference_maps))
+  logger.info("Writing alignments to maligner output file (patience)...")
+
+  aln_writer.write_maligner_header(output_maligner_file)
+  
+  # Build an alignment object for each alignment node and write to file.
+  for aln in iter_alignments(root, maps):
+
+    # Compute maligner scores for the soma alignment
+    aln.compute_scores(query_miss_penalty, ref_miss_penalty,
+      sd_rate, min_sd)
+
+    # Write alignments
+    aln_writer.write_maligner_alignment(output_maligner_file, aln)
+
+  logger.info("Done.")
+
+
+def main():
 
   args = parser.parse_args()
 
@@ -38,10 +68,18 @@ if __name__ == '__main__':
   input_file = args.alns_file if (args.alns_file is not None and args.alns_file != '-') else sys.stdin
 
   logger.info('Alignment file: %s', "STDIN" if input_file == sys.stdin else args.alns_file)
-  # logger.info('Query map file: %s', args.query_maps)
-  # logger.info('Ref maps file: %s', args.ref_maps)
   logger.info('Output file: %s', 'STDOUT' if args.output is None else args.output)
+  logger.info("Query miss penalty: %i", args.query_miss_penalty)
+  logger.info("Ref miss penalty: %i", args.ref_miss_penalty)
+  logger.info("sd rate: %.2f", args.sd_rate)
+  logger.info("min_sd: %.2f", args.min_sd)
 
+  convert_soma_to_maligner(input_file, output_file, args.query_miss_penalty, 
+    args.ref_miss_penalty, args.sd_rate, args.min_sd)
 
-  logger.info('Extracting alignment chunks... (patience)')
-  alignment_chunks(input_file, output_file)
+if __name__ == "__main__":
+  try:
+      main()
+  except Exception as e:
+    logger.error("Caught error! %s"%str(e))
+    # import pdb; pdb.post_mortem()
