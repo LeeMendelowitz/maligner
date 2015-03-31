@@ -1,15 +1,19 @@
 # Copy files from here to the binary directory.
 set( FILES_TO_INSTALL
+  alignment_chunks
+  alignment_locs
+  alignment_summary_stats
+  alignments_maligner_to_soma
+  alignments_soma_to_maligner
   convert_maps
   filter_alignments
+  get_maps_by_id
+  sample_alignments
   sample_maps_file
+  soma_consensus_maps
+  soma_query_maps
   split_maps_file
   summarize_maps_file
-  sample_alignments
-  alignment_locs
-  alignment_chunks
-  alignment_summary_stats
-  soma_consensus_maps
 )
 
 install(FILES ${FILES_TO_INSTALL}

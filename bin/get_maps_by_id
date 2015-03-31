@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+"""
+Select maps by id
+"""
+
+import argparse
+import os, sys
+
+parser = argparse.ArgumentParser(description='Select maps/alignments from maps/alignments file by id. Use --header if parsing alignments file.')
+parser.add_argument('maps_ids_file', metavar='MAPS_ID_FILE', type=str,
+                   help='Map ids to extract')
+parser.add_argument('--header', action="store_true", help='File has a header which should be transferred to output file')
+parser.add_argument('-m', '--maps_file', metavar='MAPS_FILE', type=str,
+                   help='Maligner .maps file. (Defualt: STDIN)')
+parser.add_argument('-o', '--output', metavar='OUTPUT FILE',
+  help = "Output file. (Default: STDOUT)")
+
+def get_lines_with_qmap(f, fout, qmaps, header):
+
+  # Copy header to the output file if necessary
+  if header:
+    fout.write(f.next())
+
+  for l in f:
+    fields = l.strip().split()
+    if fields[0] in qmaps:
+      fout.write(l)
+
+def run(map_ids_file, maps_file, fout, header = False):
+
+
+  with open(map_ids_file) as fin:
+    lines = (l.strip() for l in fin)
+    lines = (l for l in lines if l)
+    qmaps = set(lines)
+
+  sys.stderr.write("Extracting maps...")
+  get_lines_with_qmap(maps_file, fout, qmaps, header)
+  sys.stderr.write("done.\n")
+
+
+if __name__ == '__main__':
+
+  args = parser.parse_args()
+
+  if args.maps_file:
+    maps_file = open(args.maps_file)
+  else:
+    maps_file = sys.stdin
+
+  if args.output:
+    fout = open(args.output, 'w')
+  else:
+    fout = sys.stdout
+
+  run(args.maps_ids_file, maps_file, fout, args.header)

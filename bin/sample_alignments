@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+"""
+Randomly lines from a alignment or stats file
+
+Take a sample of the alignments in an alignment or stats file
+This assumes that the input file is a tab delimited file with a header
+where the first column is a query_map name
+"""
+
+import argparse
+from itertools import islice
+import os, sys
+
+
+parser = argparse.ArgumentParser(description='Randomly sample lines from a .aln or .stats file')
+parser.add_argument('input_file', metavar='INPUT_FILE', type=str,
+                   help='.aln file or .stats file')
+parser.add_argument('-n', '--num_maps', metavar='N', type=int, help='Number of maps to sample.', required=True)
+parser.add_argument('-o', '--output', metavar='OUTPUT FILE',
+  help = "Output file. (Default: STDOUT)")
+
+
+from random import sample
+
+
+def get_unique_maps(f):
+  header = f.next()
+  qmaps = set()
+
+  for l in f:
+    fields = l.strip().split()
+    if not fields:
+      continue
+    qmaps.add(fields[0])
+  return qmaps
+
+
+def get_lines_with_qmap(f, fout, qmaps):
+
+  header = f.next()
+  fout.write(header)
+
+  for l in f:
+    fields = l.strip().split()
+    if fields[0] in qmaps:
+      fout.write(l)
+
+
+def run(fname_in, fout, n):
+
+  sys.stderr.write("Sampling query maps...")
+  with open(fname_in) as fin:
+    qmaps = get_unique_maps(fin)
+  sys.stderr.write("done.\n")
+
+  if n < len(qmaps):
+    qmaps_sample = set(sample(list(qmaps), n))
+  else:
+    qmaps_sample = set(qmaps)
+    sys.stderr.write("WARNING: Sample size n is larger than number of query maps.\n")
+
+
+  sys.stderr.write("Sampling lines from input file...")
+  with open(fname_in) as fin:
+    get_lines_with_qmap(fin, fout, qmaps_sample)
+  sys.stderr.write("done.\n")
+
+if __name__ == '__main__':
+
+  args = parser.parse_args()
+
+  if args.output:
+    fout = open(args.output, 'w')
+  else:
+    fout = sys.stdout
+
+  run(args.input_file, fout, args.num_maps)

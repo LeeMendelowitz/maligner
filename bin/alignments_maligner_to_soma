@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+"""Extract alignment starting/ending locations from a maligner dp alignments_file"""
+
+
+import argparse
+from itertools import islice
+import os, sys
+import numpy as np
+import pandas
+from pandas import DataFrame
+import time
+from lxml.etree import Element, ElementTree
+
+
+from malignpy.common import wrap_file_function, logging_utils
+from malignpy.maps.utils import read_maps
+from malignpy.core.maligner_dp_alignments import Alignment
+from malignpy.schwartz.parse_soma_alignments import (alignment_to_node, restriction_map_to_node)
+
+logger = logging_utils.create_logger('alignments_maligner_to_soma')
+
+
+parser = argparse.ArgumentParser(description="""Convert Maligner alignments to SOMA alignments.""")
+parser.add_argument('alns_file', metavar='ALIGNMENTS_FILE', type=str,
+                   help='Alignments file. Use "-" for STDIN')
+parser.add_argument('ref_maps', metavar='REF_MAP_FILE', type=str,
+                   help='Reference map file.')
+parser.add_argument('query_maps', metavar='QUERY_MAP_FILE', type=str,
+                   help='Query map file.')
+parser.add_argument('-o', '--output', metavar='OUTPUT_FILE', help = "Output file name. (Default: STDOUT)")
+
+
+def MakeTextElement(tag, text = None):
+  elem = Element(tag)
+  if text is not None:
+    elem.text = text
+  return elem
+
+@wrap_file_function('r', 'w')
+def maligner_to_soma(aln_file, output_file, query_map_dict, ref_map_dict):
+  
+  header = aln_file.next().split()
+
+  query_to_node = {}
+  ref_to_node = {}
+
+  aln_nodes = []
+
+  # Get the time
+  tstamp = int(time.time())
+
+  uuid_format = '%i_%i'
+
+  for line_num,l in enumerate(aln_file):
+
+      aln = Alignment(l)
+
+
+      query_map = query_map_dict[aln.query_map]
+      ref_map = ref_map_dict[aln.ref_map]
+
+      query_frags = query_map.frags
+      ref_frags = ref_map.frags
+
+      if query_map.name not in query_to_node:
+
+        query_to_node[query_map.name] = restriction_map_to_node(query_map.name,
+          query_map.length,
+          query_map.frags,
+          is_consensus = False,
+        )
+
+      if ref_map.name not in ref_to_node:
+        
+        ref_to_node[ref_map.name] = restriction_map_to_node(ref_map.name,
+          ref_map.length,
+          ref_map.frags,
+          is_consensus = True,
+        )
+
+      uuid = uuid_format%(tstamp, line_num)
+      aln_nodes.append(alignment_to_node(uuid, aln, query_frags, ref_frags))
+
+  # Now we have read all of the query maps, ref_maps, and alignment nodes. Make a tree and write!
+  root = MakeTextElement('aligned_maps_document')
+  root.append(MakeTextElement('version', text = str(1.0)))
+  # root.append(MakeTextElement('experiment')) # Try empty
+  root.extend(ref_to_node.values())
+  root.extend(query_to_node.values())
+  root.extend(aln_nodes)
+  tree = ElementTree(root)
+  tree.write(output_file, pretty_print = True, xml_declaration=True, encoding="iso-8859-1")
+
+
+if __name__ == '__main__':
+
+  args = parser.parse_args()
+
+  output_file = args.output if args.output is not None else sys.stdout
+  input_file = args.alns_file if (args.alns_file is not None and args.alns_file != '-') else sys.stdin
+
+  logger.info('Alignment file: %s', "STDIN" if input_file == sys.stdin else args.alns_file)
+  logger.info('Query map file: %s', args.query_maps)
+  logger.info('Ref maps file: %s', args.ref_maps)
+  logger.info('Output file: %s', 'STDOUT' if args.output is None else args.output)
+
+  # Note: This may be a problem for large maps files.
+  logger.info('reading query maps')
+  query_map_dict = read_maps(args.query_maps)
+
+  logger.info('reading ref maps')
+  ref_map_dict = read_maps(args.ref_maps)
+
+  logger.info('done. Converting alignments... (patience)')
+  maligner_to_soma(input_file, output_file, query_map_dict, ref_map_dict)
