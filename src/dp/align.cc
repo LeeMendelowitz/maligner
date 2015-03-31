@@ -15,6 +15,7 @@ using std::cerr;
 #include "alignment.h"
 #include "ScoreMatrix.h"
 #include "ScoreCell.h"
+#include "common_math.h"
 
 #define DEBUG 0
 #define GET_BEST_DEBUG 0
@@ -80,7 +81,34 @@ namespace maligner_dp {
     }
   }
 
+  // Compute and assign mad scores to a list of alignments.
+  void compute_mad_scores(AlignmentVec& alignments, const int max_alignments_mad) {
+    
+    // Only use the top max_alignments_mad number of alignments for computing the mad
+    const size_t N = std::min(int(alignments.size()), int(max_alignments_mad));
+    assert(N <= alignments.size());
 
+    std::vector<double> scores(N);
+    for(size_t i = 0; i < N; i++) {
+      scores[i] = alignments[i].total_rescaled_score;
+    }
+
+    const double m = median(scores);
+    const double md = mad(scores);
+
+    const size_t n_aln = alignments.size();
+
+    // Use the mad and median to compute the m_score for all alignments
+    for(size_t i = 0; i < n_aln; i++) {
+
+      Alignment& aln = alignments[i];
+      double s = aln.total_rescaled_score;
+      s = (s - m)/md;
+      aln.m_score = s;
+
+    }
+
+  }
 
 
   void print_chunk_trail(const ChunkVec& query_chunks, const ChunkVec& ref_chunks) {
@@ -122,6 +150,8 @@ namespace maligner_dp {
          << "\n";
       return os;
   }
+
+
 
 
 

@@ -336,6 +336,8 @@ namespace maligner_dp {
   template<class ScoreMatrixType, class SizingPenaltyType>
   int make_best_alignments_using_partials(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task);
 
+  void compute_mad_scores(AlignmentVec& alignments, const int max_alignments_mad);
+
 
   ///////////////////////////////////////////////////////////////////////////
   // A BitVector for marking locations that have been covered in a reference.

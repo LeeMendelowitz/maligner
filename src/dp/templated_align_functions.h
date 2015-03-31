@@ -3451,6 +3451,14 @@ namespace maligner_dp {
   }
 
   template<class ScoreMatrixType, class SizingPenaltyType>
+  void assign_alignment_mad_scores(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task) {
+    // Assign alignment mad scores to each alignment
+    
+
+  }
+
+
+  template<class ScoreMatrixType, class SizingPenaltyType>
   std::ostream& print_align_task(std::ostream& os, const AlignTask<ScoreMatrixType, SizingPenaltyType>& task) {
 
     os << "align_task:\n"
@@ -3461,6 +3469,8 @@ namespace maligner_dp {
 
     return os;
   }
+
+
 
 }
 

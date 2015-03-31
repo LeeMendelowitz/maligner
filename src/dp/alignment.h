@@ -98,6 +98,7 @@ namespace maligner_dp {
 
     double total_score;
     double total_rescaled_score;
+    double m_score;
 
     // summary statistics of an alignment.
     // These are computable from the matched_chunks
@@ -228,6 +229,7 @@ namespace maligner_dp {
       query_scaling_factor = 0;
       total_score = 0;
       total_rescaled_score = 0;
+      m_score = 0;
   }
 
   // Flip the query coordinates in every matched chunk

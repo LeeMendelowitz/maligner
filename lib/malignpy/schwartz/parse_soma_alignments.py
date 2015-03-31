@@ -288,6 +288,7 @@ class Alignment(NodeClass):
     self.compute_maligner_sizing_error(sd_rate, min_sd)
     self.total_score = self.sizing_score + miss_score
     self.total_rescaled_score = self.sizing_score_rescaled + miss_score
+    self.m_score = 0.0 # TODO
 
   @property
   def chunk_string(self):
@@ -748,6 +749,7 @@ class AlignmentWriter(object):
     ('ref_miss_rate', 'ref_miss_rate' ),
     ('total_score', 'total_score'),
     ('total_rescaled_score', 'total_rescaled_score'),
+    ('m_score', 'm_score'),
     ('sizing_score', "sizing_score"),
     ('sizing_score_rescaled', "sizing_score_rescaled" ),
     ('query_scaling_factor', 'query_scaling_factor'),

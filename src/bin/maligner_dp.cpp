@@ -187,9 +187,15 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    // Print the best alignments
+    // Sort alignments by the rescaled scores.
     std::sort(all_alignments.begin(), all_alignments.end(), AlignmentRescaledScoreComp());
+
+    // Compute the mad score for the alignments.
+    compute_mad_scores(all_alignments, maligner_dp::opt::max_alignments_mad);
+
     const int max_ind = std::min(int(all_alignments.size()), opt::max_alignments);
+
+    // Print alignments
     for(int i = 0; i < max_ind; i++) {
       print_alignment(std::cout, all_alignments[i]);
     }

@@ -38,6 +38,9 @@ target_link_libraries(test_maligner_dp_get_all dp kmer_match common)
 add_executable(test_PartialSumsC "test_PartialSumsC.cpp")
 target_link_libraries(test_PartialSumsC dp kmer_match common)
 
+add_executable(test_mad "test_mad.cpp")
+target_link_libraries(test_mad common)
+
 # install directory
 install(TARGETS
   test_scorematrix
@@ -49,4 +52,5 @@ install(TARGETS
   test_maligner_dp_sizing_penalty
   test_maligner_dp_max_miss
   test_PartialSumsC
+  test_mad
   DESTINATION "${MALIGNER_BIN_DIR}")

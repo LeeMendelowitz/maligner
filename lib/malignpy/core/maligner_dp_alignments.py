@@ -3,7 +3,7 @@ from itertools import izip
 import numpy as np
 from numpy import array
 
-HEADER = "query_map ref_map is_forward  num_matched_chunks  query_misses  ref_misses  query_miss_rate ref_miss_rate total_score total_rescaled_score  sizing_score  sizing_score_rescaled query_scaling_factor chunk_string"
+HEADER = "query_map ref_map is_forward  num_matched_chunks  query_misses  ref_misses  query_miss_rate ref_miss_rate total_score total_rescaled_score m_score sizing_score  sizing_score_rescaled query_scaling_factor chunk_string"
 TYPES = [str, str, str, int, int, int, float, float, float, float, float, float, float, str]
 FIELDS = HEADER.strip().split()
 assert(len(FIELDS) == len(TYPES))

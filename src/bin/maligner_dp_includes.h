@@ -51,6 +51,7 @@ namespace maligner_dp {
       static bool query_is_bounded = false;
       static bool ref_is_bounded = false;
       static int max_alignments = 100;
+      static int max_alignments_mad = 100; // Max alignments to use for mad computation
 
   }
 }

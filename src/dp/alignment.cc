@@ -54,6 +54,7 @@ namespace maligner_dp {
        << "ref_miss_rate" << "\t"
        << "total_score" << "\t"
        << "total_rescaled_score" << "\t"
+       << "m_score" << "\t"
        << "sizing_score" << "\t"
        << "sizing_score_rescaled" << "\t"
        << "query_scaling_factor" << "\t"
@@ -81,6 +82,7 @@ namespace maligner_dp {
        << aln.ref_miss_rate << "\t"
        << aln.total_score << "\t"
        << aln.total_rescaled_score << "\t"
+       << aln.m_score << "\t"
        << aln.score.sizing_score << "\t"
        << aln.rescaled_score.sizing_score << "\t"
        << aln.query_scaling_factor << "\t";
