@@ -1,11 +1,13 @@
 #include <vector>
 #include <math.h>  
+#include <algorithm>
 
 #include "common_math.h"
 
 // Compute the median absolute deviation
 double mad(const std::vector<double>& in) {
 
+  using std::size_t;
   if(in.empty()) return 0.0;
 
   std::vector<double> v(in);
@@ -24,7 +26,7 @@ double mad(const std::vector<double>& in) {
 
 // Compute the median
 double median(const std::vector<double>& in) {
-
+  using std::size_t;
   if(in.empty()) return 0.0;
   std::vector<double> v(in);
   std::sort(v.begin(), v.end());
@@ -36,6 +38,6 @@ double median(const std::vector<double>& in) {
     return 0.5*(v[mid_plus - 1] + v[mid_plus]);
   }
 
-  return v[size_t{N/2}];
+  return v[size_t(N/2)];
 
 }
