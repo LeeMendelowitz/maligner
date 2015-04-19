@@ -15,7 +15,7 @@ set( FILES_TO_INSTALL
   split_maps_file
   summarize_maps_file
   smooth_maps_file
-  make_silico_map
+  make_insilico_map
 )
 
 install(FILES ${FILES_TO_INSTALL}
