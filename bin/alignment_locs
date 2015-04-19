@@ -30,7 +30,7 @@ parser.add_argument('-o', '--output', metavar='OUTPUT_FILE', help = "Output file
 def alignment_locs(aln_file, output_file, query_map_dict, ref_map_dict):
   
   header = aln_file.next().split()
-  inds = [0, 1, 2, 13]
+  inds = [0, 1, 2, 14]
 
   header = '\t'.join(('query_map', 'ref_map', 'orientation', 'query_start', 'query_end', 'ref_start', 'ref_end'))
   output_file.write(header + '\n')
@@ -43,7 +43,7 @@ def alignment_locs(aln_file, output_file, query_map_dict, ref_map_dict):
       query_map = fields[0]
       ref_map = fields[1]
       orientation = fields[2]
-      chunk_string = fields[13]
+      chunk_string = fields[14]
 
       chunks = chunk_string.split(';')[:-1] # Remove trailer
       chunkl = chunks[0].split(',')
