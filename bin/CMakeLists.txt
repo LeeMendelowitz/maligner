@@ -14,8 +14,11 @@ set( FILES_TO_INSTALL
   soma_query_maps
   split_maps_file
   summarize_maps_file
+  smooth_maps_file
+  make_silico_map
 )
 
 install(FILES ${FILES_TO_INSTALL}
         DESTINATION ${MALIGNER_BIN_DIR}
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+  

@@ -1,0 +1,137 @@
+#!/usr/bin/env python
+"""
+Make an insilico map for the given fasta file.
+"""
+import sys, os, time
+import argparse
+from malignpy.maps.SOMAMap import SOMAMap
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.Alphabet import generic_dna
+
+def complement(s):
+    d = Seq(s, generic_dna)
+    return str(d.complement())
+
+def reverse_complement(s):
+    d = Seq(s, generic_dna)
+    return str(d.reverse_complement())
+
+def gen_sites(seq, forward_rec_seq):
+    """
+    Find the recoginition sites in sequence seq.
+    They should only consist of letters ACTG
+    """
+
+    if not seq:
+        return
+
+    # Note: we only search the forward strand, so our query is the
+    # forward recognition and the complement recognition sequence.
+    #
+    # If the forward recognition sequence is a palindrome (equal to its reverse complement)
+    # or if the forward recognition sequence matches the complement recognitions sequence,
+    # we only mark the site once. Therefore, we search for just the forward recognition sequence
+    # in these cases.
+    complement_rec_seq = complement(forward_rec_seq)
+    rev_complement_rec_seq = reverse_complement(forward_rec_seq)
+
+    if complement_rec_seq == forward_rec_seq or \
+       rev_complement_rec_seq == forward_rec_seq:
+        complement_rec_seq = None # Don't need to search for it.
+
+    char_set = set('ACTG')
+    for rec_seq in (forward_rec_seq, complement_rec_seq):
+        if rec_seq is None:
+            continue
+        for c in rec_seq:
+            if c not in char_set:
+                raise RuntimeError('Recognition sequences must only have alphabet ACTG')
+
+    if complement_rec_seq is not None and complement_rec_seq == forward_rec_seq:
+        raise RuntimeError('forward_rec_seq and complement_rec_seq should not match.')
+
+    L = len(seq)
+    if complement_rec_seq:
+        # Check every position for a cut site.
+        lf = len(forward_rec_seq)
+        lr = len(complement_rec_seq)
+        yield (0, 's')
+        for i in xrange(L):
+            if seq[i:i+lf] == forward_rec_seq:
+                yield (i, 'f')
+            if seq[i:i+lr] == complement_rec_seq:
+                yield (i, 'r')
+        yield (L, 'e')
+    else:
+        # Check every position for a cut site.
+        lf = len(forward_rec_seq)
+        yield (0, 's')
+        for i in xrange(L):
+            if seq[i:i+lf] == forward_rec_seq:
+                yield (i, 'f')
+        yield (L, 'e')
+
+
+def make_insilico_map(seq, forward_rec_seq,
+    map_handle = sys.stdout, site_handle = None, map_name = 'map'):
+
+    siteGen = gen_sites(seq, forward_rec_seq)
+    sites = [s for s in siteGen]
+
+    def gen_frags():
+        i = iter(sites)
+        last_site = i.next()
+        for s in i:
+            yield (s[0] - last_site[0])
+            last_site = s
+    frags = [f for f in gen_frags()]
+
+    if site_handle:
+        site_handle.write('\n'.join(str(s) for s in sites))
+
+    numFrags = len(frags)
+    map = SOMAMap(frags=frags, mapId = map_name)
+    map.write(map_handle)
+
+    sys.stderr.write('Found %i restriction fragments.\n'%numFrags)
+
+
+def run_fasta(fasta_file, forward_rec_seq, output_pfx):
+    """
+    Compute restriction fragments on a fasta file.
+    """
+
+    start_time = time.clock()
+
+    path, fn = os.path.split(fasta_file)
+    bn, ext = os.path.splitext(fn)
+
+    map_handle = open('%s.map'%output_pfx, 'w')
+    site_handle = open('%s.sites'%output_pfx, 'w')
+
+    
+    seq_gen = SeqIO.parse(fasta_file, 'fasta')
+
+    for i, rec in enumerate(seq_gen):
+        seq = str(rec.seq)
+        sys.stderr.write("Read sequence %s\n"%rec.id)
+        make_insilico_map(seq, forward_rec_seq, map_handle, site_handle, map_name = rec.id)
+
+    map_handle.close()
+    site_handle.close()
+
+    end_time = time.clock()
+    sys.stderr.write('Run time: %.3f seconds.\n'%(end_time - start_time))
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="""Generate an insilico map from a fasta file.""")
+    parser.add_argument('fasta_file', metavar="FILE", type=str, help="Fasta file.")
+    parser.add_argument('rec_seq', metavar="REC_SEQ", type=str, help="Forward recognition sequence")
+    parser.add_argument('-o','--output', metavar="PFX", help="output prefix", default="out")
+
+    args = parser.parse_args()
+
+    run_fasta(args.fasta_file, args.rec_seq, args.output)
+

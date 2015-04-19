@@ -97,7 +97,7 @@ def smooth(inputMap, minFrag=500):
         frags.append(curLength)
         curFrag = []
    
-    sys.stdout.write('smooth merged %i fragments out of %i.\n'%(mergeCount, len(inputMap.frags)))
+    sys.stderr.write('smooth merged %i fragments out of %i.\n'%(mergeCount, len(inputMap.frags)))
     outputMap = SOMAMap(frags=frags, mapId = inputMap.mapId)
     assert(sum(outputMap.frags) == sum(inputMap.frags))
     assert(outputMap.length == inputMap.length)

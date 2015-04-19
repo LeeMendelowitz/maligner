@@ -1,0 +1,37 @@
+#!/usr/bin/env python
+"""
+Produce summary statistics for a maps file.
+"""
+
+import argparse, sys, os
+from malignpy.maps.SOMAMap import SOMAMap, smooth
+from malignpy.maps.utils import gen_maps
+from malignpy.common import wrap_file_function
+
+@wrap_file_function('r', 'w')
+def run(input_maps_file, fout, min_frag):
+  map_gen = gen_maps(input_maps_file)
+
+  for m in map_gen:
+    smoothed = smooth(m, min_frag)
+    smoothed.write(fout)
+
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description="""Smooth a maps file by merging consecutive small fragments""")
+  parser.add_argument('maps_file', metavar='MAPS_FILE', type=str,
+                   help='Input maps file in the maligner maps format.')
+  parser.add_argument('-o', '--output', metavar='OUTPUT_FILE',
+      help = "Output file name. (Default: STDOUT)")
+
+  parser.add_argument('-m', '--min_frag', metavar='MIN. FRAG',
+      help = "minimum fragment (Default: 500 bp)",
+      type = int,
+      default = 500)
+
+  args = parser.parse_args()
+
+  if args.output is None:
+    args.output = sys.stdout
+
+  run(args.maps_file, args.output, args.min_frag)
