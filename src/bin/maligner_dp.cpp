@@ -75,7 +75,8 @@ int main(int argc, char* argv[]) {
                        maligner_dp::opt::min_alignment_spacing,
                        maligner_dp::opt::neighbor_delta,
                        maligner_dp::opt::query_is_bounded,
-                       maligner_dp::opt::ref_is_bounded);
+                       maligner_dp::opt::ref_is_bounded,
+                       maligner_dp::opt::query_rescaling);
 
   // Build a database of reference maps. 
   MapVec ref_maps(read_maps(maligner_dp::opt::ref_maps_file));
@@ -107,6 +108,17 @@ int main(int argc, char* argv[]) {
     alns_reverse.clear();
 
     const IntVec& query_frags_forward = query_map.frags_;
+
+    if(query_map.frags_.size() < 3) {
+
+      if(opt::verbose) {
+        std::cerr << "Skipping map " << query_map.name_ << " with " 
+                  << query_map.frags_.size() << " fragments.\n";
+      }
+
+      continue;
+    }
+
     const IntVec query_frags_reverse(query_frags_forward.rbegin(), query_frags_forward.rend());
     PartialSums qps_forward(query_frags_forward, align_opts.query_max_misses);
     PartialSums qps_reverse(query_frags_reverse, align_opts.query_max_misses);
@@ -173,8 +185,12 @@ int main(int argc, char* argv[]) {
         // Alignment aln_forward = make_best_alignment_using_partials(task_forward);
         int num_alignments = make_best_alignments_using_partials(task_forward);
         timer.end();
-        // std::cerr << "Num alignments forward: " << num_alignments
-        //           << " " << timer << "\n";
+
+        if(opt::verbose) {
+          std::cerr << "Num alignments forward: " << num_alignments
+                    << " " << timer << "\n";
+        }
+
       }
 
       // Align Reverse
@@ -182,8 +198,12 @@ int main(int argc, char* argv[]) {
         timer.start();
         int num_alignments = make_best_alignments_using_partials(task_reverse);
         timer.end();
-        // std::cerr << "Num alignments reverse: " << num_alignments
-        //           << " " << timer << "\n";
+
+        if(opt::verbose) {
+          std::cerr << "Num alignments reverse: " << num_alignments
+                    << " " << timer << "\n";
+        }
+
       }
     }
 

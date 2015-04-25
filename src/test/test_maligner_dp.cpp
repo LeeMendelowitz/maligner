@@ -73,8 +73,9 @@ int main(int argc, char* argv[]) {
                        maligner_dp::opt::min_alignment_spacing,
                        maligner_dp::opt::neighbor_delta,
                        maligner_dp::opt::query_is_bounded,
-                       maligner_dp::opt::ref_is_bounded);
-  
+                       maligner_dp::opt::ref_is_bounded,
+                       maligner_dp::opt::query_rescaling);
+
   // Build a database of reference maps. 
   MapVec ref_maps(read_maps(maligner_dp::opt::ref_maps_file));
   cerr << "Read " << ref_maps.size() << " reference maps.\n";

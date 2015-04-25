@@ -1,6 +1,8 @@
 //
 // Getopt
 //
+#include <limits>
+
 #define PACKAGE_NAME "maligner dp"
 
 static const char *VERSION_MESSAGE = "Version " PACKAGE_VERSION "\n"
@@ -15,6 +17,7 @@ static const char *USAGE_MESSAGE =
 "\n"
 "      -h, --help                       display this help and exit\n"
 "      -v, --version                    display the version and exit\n"
+"      --verbose                        Verbose output\n"
 "      -q,--query-miss-penalty          Query unmatched site penalty\n"
 "      -r,--ref-miss-penalty            Reference unmatched site penalty\n"
 "      --query-max-misses               Query maximum consecutive unmatched\n"
@@ -23,9 +26,10 @@ static const char *USAGE_MESSAGE =
 "      --ref-max-miss-rate              Maximum rate of unmatched sites in the reference\n"
 "      --sd-rate                        Standard deviation rate.\n"
 "      --min-sd                         Minimum standard deviation (bp)\n"
-"      --max-chunk-sizing-error         \n"
+"      --max-chunk-sizing-error         Maximum chunk sizing error score for bounding search space. Default: Inf\n"
 "      --max-alignments-per-reference       \n"
-"      --max-alignments                 Max. number of alignments to output\n";
+"      --max-alignments                 Max. number of alignments to output\n"
+"      --no-query-rescaling             Default: perform query rescaling\n";
 
 
 namespace maligner_dp {
@@ -42,7 +46,7 @@ namespace maligner_dp {
       static int ref_max_misses = 5;
       static double sd_rate = 0.05;
       static double min_sd = 500.0;
-      static double max_chunk_sizing_error = 16.0;
+      static double max_chunk_sizing_error = std::numeric_limits<double>::infinity();
       static double ref_max_miss_rate = 0.50;
       static double query_max_miss_rate = 0.25;
       static int alignments_per_reference = 100;
@@ -52,6 +56,8 @@ namespace maligner_dp {
       static bool ref_is_bounded = false;
       static int max_alignments = 100;
       static int max_alignments_mad = 100; // Max alignments to use for mad computation
+      static bool query_rescaling = true;
+      static bool verbose = false;
 
   }
 }
@@ -66,7 +72,9 @@ enum {
   OPT_ALIGNMENTS_PER_REFERENCE,
   OPT_MAX_ALIGNMENTS,
   OPT_REF_MAX_MISS_RATE,
-  OPT_QUERY_MAX_MISS_RATE
+  OPT_QUERY_MAX_MISS_RATE,
+  OPT_VERBOSE,
+  OPT_NO_QUERY_RESCALING
 };
 
 static const struct option longopts[] = {
@@ -82,6 +90,8 @@ static const struct option longopts[] = {
     { "max-chunk-sizing-error", required_argument, NULL, OPT_MAX_CHUNK_SIZING_ERROR},
     { "max-alignments-per-reference", required_argument, NULL, OPT_ALIGNMENTS_PER_REFERENCE},
     { "max-alignments", required_argument, NULL, OPT_MAX_ALIGNMENTS},
+    { "no-query-rescaling", no_argument, NULL, OPT_NO_QUERY_RESCALING},
+    { "verbose", no_argument, NULL, OPT_VERBOSE},
     { "help",     no_argument,       NULL, 'h' },
     { "version",  no_argument,       NULL, 'v'},
     { NULL, 0, NULL, 0 }
@@ -109,6 +119,8 @@ void parse_args(int argc, char** argv)
             case OPT_MAX_CHUNK_SIZING_ERROR: arg >> opt::max_chunk_sizing_error; break;
             case OPT_ALIGNMENTS_PER_REFERENCE: arg >> opt::alignments_per_reference; break;
             case OPT_MAX_ALIGNMENTS: arg >> opt::max_alignments; break;
+            case OPT_VERBOSE: opt::verbose = true; break;
+            case OPT_NO_QUERY_RESCALING: opt::query_rescaling = false; break;
             case 'h':
             {
                 std::cout << USAGE_MESSAGE;
@@ -191,6 +203,7 @@ std::ostream& print_args(std::ostream& os) {
      << "Settings:\n"
      << "\tquery_maps_file: " << query_maps_file << "\n"
      << "\tref_maps_file: " << ref_maps_file << "\n"
+     << "\tverbose: " << verbose << "\n"
      << "\tquery_miss_penalty: " << query_miss_penalty << "\n"
      << "\tref_miss_penalty: " << ref_miss_penalty << "\n"
      << "\tquery_max_misses: " << query_max_misses << "\n"
@@ -204,6 +217,7 @@ std::ostream& print_args(std::ostream& os) {
      << "\tmax_alignments: " << max_alignments << "\n"
      << "\tmin_alignment_spacing: " << min_alignment_spacing << "\n"
      << "\tneighbor_delta: " << neighbor_delta << "\n"
+     << "\tquery_rescaling: " << query_rescaling << "\n"
      << "\tquery_is_bounded: " << query_is_bounded << "\n"
      << "\tref_is_bounded: " << ref_is_bounded << "\n";
 
