@@ -13,9 +13,11 @@ namespace maligner_dp {
       
       MapData(const std::string& map_name,
         size_t num_frags,
-        bool is_bounded = false) :
+        bool is_circular = false,
+        bool is_bounded = true) :
         map_name_(map_name),
         num_frags_(num_frags),
+        is_circular_(is_circular),
         is_bounded_(is_bounded)
       {
         num_constructs++;
@@ -24,6 +26,7 @@ namespace maligner_dp {
       MapData(const MapData& o) :
         num_frags_(o.num_frags_),
         map_name_(o.map_name_),
+        is_circular_(o.is_circular_),
         is_bounded_(o.is_bounded_)
       {
         num_copies++;
@@ -36,11 +39,9 @@ namespace maligner_dp {
       }
 
       std::string map_name_;
-      size_t num_frags_; // Total fragments in the map. This may be larger than the number of
-                         // fragments provided for alignment in the case that we are aligning a slice
-                         // of the map.
+      size_t num_frags_;
+      bool is_circular_; // Is the map circular?
       bool is_bounded_; // Are the leftmost/rightmost fragments bounded by sites? NOTE: This is not yet used in code, and duplicates an argument in AlignOpts
-
       static int num_constructs;
       static int num_copies;
   };

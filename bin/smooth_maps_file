@@ -4,7 +4,7 @@ Produce summary statistics for a maps file.
 """
 
 import argparse, sys, os
-from malignpy.maps.SOMAMap import SOMAMap, smooth
+from malignpy.maps.MalignerMap import MalignerMap, smooth
 from malignpy.maps.utils import gen_maps
 from malignpy.common import wrap_file_function
 

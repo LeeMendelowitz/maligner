@@ -16,6 +16,7 @@ set( FILES_TO_INSTALL
   summarize_maps_file
   smooth_maps_file
   make_insilico_map
+  generate_random_maps
 )
 
 install(FILES ${FILES_TO_INSTALL}

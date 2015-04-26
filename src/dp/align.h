@@ -170,6 +170,7 @@ namespace maligner_dp {
               ScoreMatrixPtr m,
               AlignmentVec * alns,
               bool is_forward_in,
+              bool is_circular_in,
               AlignOpts& ao) :
       query_map_data(qmd),
       ref_map_data(rmd),
@@ -242,6 +243,10 @@ namespace maligner_dp {
         (ref_max_miss_rate / (1 - ref_max_miss_rate) * num_query_sites) :
         std::numeric_limits<int>::max();
 
+    };
+
+    bool ref_is_circular() const {
+      return ref_map_data->is_circular_;
     };
 
   };

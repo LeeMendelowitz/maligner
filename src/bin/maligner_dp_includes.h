@@ -29,6 +29,7 @@ static const char *USAGE_MESSAGE =
 "      --max-chunk-sizing-error         Maximum chunk sizing error score for bounding search space. Default: Inf\n"
 "      --max-alignments-per-reference       \n"
 "      --max-alignments                 Max. number of alignments to output\n"
+"      --reference-is-circular          Treat reference maps as circular. Default: false\n"
 "      --no-query-rescaling             Default: perform query rescaling\n";
 
 
@@ -58,6 +59,7 @@ namespace maligner_dp {
       static int max_alignments_mad = 100; // Max alignments to use for mad computation
       static bool query_rescaling = true;
       static bool verbose = false;
+      static bool reference_is_circular = false;
 
   }
 }
@@ -74,7 +76,8 @@ enum {
   OPT_REF_MAX_MISS_RATE,
   OPT_QUERY_MAX_MISS_RATE,
   OPT_VERBOSE,
-  OPT_NO_QUERY_RESCALING
+  OPT_NO_QUERY_RESCALING,
+  OPT_REFERENCE_IS_CIRCULAR
 };
 
 static const struct option longopts[] = {
@@ -91,6 +94,7 @@ static const struct option longopts[] = {
     { "max-alignments-per-reference", required_argument, NULL, OPT_ALIGNMENTS_PER_REFERENCE},
     { "max-alignments", required_argument, NULL, OPT_MAX_ALIGNMENTS},
     { "no-query-rescaling", no_argument, NULL, OPT_NO_QUERY_RESCALING},
+    { "reference-is-circular", no_argument, NULL, OPT_REFERENCE_IS_CIRCULAR},
     { "verbose", no_argument, NULL, OPT_VERBOSE},
     { "help",     no_argument,       NULL, 'h' },
     { "version",  no_argument,       NULL, 'v'},
@@ -121,6 +125,7 @@ void parse_args(int argc, char** argv)
             case OPT_MAX_ALIGNMENTS: arg >> opt::max_alignments; break;
             case OPT_VERBOSE: opt::verbose = true; break;
             case OPT_NO_QUERY_RESCALING: opt::query_rescaling = false; break;
+            case OPT_REFERENCE_IS_CIRCULAR: opt::reference_is_circular = true; break;
             case 'h':
             {
                 std::cout << USAGE_MESSAGE;
@@ -219,7 +224,8 @@ std::ostream& print_args(std::ostream& os) {
      << "\tneighbor_delta: " << neighbor_delta << "\n"
      << "\tquery_rescaling: " << query_rescaling << "\n"
      << "\tquery_is_bounded: " << query_is_bounded << "\n"
-     << "\tref_is_bounded: " << ref_is_bounded << "\n";
+     << "\tref_is_bounded: " << ref_is_bounded << "\n"
+     << "\treference_is_circular: " << reference_is_circular << "\n";
 
   return os;
 }

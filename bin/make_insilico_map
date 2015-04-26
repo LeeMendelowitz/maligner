@@ -4,7 +4,7 @@ Make an insilico map for the given fasta file.
 """
 import sys, os, time
 import argparse
-from malignpy.maps.SOMAMap import SOMAMap
+from malignpy.maps.MalignerMap import MalignerMap
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.Alphabet import generic_dna
@@ -91,7 +91,7 @@ def make_insilico_map(seq, forward_rec_seq,
         site_handle.write('\n'.join(str(s) for s in sites))
 
     numFrags = len(frags)
-    map = SOMAMap(frags=frags, mapId = map_name)
+    map = MalignerMap(frags=frags, mapId = map_name)
     map.write(map_handle)
 
     sys.stderr.write('Found %i restriction fragments.\n'%numFrags)
@@ -107,7 +107,7 @@ def run_fasta(fasta_file, forward_rec_seq, output_pfx):
     path, fn = os.path.split(fasta_file)
     bn, ext = os.path.splitext(fn)
 
-    map_handle = open('%s.map'%output_pfx, 'w')
+    map_handle = open('%s.maps'%output_pfx, 'w')
     site_handle = open('%s.sites'%output_pfx, 'w')
 
     

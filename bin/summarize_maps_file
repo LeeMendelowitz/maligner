@@ -6,7 +6,7 @@ Produce summary statistics for a maps file.
 import argparse, sys, os
 import numpy as np
 from numpy import empty, array, concatenate, mean, percentile, min, max, sum
-from malignpy.maps.SOMAMap import SOMAMap
+from malignpy.maps.MalignerMap import MalignerMap
 from malignpy.maps.utils import gen_maps
 from malignpy.common import wrap_file_function
 
@@ -30,8 +30,9 @@ def run(input_maps_file, include_terminal):
   else:
 
     for map in map_gen:
-      frags_per_map.append(map.numFrags - 2)
       inner_frags = map.frags[1:-1]
+      num_interior = len(inner_frags)
+      frags_per_map.append(num_interior)
       frags.extend(inner_frags)
       lengths.append(sum(inner_frags))
 

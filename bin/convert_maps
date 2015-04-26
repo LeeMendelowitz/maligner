@@ -3,7 +3,7 @@
 Convert maps from the Schwartz lab format to the maligner format.
 """
 import argparse, sys, os
-from malignpy.maps.SOMAMap import SOMAMap
+from malignpy.maps.MalignerMap import MalignerMap
 from malignpy.maps.utils import read_map_data_schwartz_format
 from malignpy.common import wrap_file_function
 

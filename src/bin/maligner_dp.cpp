@@ -74,8 +74,8 @@ int main(int argc, char* argv[]) {
                        maligner_dp::opt::alignments_per_reference,
                        maligner_dp::opt::min_alignment_spacing,
                        maligner_dp::opt::neighbor_delta,
-                       maligner_dp::opt::query_is_bounded,
-                       maligner_dp::opt::ref_is_bounded,
+                       maligner_dp::opt::query_is_bounded, // Perhaps this should be part of the MapData instead of AlignOpts
+                       maligner_dp::opt::ref_is_bounded, // Perhaps this should be part of the MapData instead of AlignOpts
                        maligner_dp::opt::query_rescaling);
 
   // Build a database of reference maps. 
@@ -86,7 +86,8 @@ int main(int argc, char* argv[]) {
   RefMapDB ref_map_db;
   for(auto i = ref_maps.begin(); i != ref_maps.end(); i++) {
     ref_map_db.insert( RefMapDB::value_type(i->name_,
-        RefMapWrapper(*i, maligner_dp::opt::ref_max_misses,
+        RefMapWrapper(*i, maligner_dp::opt::reference_is_circular, 
+                          maligner_dp::opt::ref_max_misses,
                           maligner_dp::opt::sd_rate,
                           maligner_dp::opt::min_sd)) );
   }
@@ -123,7 +124,7 @@ int main(int argc, char* argv[]) {
     PartialSums qps_forward(query_frags_forward, align_opts.query_max_misses);
     PartialSums qps_reverse(query_frags_reverse, align_opts.query_max_misses);
 
-    const MapWrapper qmw(query_map, align_opts.query_max_misses);
+    const QueryMapWrapper qmw(query_map, align_opts.query_max_misses);
 
     const size_t num_query_frags = query_map.frags_.size();
 
@@ -146,7 +147,7 @@ int main(int argc, char* argv[]) {
         const_cast<MapData*>(&qmw.md_),
         const_cast<MapData*>(&rmw.md_),
         &query_frags_forward,
-        &rmw.m_.frags_, 
+        &rmw.frags_, 
         &qps_forward,
         &rmw.ps_,
         &rmw.sd_inv_,
@@ -161,7 +162,7 @@ int main(int argc, char* argv[]) {
         const_cast<MapData*>(&qmw.md_),
         const_cast<MapData*>(&rmw.md_),
         &query_frags_reverse,
-        &rmw.m_.frags_, 
+        &rmw.frags_, 
         &qps_reverse,
         &rmw.ps_,
         &rmw.sd_inv_,

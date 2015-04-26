@@ -32,6 +32,8 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = align_task.ref_map_data->num_frags_; // This may be different than n in the case of circularization
+
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
     const int num_rows = mat.getNumRows();
@@ -47,10 +49,19 @@ namespace maligner_dp {
          << "\n";
     #endif
 
+    ///////////////////////////////////////////////////
     // Initialize the first row
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < num_ref_frags + 1; j++) {
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
+      pCell->backPointer_ = nullptr;
+    }
+
+    // Do not allow alignments to start past right of the circularization point,
+    // where fragments have been doubled.
+    for (int j = num_ref_frags + 1; j < n; j++) {
+      ScoreCell* pCell = mat.getCell(0,j);
+      pCell->score_ = -INF;
       pCell->backPointer_ = nullptr;
     }
 
@@ -234,6 +245,8 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = align_task.ref_map_data->num_frags_; // This may be different than n in the case of circularization
+
     mat.resize(m, n);
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
@@ -250,10 +263,19 @@ namespace maligner_dp {
          << "\n";
     #endif
 
+    ///////////////////////////////////////////////////
     // Initialize the first row
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < num_ref_frags + 1; j++) {
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
+      pCell->backPointer_ = nullptr;
+    }
+
+    // Do not allow alignments to start past right of the circularization point,
+    // where fragments have been doubled.
+    for (int j = num_ref_frags + 1; j < n; j++) {
+      ScoreCell* pCell = mat.getCell(0,j);
+      pCell->score_ = -INF;
       pCell->backPointer_ = nullptr;
     }
 
@@ -413,6 +435,8 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = align_task.ref_map_data->num_frags_; // This may be different than n in the case of circularization
+
     mat.resize(m, n);
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
@@ -429,10 +453,19 @@ namespace maligner_dp {
          << "\n";
     #endif
 
+    ///////////////////////////////////////////////////
     // Initialize the first row
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < num_ref_frags + 1; j++) {
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
+      pCell->backPointer_ = nullptr;
+    }
+
+    // Do not allow alignments to start past right of the circularization point,
+    // where fragments have been doubled.
+    for (int j = num_ref_frags + 1; j < n; j++) {
+      ScoreCell* pCell = mat.getCell(0,j);
+      pCell->score_ = -INF;
       pCell->backPointer_ = nullptr;
     }
 
@@ -596,6 +629,8 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = align_task.ref_map_data->num_frags_; // This may be different than n in the case of circularization
+
     mat.resize(m, n);
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
@@ -612,10 +647,19 @@ namespace maligner_dp {
          << "\n";
     #endif
 
+    ///////////////////////////////////////////////////
     // Initialize the first row
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < num_ref_frags + 1; j++) {
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
+      pCell->backPointer_ = nullptr;
+    }
+
+    // Do not allow alignments to start past right of the circularization point,
+    // where fragments have been doubled.
+    for (int j = num_ref_frags + 1; j < n; j++) {
+      ScoreCell* pCell = mat.getCell(0,j);
+      pCell->score_ = -INF;
       pCell->backPointer_ = nullptr;
     }
 
@@ -791,6 +835,8 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = align_task.ref_map_data->num_frags_; // This may be different than n in the case of circularization
+
     mat.resize(m, n);
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
@@ -807,10 +853,19 @@ namespace maligner_dp {
          << "\n";
     #endif
 
+    ///////////////////////////////////////////////////
     // Initialize the first row
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < num_ref_frags + 1; j++) {
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
+      pCell->backPointer_ = nullptr;
+    }
+
+    // Do not allow alignments to start past right of the circularization point,
+    // where fragments have been doubled.
+    for (int j = num_ref_frags + 1; j < n; j++) {
+      ScoreCell* pCell = mat.getCell(0,j);
+      pCell->score_ = -INF;
       pCell->backPointer_ = nullptr;
     }
 
@@ -989,6 +1044,8 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = align_task.ref_map_data->num_frags_; // This may be different than n in the case of circularization
+
     mat.resize(m, n);
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
@@ -1005,10 +1062,19 @@ namespace maligner_dp {
          << "\n";
     #endif
 
+    ///////////////////////////////////////////////////
     // Initialize the first row
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < num_ref_frags + 1; j++) {
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
+      pCell->backPointer_ = nullptr;
+    }
+
+    // Do not allow alignments to start past right of the circularization point,
+    // where fragments have been doubled.
+    for (int j = num_ref_frags + 1; j < n; j++) {
+      ScoreCell* pCell = mat.getCell(0,j);
+      pCell->score_ = -INF;
       pCell->backPointer_ = nullptr;
     }
 
@@ -1190,6 +1256,8 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = align_task.ref_map_data->num_frags_; // This may be different than n in the case of circularization
+
     mat.resize(m, n);
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
@@ -1206,10 +1274,19 @@ namespace maligner_dp {
          << "\n";
     #endif
 
+    ///////////////////////////////////////////////////
     // Initialize the first row
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < num_ref_frags + 1; j++) {
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
+      pCell->backPointer_ = nullptr;
+    }
+
+    // Do not allow alignments to start past right of the circularization point,
+    // where fragments have been doubled.
+    for (int j = num_ref_frags + 1; j < n; j++) {
+      ScoreCell* pCell = mat.getCell(0,j);
+      pCell->score_ = -INF;
       pCell->backPointer_ = nullptr;
     }
 
@@ -1384,8 +1461,11 @@ namespace maligner_dp {
 
     ScoreMatrixType& mat = *align_task.mat;
 
+
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = align_task.ref_map_data->num_frags_; // This may be different than n in the case of circularization
+
     mat.resize(m, n);
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
@@ -1404,10 +1484,19 @@ namespace maligner_dp {
          << "\n";
     #endif
 
+    ///////////////////////////////////////////////////
     // Initialize the first row
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < num_ref_frags + 1; j++) {
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
+      pCell->backPointer_ = nullptr;
+    }
+
+    // Do not allow alignments to start past right of the circularization point,
+    // where fragments have been doubled.
+    for (int j = num_ref_frags + 1; j < n; j++) {
+      ScoreCell* pCell = mat.getCell(0,j);
+      pCell->score_ = -INF;
       pCell->backPointer_ = nullptr;
     }
 
@@ -1628,6 +1717,8 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = align_task.ref_map_data->num_frags_; // This may be different than n in the case of circularization
+
     mat.resize(m, n);
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
@@ -1644,10 +1735,19 @@ namespace maligner_dp {
          << "\n";
     #endif
 
+    ///////////////////////////////////////////////////
     // Initialize the first row
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < num_ref_frags + 1; j++) {
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
+      pCell->backPointer_ = nullptr;
+    }
+
+    // Do not allow alignments to start past right of the circularization point,
+    // where fragments have been doubled.
+    for (int j = num_ref_frags + 1; j < n; j++) {
+      ScoreCell* pCell = mat.getCell(0,j);
+      pCell->score_ = -INF;
       pCell->backPointer_ = nullptr;
     }
 
@@ -1823,6 +1923,8 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = align_task.ref_map_data->num_frags_; // This may be different than n in the case of circularization
+
     mat.resize(m, n);
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
@@ -1839,13 +1941,21 @@ namespace maligner_dp {
          << "\n";
     #endif
 
+    ///////////////////////////////////////////////////
     // Initialize the first row
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < num_ref_frags + 1; j++) {
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
       pCell->backPointer_ = nullptr;
     }
 
+    // Do not allow alignments to start past right of the circularization point,
+    // where fragments have been doubled.
+    for (int j = num_ref_frags + 1; j < n; j++) {
+      ScoreCell* pCell = mat.getCell(0,j);
+      pCell->score_ = -INF;
+      pCell->backPointer_ = nullptr;
+    }
     // Initialize the first column
     for (int i = 1; i < m; i++ ) {
       ScoreCell* pCell = mat.getCell(i,0);
@@ -2020,6 +2130,8 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = align_task.ref_map_data->num_frags_; // This may be different than n in the case of circularization
+
     mat.resize(m, n);
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
@@ -2036,10 +2148,19 @@ namespace maligner_dp {
          << "\n";
     #endif
 
+    ///////////////////////////////////////////////////
     // Initialize the first row
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < num_ref_frags + 1; j++) {
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
+      pCell->backPointer_ = nullptr;
+    }
+
+    // Do not allow alignments to start past right of the circularization point,
+    // where fragments have been doubled.
+    for (int j = num_ref_frags + 1; j < n; j++) {
+      ScoreCell* pCell = mat.getCell(0,j);
+      pCell->score_ = -INF;
       pCell->backPointer_ = nullptr;
     }
 
@@ -2223,6 +2344,7 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = align_task.ref_map_data->num_frags_; // This may be different than n in the case of circularization
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
     const int num_rows = mat.getNumRows();
@@ -2265,7 +2387,7 @@ namespace maligner_dp {
 
     // Initialize the first row
     vector<ScoreCell*> for_queue;
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < num_ref_frags+1; j++) {
 
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
@@ -2453,6 +2575,8 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = align_task.ref_map_data->num_frags_; // This may be different than n in the case of circularization
+
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
     const int num_rows = mat.getNumRows();
@@ -2496,7 +2620,7 @@ namespace maligner_dp {
     const ScoreCellColor COLOR_IN_PLAY = ScoreCellColor::GREEN;
 
     // Initialize the first row
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < num_ref_frags+1; j++) {
 
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
@@ -2667,6 +2791,7 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = align_task.ref_map_data->num_frags_; // This may be different than n in the case of circularization
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
     const int num_rows = mat.getNumRows();
@@ -2683,9 +2808,16 @@ namespace maligner_dp {
     #endif
 
     // Initialize the first row
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < num_ref_frags + 1; j++) {
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
+      pCell->backPointer_ = nullptr;
+    }
+        // Do not allow alignments to start past right of the circularization point,
+    // where fragments have been doubled.
+    for (int j = num_ref_frags + 1; j < n; j++) {
+      ScoreCell* pCell = mat.getCell(0,j);
+      pCell->score_ = -INF;
       pCell->backPointer_ = nullptr;
     }
 
@@ -2845,6 +2977,7 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = align_task.ref_map_data->num_frags_; // This may be different than n in the case of circularization
 
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
     const int num_rows = mat.getNumRows();
@@ -2860,10 +2993,19 @@ namespace maligner_dp {
          << "\n";
     #endif
 
+    ///////////////////////////////////////////////////
     // Initialize the first row
-    for (int j = 0; j < n; j++) {
+    for (int j = 0; j < num_ref_frags + 1; j++) {
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
+      pCell->backPointer_ = nullptr;
+    }
+
+    // Do not allow alignments to start past right of the circularization point,
+    // where fragments have been doubled.
+    for (int j = num_ref_frags + 1; j < n; j++) {
+      ScoreCell* pCell = mat.getCell(0,j);
+      pCell->score_ = -INF;
       pCell->backPointer_ = nullptr;
     }
 
@@ -2997,6 +3139,7 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    
     const int num_rows = mat.getNumRows();
     const int num_cols = mat.getNumCols();
     const int last_row = m - 1;
@@ -3159,7 +3302,7 @@ namespace maligner_dp {
         cells_covered.cover(a.ref_start(), a.ref_end());
         alignments.push_back(std::move(a));
 
-      } else { // if neighbor_delta > 0
+      } else { 
         cells_covered.cover(a.ref_start(), a.ref_end());
         alignments.push_back(std::move(a));
       }
@@ -3197,6 +3340,7 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+
     const int num_rows = mat.getNumRows();
     const int num_cols = mat.getNumCols();
     const int last_row = m - 1;
@@ -3448,13 +3592,6 @@ namespace maligner_dp {
     // get the best alignments and store the results in the task.
     int num_alignments = get_best_alignments_try_all(task);
     return num_alignments;
-  }
-
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  void assign_alignment_mad_scores(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task) {
-    // Assign alignment mad scores to each alignment
-    
-
   }
 
 
