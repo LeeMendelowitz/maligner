@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+"""
+Generate random maps by sampling interior fragments, with replacement.
+"""
+
+import argparse, sys, os
+from malignpy.maps.MalignerMap import MalignerMap
+from malignpy.maps.utils import gen_maps
+from malignpy.common import wrap_file_function
+import numpy as np
+
+@wrap_file_function('r', 'w')
+def run(input_maps_file, fout, num_maps, num_frags):
+
+  all_frags = []
+
+  map_gen = gen_maps(input_maps_file)
+
+  for m in map_gen:
+    all_frags = np.concatenate((all_frags, m.frags[1:-1]))
+
+  for i in range(NUM_MAPS):
+    map_name = "random_%i"%i
+    frags = np.random.choice(all_frags, num_frags).astype(int)
+    m = MalignerMap(frags = frags, mapId = map_name)
+    m.write(fout)
+
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description="""Generate random maps by sampling interior fragments, with replacement.""")
+  
+  parser.add_argument('maps_file', metavar='MAPS_FILE', type=str,
+                   help='Input maps file in the maligner maps format.')
+  parser.add_argument('num_maps', metavar='NUM_MAPS', type=int,
+                   help='Number of maps to simulate')
+  parser.add_argument('num_frags', metavar='FRAGS_PER_MAP', type=int,
+                   help='Number of fragments per map.')
+
+  parser.add_argument('-o', '--output', metavar='OUTPUT_FILE',
+      help = "Output file name. (Default: STDOUT)")
+
+  args = parser.parse_args()
+
+  if args.output is None:
+    args.output = sys.stdout
+
+  run(args.maps_file, args.output, args.num_maps, args.num_frags)
