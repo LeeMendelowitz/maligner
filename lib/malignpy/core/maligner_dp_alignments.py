@@ -1,4 +1,5 @@
 # Utilities for parsing a maligner_dp alignments file
+# And adding additional summary statistics about each alignment
 from itertools import izip
 import numpy as np
 from numpy import array
@@ -14,6 +15,7 @@ OUTPUT_FIELDS = FIELDS + ["ref_start", "ref_end", "ql", "rl", "query_misses_inte
   "max_chi2", "median_chi2", "query_miss_penalty", "ref_miss_penalty"]
 
 FIELDS_TYPES = zip(FIELDS, TYPES)
+
 
 class Chunk(object):
 

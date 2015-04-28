@@ -1,5 +1,5 @@
 ############################
-# File: SOMAMap.py
+# File: MalignerMap.py
 # Author: Lee Mendelowitz (lmendelo@umiacs.umd.edu)
 #
 # Description:
@@ -13,7 +13,7 @@ import sys
 
 from ..common import wrap_file_function
 
-class SOMAMap(object):
+class MalignerMap(object):
 
     def __init__(self, *args, **kwargs):
         if 'line' in kwargs:
@@ -22,10 +22,10 @@ class SOMAMap(object):
             self.makeFromAttributes(**kwargs)
         self.checkMap()
 
-    # Create a SOMAMap from a line in maps file
+    # Create a MalignerMap from a line in maps file
     def makeFromLine(self, line):
         """
-        Create a SOMAMap from a line in a SOMA Maps file.
+        Create a MalignerMap from a line in a SOMA Maps file.
         """
         fields = line.strip().split()
         self.mapId = fields[0]
@@ -45,7 +45,7 @@ class SOMAMap(object):
             if attr not in self.__dict__:
                 self.__dict__[attr] = kwargs[attr]
 
-    # write the SOMAMap to file
+    # write the MalignerMap to file
     def write(self, handle):
         f = handle
         fields = [self.mapId,
@@ -57,7 +57,7 @@ class SOMAMap(object):
 
     def get_data(self):
         """
-        Return dict representation of a SOMAMap
+        Return dict representation of a MalignerMap
         """
         fields = ['mapId', 'length', 'numFrags', 'frags']
         d = { k:getattr(self,k) for k in fields }
@@ -66,7 +66,7 @@ class SOMAMap(object):
     # Check the consistency of the object
     def checkMap(self):
         if len(self.frags) != self.numFrags:
-            raise Exception('SOMAMap attributes are inconsistent!')
+            raise Exception('MalignerMap attributes are inconsistent!')
 
     @property
     def name(self):
@@ -74,10 +74,15 @@ class SOMAMap(object):
 
     
 
+def smooth(inputMap, minFrag=500, has_boundary = True):
+    if has_boundary:
+        return smooth_with_boundary(inputMap, minFrag)
+    else:
+        return smooth_without_boundary(inputMap, minFrag)
 
 #########################################################
 # Smooth a map by removing small restriction fragments.
-def smooth(inputMap, minFrag=500):
+def smooth_without_boundary(inputMap, minFrag=500):
     frags = []
     mergeCount = 0
     fragGen = iter(inputMap.frags)
@@ -98,7 +103,51 @@ def smooth(inputMap, minFrag=500):
         curFrag = []
    
     sys.stderr.write('smooth merged %i fragments out of %i.\n'%(mergeCount, len(inputMap.frags)))
-    outputMap = SOMAMap(frags=frags, mapId = inputMap.mapId)
+    outputMap = MalignerMap(frags=frags, mapId = inputMap.mapId)
+    assert(sum(outputMap.frags) == sum(inputMap.frags))
+    assert(outputMap.length == inputMap.length)
+    return outputMap
+
+#########################################################
+# Smooth a map by removing small restriction fragments.
+# Leave boundary fragments as is
+def smooth_with_boundary(inputMap, minFrag=500):
+    frags = []
+    mergeCount = 0
+
+    if not inputMap.frags:
+        return MalignerMap(frags = [], mapId = inputMap.mapId)
+
+    first_frag = inputMap.frags[0]
+    last_frag = inputMap.frags[-1] if len(inputMap.frags) > 1 else None
+
+    fragGen = iter(inputMap.frags[1:-1])
+
+    frags.append(first_frag)
+
+    # Smooth interior fragments
+    curFrag = []
+    for frag in fragGen:
+        curFrag = [frag]
+        curLength = frag
+        while curLength < minFrag:
+            try:
+                nextFrag = fragGen.next()
+                curFrag.append(nextFrag)
+                curLength += nextFrag
+                mergeCount += 1
+            except StopIteration:
+                break
+        assert(sum(curFrag) == curLength)
+        frags.append(curLength)
+        curFrag = []
+
+    # Append last fragment
+    if last_frag:
+        frags.append(last_frag)
+   
+    sys.stderr.write('smooth merged %i fragments out of %i.\n'%(mergeCount, len(inputMap.frags)))
+    outputMap = MalignerMap(frags=frags, mapId = inputMap.mapId)
     assert(sum(outputMap.frags) == sum(inputMap.frags))
     assert(outputMap.length == inputMap.length)
     return outputMap

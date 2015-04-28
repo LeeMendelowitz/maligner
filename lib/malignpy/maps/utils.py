@@ -1,7 +1,7 @@
 import sys
 import re
 
-from .SOMAMap import SOMAMap
+from .MalignerMap import MalignerMap
 from ..common import wrap_file_function
 
 __all__ = (
@@ -80,7 +80,7 @@ def mapDataSchwartzGen(handle):
         fields = line2.strip().split()
         enzyme = fields[0]
         fragLengths = [int(1000.0*float(field)) for field in fields[2:]] # Convert to bp
-        omap = SOMAMap(mapId = mapId, frags = fragLengths, enzyme = enzyme)
+        omap = MalignerMap(mapId = mapId, frags = fragLengths, enzyme = enzyme)
         yield omap
 
 read_map_data_schwartz_format =  mapDataSchwartzGen
@@ -128,7 +128,7 @@ def read_map_data_xml(fileName):
                 fragSDs.append(fragSD)
         elif endMapMatch:
             print 'Creating optical map with name %s enzyme %s and %i fragments'%(mapName, enzyme, len(fragLengths))
-            opticalMapList.append(SOMAMap(mapId = mapName, frags = fragLengths, fragSD = fragSD, enzyme = enzyme))
+            opticalMapList.append(MalignerMap(mapId = mapName, frags = fragLengths, fragSD = fragSD, enzyme = enzyme))
             fragLengths = []
             fragSDs = []
             enzyme = ''
@@ -157,7 +157,7 @@ def read_maps(fin):
       maps = readMaps(f)
       f.close()
     """
-    maps = [SOMAMap(line=l) for l in fin]
+    maps = [MalignerMap(line=l) for l in fin]
     mapDict = dict((m.mapId, m) for m in maps)
     return mapDict
 
@@ -165,12 +165,12 @@ def read_maps(fin):
 @wrap_file_function('r')
 def gen_maps(f):
     """
-    Generate maps from the SOMAMap file specified by f.
+    Generate maps from the MalignerMap file specified by f.
     f can be a filename str or a file handle.
     """
     lines = (l for l in f if l)
     for l in lines:
-        yield SOMAMap(line=l)
+        yield MalignerMap(line=l)
 
 #########################################################
 # Write maps to a file in the SOMA map format
