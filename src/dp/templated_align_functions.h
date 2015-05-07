@@ -178,7 +178,7 @@ namespace maligner_dp {
     } // for int j
     
     #if FILL_DEBUG > 0
-      std::cout << "num breaks: " << num_breaks << "\n";
+      std::cerr << "num breaks: " << num_breaks << "\n";
     #endif
 
   } // fill_score_matrix
@@ -339,7 +339,7 @@ namespace maligner_dp {
             ScoreCell* pTarget = mat.getCell(k, l);
             if (pTarget->score_ == -INF) continue;
 
-            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || k == m - 1);
+            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || i == m - 1);
 
             int query_miss = i - k - 1; // sites in query unaligned to reference
             double query_miss_penalty = query_miss_penalties[query_miss];
@@ -405,7 +405,7 @@ namespace maligner_dp {
     } // for int j
     
     #if FILL_DEBUG > 0
-      std::cout << "num breaks: " << num_breaks << "\n";
+      std::cerr << "num breaks: " << num_breaks << "\n";
     #endif
 
   } // fill_score_matrix_using_partials, column_order
@@ -509,7 +509,7 @@ namespace maligner_dp {
       
         for(int k = i-1; k >= k0; k--) {
 
-            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || k == m - 1);
+            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || i == m - 1);
 
             int query_miss = i - k - 1; // sites in query unaligned to reference
             double query_miss_penalty = query_miss_penalties[query_miss];
@@ -596,7 +596,7 @@ namespace maligner_dp {
     } // for int j
     
     #if FILL_DEBUG > 0
-      std::cout << "num breaks: " << num_breaks << "\n";
+      std::cerr << "num breaks: " << num_breaks << "\n";
     #endif
 
   } // fill_score_matrix_using_partials, row_order
@@ -721,7 +721,7 @@ namespace maligner_dp {
             ScoreCell* pTarget = mat.getCell(k, l);
             if (pTarget->score_ == -INF) continue;
 
-            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || k == m - 1);
+            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || i == m - 1);
 
             int query_miss = i - k - 1; // sites in query unaligned to reference
             double query_miss_penalty = query_miss_penalties[query_miss];
@@ -805,7 +805,7 @@ namespace maligner_dp {
     } // for int j
     
     #if FILL_DEBUG > 0
-      std::cout << "num breaks: " << num_breaks << "\n";
+      std::cerr << "num breaks: " << num_breaks << "\n";
     #endif
 
   } // fill_score_matrix_using_partials_with_breaks, column_order
@@ -909,7 +909,7 @@ namespace maligner_dp {
       
         for(int k = i-1; k >= k0; k--) {
 
-            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || k == m - 1);
+            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || i == m - 1);
 
             int query_miss = i - k - 1; // sites in query unaligned to reference
             double query_miss_penalty = query_miss_penalties[query_miss];
@@ -1011,7 +1011,7 @@ namespace maligner_dp {
     } // for int j
     
     #if FILL_DEBUG > 0
-      std::cout << "num breaks: " << num_breaks << "\n";
+      std::cerr << "num breaks: " << num_breaks << "\n";
     #endif
 
   } // fill_score_matrix_using_partials_with_breaks, row_order
@@ -1138,7 +1138,7 @@ namespace maligner_dp {
             ScoreCell* pTarget = mat.getCell(k, l);
             if (pTarget->score_ == -INF) continue;
 
-            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || k == m - 1);
+            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || i == m - 1);
 
             int query_miss = i - k - 1; // sites in query unaligned to reference
             double query_miss_penalty = query_miss_penalties[query_miss];
@@ -1224,7 +1224,7 @@ namespace maligner_dp {
     } // for int j
     
     #if FILL_DEBUG > 0
-      std::cout << "num breaks: " << num_breaks << "\n";
+      std::cerr << "num breaks: " << num_breaks << "\n";
     #endif
 
   } // fill_score_matrix_using_partials_with_breaks_hardcode_penalty, column_order
@@ -1330,7 +1330,7 @@ namespace maligner_dp {
       
         for(int k = i-1; k >= k0; k--) {
 
-            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || k == m - 1);
+            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || i == m - 1);
 
             int query_miss = i - k - 1; // sites in query unaligned to reference
             double query_miss_penalty = query_miss_penalties[query_miss];
@@ -1433,7 +1433,7 @@ namespace maligner_dp {
     } // for int j
     
     #if FILL_DEBUG > 0
-      std::cout << "num breaks: " << num_breaks << "\n";
+      std::cerr << "num breaks: " << num_breaks << "\n";
     #endif
 
   } // fill_score_matrix_using_partials_with_breaks_hardcode_penalty, row_order
@@ -1549,7 +1549,7 @@ namespace maligner_dp {
 
         for(int k = i-1; k >= k0; k--) {
 
-            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || k == m - 1);
+            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || i == m - 1);
 
             int query_miss = i - k - 1; // sites in query unaligned to reference
             double query_miss_penalty = query_miss_penalties[query_miss];
@@ -1558,19 +1558,21 @@ namespace maligner_dp {
 
           for(int l = j-1; l >= l0; l--) {
 
+            const bool is_ref_boundary = !align_opts.ref_is_bounded && (l == 0 || j == n - 1);
+
             #if FILL_DEBUG > 0
             cerr << "i: " << i
                  << " j: " << j
                  << " k: " << k
-                 << " l: " << l
-                 << "\n";
+                 << " l: " << l << "\n"
+                 << "is_query_boundary: " << is_query_boundary << " "
+                 << "is_ref_boundary: " << is_ref_boundary << "\n";
+
             #endif
 
+            
             ScoreCell* pTarget = mat.getCell(k, l);
             if (pTarget->score_ == -INF) continue;
-
-
-            const bool is_ref_boundary = !align_opts.ref_is_bounded && (l == 0 || j == n - 1);
 
             int ref_miss = j - l - 1; // sites in reference unaligned to query
             double ref_miss_penalty = ref_miss_penalties[ref_miss];
@@ -1674,18 +1676,30 @@ namespace maligner_dp {
 
         // Assign the backpointer and score to pCell
         if (backPointer) {
+
+          #if FILL_DEBUG > 0
+             std::cerr << "Making assignment:\n"
+                       << "\t" << SAFE_WRITE(backPointer) << " " << best_score << " " << best_ref_miss_total << " " << best_query_miss_total << " " << "\n";
+          #endif
+
           pCell->backPointer_ = backPointer;
           pCell->score_ = best_score;
           pCell->qm_ = best_query_miss_total;
           pCell->rm_ = best_ref_miss_total;
           last_row_in_play = i;
+
+          #if FILL_DEBUG > 0
+            std::cerr << "pCell after assignment: "
+                      << SAFE_WRITE(pCell) << "\n";
+          #endif
+
         }
 
       } // for int i
     } // for int j
     
     #if FILL_DEBUG > 0
-      std::cout << "num breaks: " << num_breaks << "\n";
+      std::cerr << "num breaks: " << num_breaks << "\n";
     #endif
 
   } // fill_score_matrix_using_partials_with_breaks_hardcode_penalty_max_miss, row_order
@@ -1800,7 +1814,7 @@ namespace maligner_dp {
       
           for(int k = i-1; k >= k0; k--) {
 
-            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || k == m - 1);
+            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || i == m - 1);
 
             int query_miss = i - k - 1; // sites in query unaligned to reference
             double query_miss_penalty = query_miss_penalties[query_miss];
@@ -1812,7 +1826,9 @@ namespace maligner_dp {
                  << " j: " << j
                  << " k: " << k
                  << " l: " << l
-                 << "\n";
+                 << "\n"
+                 << "is_query_boundary: " << is_query_boundary << " "
+                 << "is_ref_boundary: " << is_ref_boundary << "\n";
             #endif
 
             ScoreCell* pTarget = mat.getCell(k, l);
@@ -1894,7 +1910,7 @@ namespace maligner_dp {
     } // for int j
     
     #if FILL_DEBUG > 0
-      std::cout << "num breaks: " << num_breaks << "\n";
+      std::cerr << "num breaks: " << num_breaks << "\n";
     #endif
 
   } // fill_score_matrix_using_partials_with_breaks_hardcode_penalty, row_order
@@ -2022,7 +2038,7 @@ namespace maligner_dp {
             ScoreCell* pTarget = mat.getCell(k, l);
             if (pTarget->score_ == -INF) continue;
 
-            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || k == m - 1);
+            const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || i == m - 1);
 
             int query_miss = i - k - 1; // sites in query unaligned to reference
             double query_miss_penalty = query_miss * align_opts.query_miss_penalty;
@@ -2104,7 +2120,7 @@ namespace maligner_dp {
     } // for int j
     
     #if FILL_DEBUG > 0
-      std::cout << "num breaks: " << num_breaks << "\n";
+      std::cerr << "num breaks: " << num_breaks << "\n";
     #endif
 
   } // fill_score_matrix_with_breaks, column_order
@@ -2206,7 +2222,7 @@ namespace maligner_dp {
         for(int k = i-1; k >= k0; k--) {
 
           query_size += query[k];
-          const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || k == m - 1);
+          const bool is_query_boundary = !align_opts.query_is_bounded && (k == 0 || i == m - 1);
 
           int query_miss = i - k - 1; // sites in query unaligned to reference
           double query_miss_penalty = query_miss * align_opts.query_miss_penalty;
@@ -2306,7 +2322,7 @@ namespace maligner_dp {
     } // for int j
     
     #if FILL_DEBUG > 0
-      std::cout << "num breaks: " << num_breaks << "\n";
+      std::cerr << "num breaks: " << num_breaks << "\n";
     #endif
 
   } // fill_score_matrix_with_breaks, row_order
@@ -2401,13 +2417,13 @@ namespace maligner_dp {
 
           ScoreCell* cell_to_queue = mat.getCell(k, j+l);  
           #if QUEUE_DEBUG > 0
-            std::cout << "checking cell: " << cell_to_queue->q_ << " " << cell_to_queue->r_
+            std::cerr << "checking cell: " << cell_to_queue->q_ << " " << cell_to_queue->r_
               << " " << cell_to_queue << " is white: " << (ScoreCellColor::WHITE == cell_to_queue->color_) << "\n";
           #endif
           if(cell_to_queue->color_ == ScoreCellColor::WHITE) {
             cell_to_queue->color_ = ScoreCellColor::BLACK;
             #if QUEUE_DEBUG > 0
-              std::cout << "pushing cell: " << cell_to_queue->q_ << " " << cell_to_queue->r_
+              std::cerr << "pushing cell: " << cell_to_queue->q_ << " " << cell_to_queue->r_
               << " " << cell_to_queue << "\n";
             #endif
             for_queue.push_back(cell_to_queue);
@@ -2436,7 +2452,7 @@ namespace maligner_dp {
       int j = pCell->r_;
 
       #if QUEUE_DEBUG > 0
-      std::cout << "i: " << i << " j: " << j << " " << pCell << " cell_queue_size: " << cell_queue.size() << "\n";
+      std::cerr << "i: " << i << " j: " << j << " " << pCell << " cell_queue_size: " << cell_queue.size() << "\n";
       #endif
 
       int l0 = (j > align_opts.ref_max_misses + 1) ? j - align_opts.ref_max_misses - 1 : 0;    
@@ -2522,13 +2538,13 @@ namespace maligner_dp {
             if(best_col + l >= num_cols) break;
             ScoreCell* cell_to_queue = mat.getCell(best_row + k, best_col + l);
             #if QUEUE_DEBUG > 0
-              std::cout << "checking cell: " << cell_to_queue->q_ << " " << cell_to_queue->r_
+              std::cerr << "checking cell: " << cell_to_queue->q_ << " " << cell_to_queue->r_
                 << " " << cell_to_queue << " is white: " << (ScoreCellColor::WHITE == cell_to_queue->color_) << "\n";
             #endif
             if(cell_to_queue->color_ == ScoreCellColor::WHITE) {
               cell_to_queue->color_ = ScoreCellColor::BLACK;
               #if QUEUE_DEBUG > 0
-              std::cout << "pushing cell: " << cell_to_queue->q_ << " " << cell_to_queue->r_
+              std::cerr << "pushing cell: " << cell_to_queue->q_ << " " << cell_to_queue->r_
                 << " " << cell_to_queue << "\n";
               #endif
               cell_queue.push(cell_to_queue);
@@ -2540,7 +2556,7 @@ namespace maligner_dp {
     }
 
     #if FILL_DEBUG > 0
-      std::cout << "num breaks: " << num_breaks << "\n";
+      std::cerr << "num breaks: " << num_breaks << "\n";
     #endif
 
   } // fill_score_matrix_using_partials
@@ -2742,7 +2758,7 @@ namespace maligner_dp {
               if(best_col + l >= num_cols) break;
               ScoreCell* cell_to_queue = mat.getCell(best_row + k, best_col + l);
               #if QUEUE_DEBUG > 0
-                std::cout << "checking cell: " << cell_to_queue->q_ << " " << cell_to_queue->r_
+                std::cerr << "checking cell: " << cell_to_queue->q_ << " " << cell_to_queue->r_
                   << " " << cell_to_queue << " is white: " << (ScoreCellColor::WHITE == cell_to_queue->color_) << "\n";
               #endif
 
@@ -2756,7 +2772,7 @@ namespace maligner_dp {
     }
 
     #if FILL_DEBUG > 0
-      std::cout << "num breaks: " << num_breaks << "\n";
+      std::cerr << "num breaks: " << num_breaks << "\n";
     #endif
 
   } // fill_score_matrix_using_partials
@@ -2932,7 +2948,7 @@ namespace maligner_dp {
     } // for int j
     
     #if FILL_DEBUG > 0
-      std::cout << "num breaks: " << num_breaks << "\n";
+      std::cerr << "num breaks: " << num_breaks << "\n";
     #endif
 
   } // fill_score_matrix_using_partials_no_size_penalty
@@ -3123,7 +3139,7 @@ namespace maligner_dp {
     } // for int j
     
     #if FILL_DEBUG > 0
-      std::cout << "num breaks: " << num_breaks << "\n";
+      std::cerr << "num breaks: " << num_breaks << "\n";
     #endif
 
   } // fill_score_matrix_using_partials_with_size_penalty_class

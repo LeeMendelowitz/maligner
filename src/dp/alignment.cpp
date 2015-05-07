@@ -66,7 +66,8 @@ namespace maligner_dp {
        << "sizing_score" << "\t"
        << "sizing_score_rescaled" << "\t"
        << "query_scaling_factor" << "\t"
-       << "chunk_string" << "\n";
+       << "chunk_string" << "\t"
+       << "score_string" << "\n";
     return os;
   }
 
@@ -105,6 +106,13 @@ namespace maligner_dp {
 
     for(auto& mc : aln.rescaled_matched_chunks) {
       os << mc << ";";
+    }
+
+    os << "\t";
+
+    // NEW DEBUG OUTPUT WITH SCORES
+    for(auto& mc : aln.rescaled_matched_chunks) {
+      os << mc.score << ";";
     }
 
     return os;
