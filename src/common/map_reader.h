@@ -36,6 +36,8 @@ namespace maligner_maps {
 
   };
 
+  MapVec read_maps(std::string& filename);
+
 }
 
 #endif

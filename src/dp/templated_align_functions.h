@@ -3252,7 +3252,7 @@ namespace maligner_dp {
       // Should we build all alignments, rescale, sort based on rescaled score,
       // and select non-overlapping alignments based on rescaled score?
       // This will be a little extra computation.
-      if ( cells_covered.is_covered(a.ref_start(), a.ref_end()) ) {
+      if ( cells_covered.is_covered(a.get_ref_start(), a.get_ref_end()) ) {
         continue;
       }
 
@@ -3299,11 +3299,11 @@ namespace maligner_dp {
         // Save the best alignment (i.e. with the lowest "edit distance" score)
         assert(neighborhood_alignments.size() > 0);
         Alignment& a = neighborhood_alignments[0];
-        cells_covered.cover(a.ref_start(), a.ref_end());
+        cells_covered.cover(a.get_ref_start(), a.get_ref_end());
         alignments.push_back(std::move(a));
 
       } else { 
-        cells_covered.cover(a.ref_start(), a.ref_end());
+        cells_covered.cover(a.get_ref_start(), a.get_ref_end());
         alignments.push_back(std::move(a));
       }
 
@@ -3365,11 +3365,11 @@ namespace maligner_dp {
     for(size_t i = 0; i < N; i++) {
 
       Alignment& aln = my_alignments[i];
-      if(cells_covered.is_covered(aln.ref_start(), aln.ref_end())) {
+      if(cells_covered.is_covered(aln.get_ref_start(), aln.get_ref_end())) {
         continue;
       }
 
-      cells_covered.cover(aln.ref_start(), aln.ref_end());
+      cells_covered.cover(aln.get_ref_start(), aln.get_ref_end());
       alignments.push_back(std::move(aln));
       num_alignments++;
 
@@ -3522,6 +3522,7 @@ namespace maligner_dp {
     if (align_opts.rescale_query) {
       aln.rescale_matched_chunks(align_opts);
     }
+    aln.add_alignment_locs(*task.query_ix_to_locs, *task.ref_ix_to_locs);
 
     return aln;
   }
@@ -3547,6 +3548,7 @@ namespace maligner_dp {
     if (align_opts.rescale_query) {
       aln.rescale_matched_chunks(align_opts);
     }
+    aln.add_alignment_locs(*task.query_ix_to_locs, *task.ref_ix_to_locs);
     return aln;
   }
 
@@ -3572,6 +3574,7 @@ namespace maligner_dp {
     if (align_opts.rescale_query) {
       aln.rescale_matched_chunks(align_opts);
     }
+    aln.add_alignment_locs(*task.query_ix_to_locs, *task.ref_ix_to_locs);
     return aln;
   }
 

@@ -25,6 +25,19 @@ namespace maligner_dp {
       return query_miss_score + ref_miss_score + sizing_score;
     }
 
+    Score operator+(const Score& other) const {
+      return Score(query_miss_score + other.query_miss_score,
+                   ref_miss_score + other.ref_miss_score,
+                   sizing_score + other.sizing_score);
+    }
+
+    Score& operator+=(const Score& other) {
+      query_miss_score += other.query_miss_score;
+      ref_miss_score += other.ref_miss_score;
+      sizing_score += other.sizing_score;
+      return *this;
+    }
+
     bool operator==(const Score& other ) const {
 
       return (query_miss_score == other.query_miss_score &&
@@ -44,7 +57,7 @@ namespace maligner_dp {
 
     MatchedChunk() {};
 
-    MatchedChunk(Chunk& qc, Chunk& rc, Score& s) :
+    MatchedChunk(const Chunk& qc, const Chunk& rc, const Score& s) :
       query_chunk(qc), ref_chunk(rc), score(s) {};
 
     Chunk query_chunk;
@@ -69,6 +82,10 @@ namespace maligner_dp {
       return ref_chunk.end;
     }
 
+    int ref_size() const {
+      return ref_chunk.size;
+    }
+
     int query_start() const {
       return query_chunk.start;
     }
@@ -77,12 +94,21 @@ namespace maligner_dp {
       return query_chunk.end;
     }
 
+    int query_size() const {
+      return query_chunk.size;
+    }
+
+
   };
 
   typedef std::vector<MatchedChunk> MatchedChunkVec;
 
+  Score sum_scores(const MatchedChunkVec&);
+
   std::ostream& operator<<(std::ostream& os, const MatchedChunk& chunk);
   std::ostream& operator<<(std::ostream& os, const Score& score);
+
+
   
 
   

@@ -29,6 +29,13 @@ namespace maligner_dp {
         return end - start - 1;
       }
 
+      // Flip coordinates with respect to the reverse of the reference
+      void reverse_coords(int total_frags) {
+        int old_start = start;
+        start = total_frags - end;
+        end = total_frags - old_start;
+      }
+
   };
 
   typedef std::vector<Chunk> ChunkVec;

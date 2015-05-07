@@ -28,7 +28,7 @@ namespace kmer_match {
     
   public:
 
-    MapChunkDB(const MapVec& maps, size_t frags_per_chunk);
+    MapChunkDB(const MapPVec& maps, size_t frags_per_chunk);
 
     void sort_chunks();
 

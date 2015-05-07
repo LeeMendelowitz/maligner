@@ -26,6 +26,15 @@ namespace maligner_dp {
 
     return os;
   }
+
+  Score sum_scores(const MatchedChunkVec& mcs) {
+    Score score;
+    const size_t N = mcs.size();
+    for(size_t i = 0; i < N; i++) {
+      score += mcs[i].score;
+    }
+    return score;
+  }
   
 }
 

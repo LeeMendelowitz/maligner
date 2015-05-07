@@ -29,8 +29,8 @@ namespace maligner_dp {
 
   using Constants::INF;
 
-  int MapData::num_copies = 0;
-  int MapData::num_constructs = 0;
+  // int MapData::num_copies = 0;
+  // int MapData::num_constructs = 0;
 
   class ColRowPair {
   public:

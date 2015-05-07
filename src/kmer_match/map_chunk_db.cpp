@@ -12,14 +12,13 @@ using namespace maligner_maps;
 
 namespace kmer_match {
 
-  MapChunkDB::MapChunkDB(const MapVec& maps, size_t frags_per_chunk) :
+  MapChunkDB::MapChunkDB(const MapPVec& maps, size_t frags_per_chunk) :
   frags_per_chunk_(frags_per_chunk) {
     
-    // Let's just ensure we have enough space.
     size_t num_frags = 0;
 
     for(auto mi = maps.begin(); mi != maps.end(); mi++) {
-      num_frags += mi->frags_.size();
+      num_frags += (*mi)->frags_.size();
     }
 
     // Reserve enough space to avoid reallocation.
@@ -28,12 +27,13 @@ namespace kmer_match {
     // For each map, compute the chunks.
     for(auto mi = maps.begin(); mi != maps.end(); mi++) {
 
-      const Map * pMap = &(*mi);
-
-      ChunksAtIndex chunks_at_index_start_(mi->frags_.size());
-      ChunksAtIndex chunks_at_index_end_(mi->frags_.size());
+      const Map * pMap = *mi;
       
-      const size_t num_frags = mi->frags_.size();
+      const size_t num_frags = pMap->frags_.size();
+
+      ChunksAtIndex chunks_at_index_start_(num_frags);
+      ChunksAtIndex chunks_at_index_end_(num_frags);
+      
       for(size_t start = 0; start < num_frags; start++) {
         const size_t last = min(start + frags_per_chunk, num_frags - 1);
         for(size_t end = start + 1; end <= last; end++) {

@@ -7,14 +7,13 @@ include_directories(
 
 # source files
 set(DP_SOURCES
-  "align.cc"
-  "globals.cc"
-  "ScoreCell.cc"
+  "align.cpp"
+  "globals.cpp"
+  "ScoreCell.cpp"
   # "ScoreMatrix.cc"
-  "alignment.cc"
-  "chunk.cc"
-  "matched_chunk.cc"
-  "map_data.cc"
+  "alignment.cpp"
+  "chunk.cpp"
+  "matched_chunk.cpp"
 )
 
 # Build Library

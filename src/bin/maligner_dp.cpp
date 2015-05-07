@@ -137,20 +137,22 @@ int main(int argc, char* argv[]) {
 
 
       const RefMapWrapper& rmw = ref_map_iter->second;
-      const size_t num_ref_frags = rmw.m_.frags_.size();
+      const size_t num_ref_frags = rmw.map_.frags_.size();
       // sm.resize(num_query_frags + 1, num_ref_frags + 1);
 
       // const IntVec* p_frags_forward = &query_frags_forward;
       // const IntVec* p_frags_reverse = &query_frags_reverse;
 
       AlignTaskType task_forward(
-        const_cast<MapData*>(&qmw.md_),
-        const_cast<MapData*>(&rmw.md_),
+        const_cast<MapData*>(&qmw.map_data_),
+        const_cast<MapData*>(&rmw.map_data_),
         &query_frags_forward,
         &rmw.frags_, 
         &qps_forward,
         &rmw.ps_,
         &rmw.sd_inv_,
+        &qmw.ix_to_locs_,
+        &rmw.ix_to_locs_,
         0, // ref_offset
         &sm,
         &all_alignments,
@@ -159,13 +161,15 @@ int main(int argc, char* argv[]) {
       );
 
       AlignTaskType task_reverse(
-        const_cast<MapData*>(&qmw.md_),
-        const_cast<MapData*>(&rmw.md_),
+        const_cast<MapData*>(&qmw.map_data_),
+        const_cast<MapData*>(&rmw.map_data_),
         &query_frags_reverse,
         &rmw.frags_, 
         &qps_reverse,
         &rmw.ps_,
         &rmw.sd_inv_,
+        &qmw.ix_to_locs_,
+        &rmw.ix_to_locs_,        
         0, // ref_offset
         &sm,
         &all_alignments,
@@ -177,7 +181,7 @@ int main(int argc, char* argv[]) {
       // std::cerr << "Align task forward: "; print_align_task(std::cerr, task_forward);
       // std::cerr << "Align task reverse: "; print_align_task(std::cerr, task_reverse);
 
-      // std::cerr << "Aligning " << query_map.name_ << " to " << rmw.m_.name_ << "\n";
+      // std::cerr << "Aligning " << query_map.name_ << " to " << rmw.map_.name_ << "\n";
       Timer timer;
 
       // Align Forward
@@ -218,6 +222,7 @@ int main(int argc, char* argv[]) {
 
     // Print alignments
     for(int i = 0; i < max_ind; i++) {
+      Alignment& aln = all_alignments[i];
       print_alignment(std::cout, all_alignments[i]);
     }
     

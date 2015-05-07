@@ -4,6 +4,7 @@
 #include <vector>
 #include <ostream>
 
+#include "common_types.h"
 #include "map_data.h"
 #include "matched_chunk.h"
 
@@ -12,6 +13,7 @@
 namespace maligner_dp {
 
   using std::size_t;
+  using maligner_maps::MapData;
 
   // Forward Declarations
   class AlignOpts;
@@ -32,7 +34,7 @@ namespace maligner_dp {
     Alignment(const MatchedChunkVec& mc, const Score& s,
       const MapData& query_md,
       const MapData& ref_md,
-      bool is_forward__) :
+      bool is_forward_in) :
       query_map_data(query_md),
       ref_map_data(ref_md),
       matched_chunks(mc),
@@ -40,11 +42,11 @@ namespace maligner_dp {
       score(s),
       rescaled_score(s),
       query_scaling_factor(1.0),
-      is_forward(is_forward__)
+      is_forward(is_forward_in)
     {
       #if ALIGNMENT_CLASS_DEBUG > 0
       {
-        std::cerr << "Constructing alignment class. is_forward: " << is_forward__ << "\n";
+        std::cerr << "Constructing alignment class. is_forward: " << is_forward_in << "\n";
 
       }
       #endif
@@ -60,6 +62,8 @@ namespace maligner_dp {
     Alignment(Alignment&&) = default;
     Alignment& operator=(Alignment&&) = default;
 
+    void add_alignment_locs(const IntVec& query_ix_to_loc, const IntVec& ref_ix_to_loc);
+
     // rescale the query chunks using the query_scaling_factor, and
     // recompute the sizing error for those chunks.
     void rescale_matched_chunks(const AlignOpts& align_opts);
@@ -70,7 +74,9 @@ namespace maligner_dp {
     // Reset the summary
     void reset_stats();
 
-    int ref_start() const {
+    void compute_index_locs();
+
+    int get_ref_start() const {
       if (is_valid) {
         const MatchedChunk& first = matched_chunks.front();
         return first.ref_start();
@@ -78,7 +84,7 @@ namespace maligner_dp {
       return 0;
     }
 
-    int ref_end() const {
+    int get_ref_end() const {
       if (is_valid) {
         const MatchedChunk& last = matched_chunks.back();
         return last.ref_end();
@@ -86,7 +92,6 @@ namespace maligner_dp {
       return 0;
     }
 
-    
 
     // Attributes
     MapData query_map_data;
@@ -114,6 +119,18 @@ namespace maligner_dp {
     double query_scaling_factor;
     bool is_forward;
     bool is_valid;
+
+    // Locations
+    int query_start; // index
+    int query_end; // index (exclusive)
+    int ref_start; // index
+    int ref_end; // index (exclusive)
+
+    // bp locations
+    int query_start_bp;
+    int query_end_bp;
+    int ref_start_bp;
+    int ref_end_bp;
 
     private:
 
@@ -214,6 +231,7 @@ namespace maligner_dp {
 
   }
 
+
   inline void Alignment::reset_stats() {
       is_valid = false;
       is_forward = false;
@@ -229,7 +247,32 @@ namespace maligner_dp {
       query_scaling_factor = 0;
       total_score = 0;
       total_rescaled_score = 0;
+      query_start_bp = 0;
+      query_end_bp = 0;
+      ref_start_bp = 0;
+      ref_end_bp = 0;
       m_score = 0;
+  }
+
+  inline void Alignment::compute_index_locs() {
+
+    if (matched_chunks.empty()) {
+      return;
+    }
+
+    const MatchedChunk& first_chunk = matched_chunks[0];
+    const MatchedChunk& last_chunk = matched_chunks[matched_chunks.size() - 1];
+    ref_start = first_chunk.ref_start();
+    ref_end  = last_chunk.ref_end();
+
+    if(is_forward) {
+      query_start = first_chunk.query_start();
+      query_end = last_chunk.query_end();
+    } else {
+      query_start = last_chunk.query_start();
+      query_end = first_chunk.query_end();
+    }
+
   }
 
   // Flip the query coordinates in every matched chunk
@@ -282,6 +325,25 @@ namespace maligner_dp {
     }
   }
 
+  inline void Alignment::add_alignment_locs(const IntVec& query_ix_to_loc, const IntVec& ref_ix_to_loc) {
+    
+    if (matched_chunks.empty()) {
+      return;
+    }
+
+    compute_index_locs();
+
+    const MatchedChunk& first_chunk = matched_chunks[0];
+    const MatchedChunk& last_chunk = matched_chunks[matched_chunks.size() - 1];
+
+    // These locations are pre-query rescaling.
+    query_start_bp = query_ix_to_loc[query_start];
+    query_end_bp = query_ix_to_loc[query_end];
+
+    ref_start_bp = ref_ix_to_loc[first_chunk.ref_end()] - first_chunk.query_size();
+    ref_end_bp = ref_ix_to_loc[last_chunk.ref_start()] + last_chunk.query_size();
+
+  }
 
   void print_alignment(std::ostream& os, const Alignment& aln);
 

@@ -167,6 +167,8 @@ namespace maligner_dp {
               const PartialSums* qps,
               const PartialSums* rps,
               const SDInv* rsd,
+              const IntVec* query_ix_to_locs_in,
+              const IntVec* ref_ix_to_locs_in,
               ScoreMatrixPtr m,
               AlignmentVec * alns,
               bool is_forward_in,
@@ -179,6 +181,8 @@ namespace maligner_dp {
       query_partial_sums(qps),
       ref_partial_sums(rps),
       ref_sd_inv(rsd),
+      query_ix_to_locs(query_ix_to_locs_in),
+      ref_ix_to_locs(ref_ix_to_locs_in),      
       ref_offset(0),
       mat(m),
       alignments(alns),
@@ -192,6 +196,8 @@ namespace maligner_dp {
               const PartialSums* qps,
               const PartialSums* rps,
               const SDInv* rsd,
+              const IntVec* query_ix_to_locs_in,
+              const IntVec* ref_ix_to_locs_in,
               int ref_offset_in,
               ScoreMatrixPtr m,
               AlignmentVec * alns,
@@ -204,6 +210,8 @@ namespace maligner_dp {
       query_partial_sums(qps),
       ref_partial_sums(rps),
       ref_sd_inv(rsd),
+      query_ix_to_locs(query_ix_to_locs_in),
+      ref_ix_to_locs(ref_ix_to_locs_in),
       ref_offset(ref_offset_in),
       mat(m),
       alignments(alns),
@@ -218,6 +226,8 @@ namespace maligner_dp {
     const PartialSums* query_partial_sums;
     const PartialSums* ref_partial_sums;
     const SDInv* ref_sd_inv; // 1.0/(sd^2) precomputed for each reference chunk.
+    const IntVec* query_ix_to_locs;
+    const IntVec* ref_ix_to_locs;
     int query_max_total_misses;
     int ref_max_total_misses;
     int ref_offset; // index of the first fragment in ref. This will be nonzero if aligning to slice of reference.

@@ -15,7 +15,7 @@ message(STATUS "INCLUDE_DIRECTORIES : ${INCLUDE_DIRECTORIES}")
 # build maligner
 set(maligner_SRCS "maligner.cpp")
 add_executable(maligner ${maligner_SRCS})
-target_link_libraries(maligner kmer_match common)
+target_link_libraries(maligner kmer_match dp common)
 
 # build maligner_dp
 set(maligner_dp_SRCS "maligner_dp.cpp")

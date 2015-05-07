@@ -11,7 +11,7 @@ namespace kmer_match {
   
   // Define ReferenceAlignment Class 
   // This only represents the "reference" portion of the alignment.
-  // The query portion is stored elsewhere.
+  // The chunks are oriented in same orientation as the query.
   class ReferenceAlignment {
 
   public:

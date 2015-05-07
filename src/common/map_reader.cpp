@@ -33,4 +33,9 @@ namespace maligner_maps {
     return maps;
   }
 
+  MapVec read_maps(std::string& filename) {
+    MapReader reader(filename);
+    return reader.read_all_maps();
+  }
+
 }
