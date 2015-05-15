@@ -33,6 +33,7 @@ def gen_sites(seq, forward_rec_seq):
     # or if the forward recognition sequence matches the complement recognitions sequence,
     # we only mark the site once. Therefore, we search for just the forward recognition sequence
     # in these cases.
+    forward_rec_seq = forward_rec_seq.upper()
     complement_rec_seq = complement(forward_rec_seq)
     rev_complement_rec_seq = reverse_complement(forward_rec_seq)
 
@@ -115,6 +116,7 @@ def run_fasta(fasta_file, forward_rec_seq, output_pfx):
 
     for i, rec in enumerate(seq_gen):
         seq = str(rec.seq)
+        seq = seq.upper()
         sys.stderr.write("Read sequence %s\n"%rec.id)
         make_insilico_map(seq, forward_rec_seq, map_handle, site_handle, map_name = rec.id)
 

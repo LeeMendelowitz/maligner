@@ -8,6 +8,7 @@ set( FILES_TO_INSTALL
   convert_maps
   filter_alignments
   get_maps_by_id
+  get_boundary_frags
   sample_alignments
   sample_maps_file
   soma_consensus_maps
@@ -17,6 +18,7 @@ set( FILES_TO_INSTALL
   smooth_maps_file
   make_insilico_map
   generate_random_maps
+  parse_nucmer_coords
 )
 
 install(FILES ${FILES_TO_INSTALL}

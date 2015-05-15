@@ -10,7 +10,7 @@
 # The SOMA map file is tab delimited with one record per line:
 # [MapId] [Length (bp)] [number of fragments] [frag 0 length (bp)] [frag 1 length (bp)] ...
 import sys
-
+import numpy as np
 from ..common import wrap_file_function
 
 class MalignerMap(object):
@@ -74,7 +74,7 @@ class MalignerMap(object):
 
     
 
-def smooth(inputMap, minFrag=500, has_boundary = True):
+def smooth(inputMap, minFrag=500, has_boundary = False):
     if has_boundary:
         return smooth_with_boundary(inputMap, minFrag)
     else:
@@ -151,3 +151,85 @@ def smooth_with_boundary(inputMap, minFrag=500):
     assert(sum(outputMap.frags) == sum(inputMap.frags))
     assert(outputMap.length == inputMap.length)
     return outputMap
+
+#########################################################
+# Smooth an input map in a symmetric manner, such that the smoothed version of
+# the reverse map is the same. We do this by comparing the first frag to the last frag in size,
+# and flipping if the first frag is less than the last frag.
+def smooth_symmetric(inputMap, minFrag=500):
+
+    if len(inputMap.frags) < 2:
+        return inputMap
+
+    first_frag = inputMap.frags[0]
+    last_frag =  inputMap.frags[-1]
+    if first_frag < last_frag:
+        output_map = MalignerMap(frags = inputMap.frags[::-1],
+                mapId = inputMap.mapId)
+        output_map = smooth_without_boundary(output_map, minFrag = minFrag)
+        # Reverse the frags again
+        output_map.frags = output_map.frags[::-1]
+        return output_map
+ 
+    output_map = smooth_without_boundary(inputMap, minFrag = minFrag)
+    return output_map
+
+#########################################################
+# Smooth an input map in an iterative fashion, starting with
+# with the smallest fragment. We smooth by merging with the smaller
+# neighboring fragment.
+#
+# This strategy will do a better job of producing consistent smoothed maps
+# for a reference and forward and reverse subqueries of the reference.
+def smooth_left_right(inputMap, minFrag=500, boundary_frags = True):
+
+    from numpy import array, concatenate as concat, sum
+
+    if len(inputMap.frags) < 2:
+        return inputMap
+
+    frags = np.array(inputMap.frags)
+
+    # Remove boundary fragments - ignore them while smoothing
+    if boundary_frags:
+
+        bleft = frags[0]
+        bright = frags[-1]
+        frags = frags[1:-1]
+
+
+    while True:
+
+        num_frags = frags.shape[0]
+        if num_frags < 2:
+            break
+
+        i = np.argmin(frags)
+        f = frags[i]
+        last_ind = num_frags - 1
+
+        if f > minFrag:
+            break
+        if (i == 0):
+            # This is the first frag, merge right
+            frags = concat(([frags[0] + frags[1]], frags[2:]))
+        elif (i == last_ind):
+            # This is the laste frag, merge left
+            frags = concat((frags[:-2], [frags[-1] + frags[-2]]))
+        else:
+            # This is an interior frag, merge with min
+            left_frag = frags[i-1]
+            right_frag = frags[i+1]
+            if left_frag < right_frag:
+                frags = concat((frags[0:i-1], [frags[i-1] + frags[i]], frags[i+1:]))
+            else:
+                frags = concat((frags[0:i], [frags[i] + frags[i+1]], frags[i+2:]))
+    
+    # Reattach boundary fragments
+    if boundary_frags:
+        frags = concat(([bleft], frags, [bright]))
+
+    output_map = MalignerMap(frags = frags, mapId = inputMap.mapId)
+    return output_map
+
+

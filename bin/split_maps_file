@@ -29,6 +29,10 @@ def split(map_file_path, num_pieces, output_dir = None):
   map_file_path = os.path.abspath(map_file_path)
   _, fn = os.path.split(map_file_path)
   bn, _ = os.path.splitext(fn)
+  if output_dir and not os.path.exists(output_dir):
+    # Make the directory if it does not exist
+    os.mkdirs(output_dir)
+
   if not output_dir:
     output_dir = os.getcwd()
   output_pfx = bn

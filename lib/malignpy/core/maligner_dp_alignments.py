@@ -4,18 +4,32 @@ from itertools import izip
 import numpy as np
 from numpy import array
 
-HEADER = "query_map ref_map is_forward  num_matched_chunks  query_misses  ref_misses  query_miss_rate ref_miss_rate total_score total_rescaled_score m_score sizing_score  sizing_score_rescaled query_scaling_factor chunk_string"
-TYPES = [str, str, str, int, int, int, float, float, float, float, float, float, float, str]
-FIELDS = HEADER.strip().split()
-assert(len(FIELDS) == len(TYPES))
+INPUT_FIELDS_TYPES = [
+  ("query_map", str),
+  ("ref_map", str),
+  ("is_forward", str),
+  ("num_matched_chunks", int),
+  ("query_misses", int),
+  ("ref_misses", int),
+  ("query_miss_rate", float),
+  ("ref_miss_rate", float),
+  ("total_score", float),
+  ("total_rescaled_score", float),
+  ("m_score", float),
+  ("sizing_score", float),
+  ("sizing_score_rescaled", float),
+  ("query_scaling_factor", float),
+  ("chunk_string", str)
+]
+
+FIELDS = [f[0] for f in INPUT_FIELDS_TYPES]
+TYPES = [f[1] for f in INPUT_FIELDS_TYPES]
+
 OUTPUT_FIELDS = FIELDS + ["ref_start", "ref_end", "ql", "rl", "query_misses_interior", "ref_misses_interior",
   "query_miss_rate_interior", "ref_miss_rate_interior", 
   "query_sites_total", "query_sites_interior",
   "ref_sites_total", "ref_sites_interior",
   "max_chi2", "median_chi2", "query_miss_penalty", "ref_miss_penalty"]
-
-FIELDS_TYPES = zip(FIELDS, TYPES)
-
 
 class Chunk(object):
 

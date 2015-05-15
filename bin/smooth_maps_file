@@ -4,16 +4,16 @@ Produce summary statistics for a maps file.
 """
 
 import argparse, sys, os
-from malignpy.maps.MalignerMap import MalignerMap, smooth
+from malignpy.maps.MalignerMap import MalignerMap, smooth_left_right
 from malignpy.maps.utils import gen_maps
 from malignpy.common import wrap_file_function
 
 @wrap_file_function('r', 'w')
-def run(input_maps_file, fout, min_frag):
+def run(input_maps_file, fout, min_frag, boundary_frags = True):
   map_gen = gen_maps(input_maps_file)
 
   for m in map_gen:
-    smoothed = smooth(m, min_frag)
+    smoothed = smooth_left_right(m, min_frag, boundary_frags)
     smoothed.write(fout)
 
 

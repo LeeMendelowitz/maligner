@@ -9,8 +9,10 @@ import numpy as np
 import pandas
 from pandas import DataFrame
 
+
 from malignpy.common import wrap_file_function, logging_utils
 from malignpy.maps.utils import read_maps
+from malignpy.core.maligner_dp_alignments import Chunk
 
 logger = logging_utils.create_logger('alignment_locs')
 
@@ -24,12 +26,20 @@ parser.add_argument('query_maps', metavar='QUERY_MAP_FILE', type=str,
                    help='Query map file.')
 parser.add_argument('-o', '--output', metavar='OUTPUT_FILE', help = "Output file name. (Default: STDOUT)")
 
+class ReferenceInfo(object):
+  def __init__(self, ref_map):
+    self.ref_map = ref_map
+    self.ref_map_frags = np.array(ref_map.frags)
+    self.ref_map_locs = np.cumsum(self.ref_map_frags)
 
 
 @wrap_file_function('r', 'w')
-def alignment_locs(aln_file, output_file, query_map_dict, ref_map_dict):
-  
-  header = aln_file.next().split()
+def alignment_locs(aln_file, output_file, query_map_dict, ref_map_info_dict):
+ 
+  header = aln_file.next().strip()
+  header_fields = header.split()
+  header_field_to_index = {k:i for i,k in enumerate(header_fields)}
+
   inds = [0, 1, 2, 14]
 
   header = '\t'.join(('query_map', 'ref_map', 'orientation', 'query_start', 'query_end', 'ref_start', 'ref_end'))
@@ -39,27 +49,39 @@ def alignment_locs(aln_file, output_file, query_map_dict, ref_map_dict):
     try:
 
       # Quick crude parsing 
+      # Consider making an alignment class to parse the output file
       fields = l.split()
-      query_map = fields[0]
-      ref_map = fields[1]
-      orientation = fields[2]
-      chunk_string = fields[14]
+      fieldsd = {k:v for k,v in zip(header_fields, fields)}
+      query_map_name = fieldsd['query_map']
+      ref_map_name = fieldsd['ref_map']
+      orientation = fieldsd['is_forward']
+      chunk_string = fieldsd['chunk_string']
 
-      chunks = chunk_string.split(';')[:-1] # Remove trailer
-      chunkl = chunks[0].split(',')
-      chunkr = chunks[-1].split(',')
+      chunk_strings = chunk_string.split(';')
+      chunk_strings = [cs for cs in chunk_strings if cs]
+      chunk_tuples = [tuple(cs.split(',')) for cs in chunk_strings]
+      chunks = [Chunk(c) for c in chunk_tuples]
+      chunkl = chunks[0]
+      chunkr = chunks[-1]
 
-      ref_start = chunkl[3]
-      ref_end = chunkr[4]
+      ref_start = chunkl.rs
+      ref_end = chunkr.re
+
+      # Here we are assuming that the first and last chunk are boudnary chunks,
+      # not bounded on both sides by restriction sites.
+      # Compute the reference location of the first matched site
+
+      # Compute the approximate reference location of the query start
+
 
       if orientation == 'F':
-        query_start = chunkl[0]
-        query_end = chunkr[1]
+        query_start = chunkl.qs
+        query_end = chunkr.qe
       else:
-        query_start = chunkr[0]
-        query_end = chunkl[1]
+        query_start = chunkr.qs
+        query_end = chunkl.qe
 
-      output_file.write('\t'.join((query_map, ref_map, orientation, query_start, query_end, ref_start, ref_end)) + '\n')
+      output_file.write('\t'.join(str(field) for field in (query_map_name, ref_map_name, orientation, query_start, query_end, ref_start, ref_end)) + '\n')
 
     except Exception as e:
       logger.error('Caught Exception on parsing file on line %i: %s'%(line_num, e))
@@ -85,5 +107,8 @@ if __name__ == '__main__':
   logger.info('reading ref maps')
   ref_map_dict = read_maps(args.ref_maps)
 
+  ref_map_info_dict = {k:ReferenceInfo(v) for k,v in ref_map_dict.iteritems()}
+
+
   logger.info('done. Extracting alignment locations... (patience)')
-  alignment_locs(input_file, output_file, query_map_dict, ref_map_dict)
+  alignment_locs(input_file, output_file, query_map_dict, ref_map_info_dict)
