@@ -111,6 +111,7 @@ namespace maligner_dp {
     int num_matched_sites;
     int query_misses;
     int ref_misses;
+    int num_interior_chunks;
     double query_miss_rate;
     double ref_miss_rate;
     double total_miss_rate;
@@ -120,6 +121,7 @@ namespace maligner_dp {
     double query_scaling_factor;
     bool is_forward;
     bool is_valid;
+    double score_per_inner_chunk;
 
     // Locations
     int query_start; // index
@@ -200,6 +202,7 @@ namespace maligner_dp {
 
 
       std::size_t l(matched_chunks.size());
+      num_interior_chunks = 0;
       for (std::size_t i = 0; i < l; i++) {
         const MatchedChunk& mc = matched_chunks[i];
         query_misses += mc.query_chunk.num_misses();
@@ -207,6 +210,7 @@ namespace maligner_dp {
         if (!mc.query_chunk.is_boundary && !mc.ref_chunk.is_boundary) {
           query_interior_size += mc.query_chunk.size;
           ref_interior_size += mc.ref_chunk.size;
+          num_interior_chunks++;
         }
       }
 
@@ -229,6 +233,7 @@ namespace maligner_dp {
       query_miss_rate = ((double) query_misses)/((double) num_matched_sites + query_misses);
       total_miss_rate = ((double) ref_misses + query_misses) / ((double) ref_misses + query_misses + 2.0*num_matched_sites);
       interior_size_ratio = ((double) query_interior_size) / ref_interior_size;
+      score_per_inner_chunk = total_rescaled_score/double(num_interior_chunks);
 
   }
 
@@ -245,6 +250,7 @@ namespace maligner_dp {
       ref_interior_size = 0;
       num_matched_sites = 0;
       interior_size_ratio = 0;
+      num_interior_chunks = 0;
       query_scaling_factor = 0;
       total_score = 0;
       total_rescaled_score = 0;
@@ -254,6 +260,7 @@ namespace maligner_dp {
       ref_end_bp = 0;
       m_score = 0;
       p_val = 0;
+      score_per_inner_chunk = 0.0;
   }
 
   inline void Alignment::compute_index_locs() {

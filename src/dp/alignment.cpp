@@ -67,6 +67,8 @@ namespace maligner_dp {
        << "sizing_score" << "\t"
        << "sizing_score_rescaled" << "\t"
        << "query_scaling_factor" << "\t"
+       << "num_interior_chunks" << "\t"
+       << "score_per_inner_chunk" << "\t"
        << "chunk_string" << "\t"
        << "score_string" << "\n";
     return os;
@@ -104,7 +106,9 @@ namespace maligner_dp {
        << aln.p_val << "\t"
        << aln.score.sizing_score << "\t"
        << aln.rescaled_score.sizing_score << "\t"
-       << aln.query_scaling_factor << "\t";
+       << aln.query_scaling_factor << "\t"
+       << aln.num_interior_chunks << "\t"
+       << aln.score_per_inner_chunk << "\t";
 
     for(auto& mc : aln.rescaled_matched_chunks) {
       os << mc << ";";

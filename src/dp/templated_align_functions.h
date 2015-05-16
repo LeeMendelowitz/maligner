@@ -3225,6 +3225,7 @@ namespace maligner_dp {
     const int num_rows = mat.getNumRows();
     const int num_cols = mat.getNumCols();
     const int last_row = m - 1;
+    const int num_ref_frags = task.ref_map_data->num_frags_;
 
     BitCover cells_covered(n);
 
@@ -3317,6 +3318,7 @@ namespace maligner_dp {
         assert(neighborhood_alignments.size() > 0);
         Alignment& a = neighborhood_alignments[0];
         cells_covered.cover(a.get_ref_start(), a.get_ref_end());
+
         alignments.push_back(std::move(a));
 
       } else { 
@@ -3329,6 +3331,30 @@ namespace maligner_dp {
         int lb = max(seed_col - align_opts.min_alignment_spacing + 1, 0);
         int ub = min(seed_col + align_opts.min_alignment_spacing, n);
         cells_covered.cover(lb, ub);
+
+        // Account for circularization, if necessary. Mark positions in
+        // the "duplicated" fragments as covered so we don't report overlapping alignments.
+        if(task.ref_map_data->is_circular_) {
+
+          int ref_start = lb;
+          int ref_end = ub;
+
+          if(ref_end > num_ref_frags) {
+            // Shift the interval left by num_ref_frags and mark those positions as covered
+            int left_start = std::max(ref_start - num_ref_frags, 0);
+            int left_end = ref_end - num_ref_frags;
+            cells_covered.cover(size_t(left_start), size_t(left_end));\
+          }
+
+          if(ref_end <= num_ref_frags) {
+            // shift the interval right by num ref_frags and mark those positions as covered
+            int right_start = ref_start + num_ref_frags;
+            int right_end = ref_end + num_ref_frags;
+            cells_covered.cover(size_t(right_start), size_t(right_end));
+          }
+
+        }
+
       }
 
     }
@@ -3357,6 +3383,7 @@ namespace maligner_dp {
 
     const int m = query.size() + 1;
     const int n = ref.size() + 1;
+    const int num_ref_frags = task.ref_map_data->num_frags_;
 
     const int num_rows = mat.getNumRows();
     const int num_cols = mat.getNumCols();
@@ -3387,6 +3414,31 @@ namespace maligner_dp {
       }
 
       cells_covered.cover(aln.get_ref_start(), aln.get_ref_end());
+
+      // Account for circularization, if necessary. Mark positions in
+      // the "duplicated" fragments as covered so we don't report overlapping alignments.
+      if(task.ref_map_data->is_circular_) {
+
+        int ref_start = aln.get_ref_start();
+        int ref_end = aln.get_ref_end();
+
+        if(ref_end > num_ref_frags) {
+          // Shift the interval left by num_ref_frags and mark those positions as covered
+          int left_start = std::max(ref_start - num_ref_frags, 0);
+          int left_end = ref_end - num_ref_frags;
+          cells_covered.cover(size_t(left_start), size_t(left_end));\
+        }
+
+        if(ref_end <= num_ref_frags) {
+          // shift the interval right by num ref_frags and mark those positions as covered
+          int right_start = ref_start + num_ref_frags;
+          int right_end = ref_end + num_ref_frags;
+          cells_covered.cover(size_t(right_start), size_t(right_end));
+        }
+
+      }
+
+
       alignments.push_back(std::move(aln));
       num_alignments++;
 

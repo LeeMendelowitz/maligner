@@ -388,8 +388,6 @@ int main(int argc, char* argv[]) {
     compute_mad_scores(all_alignments, maligner_dp::opt::max_alignments_mad);
 
     const int max_ind = std::min(int(all_alignments.size()), opt::max_alignments);
-
-
     
     query_timer.end();    
 
@@ -399,15 +397,16 @@ int main(int argc, char* argv[]) {
 
     //////////////////////////////////////////////////           
     // Run permutation test to assign bootstrapped p-values, if necessary
-    query_timer.start();
+    
 
     if(opt::num_permutation_trials > 0) {
+
+      query_timer.start();
+      std::cerr << "Runing permutation test...";
 
 
       // Null distribution of alignment scores
       AlignmentVec random_alns = run_permutation_test(permuted_map_db, qmw, sm, align_opts);
-
-      std::cerr << "have " << random_alns.size() << " random alignments." << std::endl;
 
       // Assign pvals
       const size_t n = all_alignments.size();
@@ -417,15 +416,22 @@ int main(int argc, char* argv[]) {
         assign_pval(random_alns, aln);
       }
 
+      query_timer.end();
+      std::cerr << "done running permutation tests. " << query_timer;
+
     }
 
     ////////////////////////////////////////////////////
-    // Print alignments
+    // Print alignments if they pass the filter.
     for(int i = 0; i < max_ind; i++) {
-      Alignment& aln = all_alignments[i];
-      print_alignment(std::cout, all_alignments[i]);
-    }
 
+      Alignment& aln = all_alignments[i];
+
+      if(aln.score_per_inner_chunk < opt::max_score_per_inner_chunk) {
+        print_alignment(std::cout, all_alignments[i]);
+      }
+
+    }
 
     std::cerr << "*****************************************\n";
 

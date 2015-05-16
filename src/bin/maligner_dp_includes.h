@@ -13,25 +13,41 @@ static const int NUM_POSITION_ARGS = 2;
 
 static const char *USAGE_MESSAGE =
 "Usage: " PACKAGE_NAME " [OPTION] ... QUERY_MAPS_FILE REFERENCE_MAPS_FILE\n"
-"Align the maps in the QUERY_MAPS_FILE to the maps in the REFERENCE_MAPS_FILE using dynamic programming.\n"
 "\n"
-"      -h, --help                       display this help and exit\n"
-"      -v, --version                    display the version and exit\n"
-"      --verbose                        Verbose output\n"
+" Align the maps in the QUERY_MAPS_FILE to the maps in the REFERENCE_MAPS_FILE\n"
+" using dynamic programming.\n"
+"\n"
+" Alignment options:\n"
+"      --reference-is-circular          Treat reference maps as circular. Default: false\n"
+"      --num-permutation-trials         Number of trials for the permutation test.\n"
+"                                           Default: 0\n"
+"      --no-query-rescaling             Default: perform query rescaling\n"
+"\n"
+" Scoring parameters:\n"
 "      -q,--query-miss-penalty          Query unmatched site penalty\n"
 "      -r,--ref-miss-penalty            Reference unmatched site penalty\n"
-"      --query-max-misses               Query maximum consecutive unmatched\n"
-"      --ref-max-misses                 Reference maximum consecutive unmatched\n"
-"      --query-max-miss-rate            Maximum rate of unmatched sites in the query\n"
-"      --ref-max-miss-rate              Maximum rate of unmatched sites in the reference\n"
 "      --sd-rate                        Standard deviation rate.\n"
 "      --min-sd                         Minimum standard deviation (bp)\n"
-"      --max-chunk-sizing-error         Maximum chunk sizing error score for bounding search space. Default: Inf\n"
-"      --max-alignments-per-reference       \n"
+"\n"
+" Search space parameters:\n"
+"      --query-max-misses               Query max. consecutive unmatched sites\n"
+"      --ref-max-misses                 Reference max. consecutive unmatched sites\n"
+"      --query-max-miss-rate            Max. rate of unmatched sites in the query\n"
+"      --ref-max-miss-rate              Max. rate of unmatched sites in the reference\n"
+"      --max-chunk-sizing-error         Max. chunk sizing error score for bounding search\n"
+"                                          space. Default: Inf\n"
+"      --max-alignments-per-reference   Max. alignments to report per reference\n"
 "      --max-alignments                 Max. number of alignments to output\n"
-"      --reference-is-circular          Treat reference maps as circular. Default: false\n"
-"      --num-permutation-trials         Number of trials for the permutation test. Default: 0\n"
-"      --no-query-rescaling             Default: perform query rescaling\n";
+"\n"
+" Alignment filters:\n"
+"      --max-score-per-inner-chunk      Report alignments a score per inner chunk less than this\n"
+"                                           threshold. Default: Inf\n"
+"\n"
+" General arguments:"
+"      -h, --help                       display this help and exit\n"
+"      -v, --version                    display the version and exit\n"
+"      --verbose                        Verbose output\n";
+
 
 
 namespace maligner_dp {
@@ -58,6 +74,7 @@ namespace maligner_dp {
       static bool ref_is_bounded = false;
       static int max_alignments = 100;
       static int max_alignments_mad = 100; // Max alignments to use for mad computation
+      static double max_score_per_inner_chunk = std::numeric_limits<double>::infinity();
       static int num_permutation_trials = 0; // Number of trials for permutation test.
       static bool query_rescaling = true;
       static bool verbose = false;
@@ -78,6 +95,7 @@ enum {
   OPT_NUM_PERMUTATION_TRIALS,
   OPT_REF_MAX_MISS_RATE,
   OPT_QUERY_MAX_MISS_RATE,
+  OPT_MAX_SCORE_PER_INNER_CHUNK,
   OPT_VERBOSE,
   OPT_NO_QUERY_RESCALING,
   OPT_REFERENCE_IS_CIRCULAR
@@ -96,6 +114,7 @@ static const struct option longopts[] = {
     { "max-chunk-sizing-error", required_argument, NULL, OPT_MAX_CHUNK_SIZING_ERROR},
     { "max-alignments-per-reference", required_argument, NULL, OPT_ALIGNMENTS_PER_REFERENCE},
     { "max-alignments", required_argument, NULL, OPT_MAX_ALIGNMENTS},
+    { "max-score-per-inner-chunk", required_argument, NULL, OPT_MAX_SCORE_PER_INNER_CHUNK},
     { "num-permutation-trials", required_argument, NULL, OPT_NUM_PERMUTATION_TRIALS},
     { "no-query-rescaling", no_argument, NULL, OPT_NO_QUERY_RESCALING},
     { "reference-is-circular", no_argument, NULL, OPT_REFERENCE_IS_CIRCULAR},
@@ -125,6 +144,7 @@ void parse_args(int argc, char** argv)
             case OPT_SD_RATE: arg >> opt::sd_rate; break;
             case OPT_MIN_SD: arg >> opt::min_sd; break;
             case OPT_MAX_CHUNK_SIZING_ERROR: arg >> opt::max_chunk_sizing_error; break;
+            case OPT_MAX_SCORE_PER_INNER_CHUNK: arg >> opt::max_score_per_inner_chunk; break;
             case OPT_ALIGNMENTS_PER_REFERENCE: arg >> opt::alignments_per_reference; break;
             case OPT_MAX_ALIGNMENTS: arg >> opt::max_alignments; break;
             case OPT_NUM_PERMUTATION_TRIALS: arg >> opt::num_permutation_trials; break;
@@ -223,6 +243,7 @@ std::ostream& print_args(std::ostream& os) {
      << "\tsd_rate: " << sd_rate << "\n"
      << "\tmin_sd: " << min_sd << "\n"
      << "\tmax_chunk_sizing_error: " << max_chunk_sizing_error << "\n"
+     << "\tmax_score_per_inner_chunk: " << max_score_per_inner_chunk << "\n"
      << "\talignments_per_reference: " << alignments_per_reference << "\n"
      << "\tmax_alignments: " << max_alignments << "\n"
      << "\tmin_alignment_spacing: " << min_alignment_spacing << "\n"
