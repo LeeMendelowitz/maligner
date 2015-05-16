@@ -30,6 +30,7 @@ static const char *USAGE_MESSAGE =
 "      --max-alignments-per-reference       \n"
 "      --max-alignments                 Max. number of alignments to output\n"
 "      --reference-is-circular          Treat reference maps as circular. Default: false\n"
+"      --num-permutation-trials         Number of trials for the permutation test. Default: 0\n"
 "      --no-query-rescaling             Default: perform query rescaling\n";
 
 
@@ -57,6 +58,7 @@ namespace maligner_dp {
       static bool ref_is_bounded = false;
       static int max_alignments = 100;
       static int max_alignments_mad = 100; // Max alignments to use for mad computation
+      static int num_permutation_trials = 0; // Number of trials for permutation test.
       static bool query_rescaling = true;
       static bool verbose = false;
       static bool reference_is_circular = false;
@@ -73,6 +75,7 @@ enum {
   OPT_MAX_CHUNK_SIZING_ERROR,
   OPT_ALIGNMENTS_PER_REFERENCE,
   OPT_MAX_ALIGNMENTS,
+  OPT_NUM_PERMUTATION_TRIALS,
   OPT_REF_MAX_MISS_RATE,
   OPT_QUERY_MAX_MISS_RATE,
   OPT_VERBOSE,
@@ -93,6 +96,7 @@ static const struct option longopts[] = {
     { "max-chunk-sizing-error", required_argument, NULL, OPT_MAX_CHUNK_SIZING_ERROR},
     { "max-alignments-per-reference", required_argument, NULL, OPT_ALIGNMENTS_PER_REFERENCE},
     { "max-alignments", required_argument, NULL, OPT_MAX_ALIGNMENTS},
+    { "num-permutation-trials", required_argument, NULL, OPT_NUM_PERMUTATION_TRIALS},
     { "no-query-rescaling", no_argument, NULL, OPT_NO_QUERY_RESCALING},
     { "reference-is-circular", no_argument, NULL, OPT_REFERENCE_IS_CIRCULAR},
     { "verbose", no_argument, NULL, OPT_VERBOSE},
@@ -123,6 +127,7 @@ void parse_args(int argc, char** argv)
             case OPT_MAX_CHUNK_SIZING_ERROR: arg >> opt::max_chunk_sizing_error; break;
             case OPT_ALIGNMENTS_PER_REFERENCE: arg >> opt::alignments_per_reference; break;
             case OPT_MAX_ALIGNMENTS: arg >> opt::max_alignments; break;
+            case OPT_NUM_PERMUTATION_TRIALS: arg >> opt::num_permutation_trials; break;
             case OPT_VERBOSE: opt::verbose = true; break;
             case OPT_NO_QUERY_RESCALING: opt::query_rescaling = false; break;
             case OPT_REFERENCE_IS_CIRCULAR: opt::reference_is_circular = true; break;
@@ -221,6 +226,7 @@ std::ostream& print_args(std::ostream& os) {
      << "\talignments_per_reference: " << alignments_per_reference << "\n"
      << "\tmax_alignments: " << max_alignments << "\n"
      << "\tmin_alignment_spacing: " << min_alignment_spacing << "\n"
+     << "\tnum_permutation_trials: " << num_permutation_trials << "\n"
      << "\tneighbor_delta: " << neighbor_delta << "\n"
      << "\tquery_rescaling: " << query_rescaling << "\n"
      << "\tquery_is_bounded: " << query_is_bounded << "\n"

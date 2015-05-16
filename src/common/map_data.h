@@ -18,11 +18,13 @@ namespace maligner_maps {
         size_t num_frags,
         int length,
         bool is_circular = false,
-        bool is_bounded = true) :
+        bool is_bounded = true,
+        bool is_random = false) :
         map_name_(map_name),
         num_frags_(num_frags),
         is_circular_(is_circular),
-        is_bounded_(is_bounded)
+        is_bounded_(is_bounded),
+        is_random_(is_random)
       {
         // num_constructs++;
 
@@ -33,7 +35,8 @@ namespace maligner_maps {
         length_(o.length_),
         map_name_(o.map_name_),
         is_circular_(o.is_circular_),
-        is_bounded_(o.is_bounded_)
+        is_bounded_(o.is_bounded_),
+        is_random_(o.is_random_)
       {
         // num_copies++;
       };
@@ -49,7 +52,7 @@ namespace maligner_maps {
       int length_; // number of bp
       bool is_circular_; // Is the map circular?
       bool is_bounded_; // Are the leftmost/rightmost fragments bounded by sites? NOTE: This is not yet used in code, and duplicates an argument in AlignOpts
-
+      bool is_random_; // Is this a random map?
       // static int num_constructs;
       // static int num_copies;
   };

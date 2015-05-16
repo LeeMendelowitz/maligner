@@ -63,6 +63,7 @@ namespace maligner_dp {
        << "total_score" << "\t"
        << "total_rescaled_score" << "\t"
        << "m_score" << "\t"
+       << "p_val" << "\t"
        << "sizing_score" << "\t"
        << "sizing_score_rescaled" << "\t"
        << "query_scaling_factor" << "\t"
@@ -100,6 +101,7 @@ namespace maligner_dp {
        << aln.total_score << "\t"
        << aln.total_rescaled_score << "\t"
        << aln.m_score << "\t"
+       << aln.p_val << "\t"
        << aln.score.sizing_score << "\t"
        << aln.rescaled_score.sizing_score << "\t"
        << aln.query_scaling_factor << "\t";

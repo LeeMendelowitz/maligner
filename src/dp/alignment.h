@@ -104,6 +104,7 @@ namespace maligner_dp {
     double total_score;
     double total_rescaled_score;
     double m_score;
+    double p_val;
 
     // summary statistics of an alignment.
     // These are computable from the matched_chunks
@@ -140,7 +141,7 @@ namespace maligner_dp {
 
   typedef std::vector<Alignment> AlignmentVec;
 
-    // Sort an AlignmentVec in ascending order of score.
+  // Sort an AlignmentVec in ascending order of score.
   class AlignmentRescaledScoreComp {
   public:
       bool operator()(const Alignment& a1, const Alignment& a2) {
@@ -252,6 +253,7 @@ namespace maligner_dp {
       ref_start_bp = 0;
       ref_end_bp = 0;
       m_score = 0;
+      p_val = 0;
   }
 
   inline void Alignment::compute_index_locs() {

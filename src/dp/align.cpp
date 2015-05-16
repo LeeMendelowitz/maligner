@@ -18,7 +18,6 @@ using std::cerr;
 #include "common_math.h"
 
 #define DEBUG 0
-#define GET_BEST_DEBUG 0
 #define BUILD_TRAIL_DEBUG 0
 #define BREAKS_DEBUG 0
 #define RESCALE_DEBUG 0

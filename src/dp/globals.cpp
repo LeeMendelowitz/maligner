@@ -6,7 +6,7 @@ namespace maligner_dp {
 
     namespace Constants
     {
-        const double INF = std::numeric_limits<double>::max();
+        const double INF = std::numeric_limits<double>::infinity();
         const double MAX_LOST_FRAC = 0.20;
         const int FRAG_CUTOFF = 0; // bp
 

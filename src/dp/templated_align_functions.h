@@ -2,6 +2,7 @@
 #define TEMPLATED_ALN_FUNC
 
 #define FILL_DEBUG 0
+#define GET_BEST_DEBUG 0
 
 #include <limits>
 #include <algorithm>
@@ -3165,9 +3166,9 @@ namespace maligner_dp {
     int index = last_row;
 
     // Get the cell with the best score in the last row.
-    for (int i = 0; i < n; i++, index += num_rows) {
+    for (int j = 0; j < num_cols; j++) {
       
-      ScoreCell * pCell = mat.getCell(index);
+      ScoreCell * pCell = mat.getCell(last_row, j);
 
       #if GET_BEST_DEBUG > 0
       cerr << "index: " << index << ", ";
@@ -3564,8 +3565,10 @@ namespace maligner_dp {
     if (align_opts.rescale_query) {
       aln.rescale_matched_chunks(align_opts);
     }
+
     aln.add_alignment_locs(*task.query_ix_to_locs, *task.ref_ix_to_locs);
     return aln;
+
   }
 
   // Fill score matrix, find best alignment, and return it.
@@ -3620,6 +3623,8 @@ namespace maligner_dp {
     os << "align_task:\n"
        << "\tquery: " << task.query << "\n"
        << "\tref: " << task.ref << "\n"
+       << "\tnum_query_frags: " << task.query->size() << "\n"
+       << "\tnum_ref_frags: " << task.ref->size() << "\n"
        << "\tis_forward: " << task.is_forward << "\n"
        << std::endl;
 

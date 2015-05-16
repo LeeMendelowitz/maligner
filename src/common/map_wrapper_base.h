@@ -11,6 +11,27 @@
 
 namespace maligner_maps {
 
+
+  //////////////////////////////////////////////////////////////////////////////////////
+  // The MapWrapper class brings together structures for a single map.
+  //
+  // The Map class is meant for parsing maps from a .maps file into a
+  // fragment vector.
+  //
+  // The MapData class maintains meta data about the map (its name, size, is circular,
+  // is bounded by restriction sites).
+  //
+  // The MapWrapper contains these two, plus a structure ix_to_lcos_ for
+  // converting an index to a bp location
+  //
+  // NOTE: If the map is circular (most prokaryotic genomes),
+  // then we "double" the vector of fragments to allow use to 
+  // align fragments past the origin of replication. We double the fragments in
+  // map_.frags_.
+  //
+  // However, we maintain the number of fragments in the **original** map 
+  // in the map_data_.
+  ////////////////////////////////////////////////////////////////////////////////////
   class MapWrapper {
 
   public:
@@ -19,18 +40,45 @@ namespace maligner_maps {
 
     MapWrapper(const Map& map, bool is_circular, bool is_bounded) :
       map_(map),
-      map_data_(map_.name_, map_.frags_.size(), map_.size_, is_circular, is_bounded)
+      map_data_(map_.name_, map_.frags_.size(), map_.size_, is_circular, is_bounded),
+      frags_reverse_(map_.frags_.rbegin(), map_.frags_.rend())
     {
-      __compute_index(is_circular);
+
+      // If the map is circular, double the fragments (for the purposes of alignment)
+      if(is_circular) {
+        __circularize();
+      }
+
+      __compute_index();
 
     }
 
     MapWrapper(Map&& map, bool is_circular, bool is_bounded) :
       map_(map),
-      map_data_(map_.name_, map_.frags_.size(), map_.size_, is_circular, is_bounded)
+      map_data_(map_.name_, map_.frags_.size(), map_.size_, is_circular, is_bounded),
+      frags_reverse_(map_.frags_.rbegin(), map_.frags_.rend())
     {
 
-      __compute_index(is_circular);
+      // If the map is circular, double the fragments (for the purposes of alignment)
+      if(is_circular) {
+        __circularize();
+      }
+
+      __compute_index();
+
+    }
+
+    MapWrapper(const Map& map, const MapData& map_data) :
+      map_(map),
+      map_data_(map_data),
+      frags_reverse_(map_.frags_.rbegin(), map_.frags_.rend()) {
+
+        // If the map is circular, double the fragments (for the purposes of alignment)
+        if(map_data_.is_circular_) {
+          __circularize();
+        }
+
+        __compute_index();
 
     }
 
@@ -48,6 +96,22 @@ namespace maligner_maps {
       return map_.frags_;
     }
 
+    FragVec get_frags_noncircularized() const {
+      const size_t N = num_frags();
+      const FragVec& frags = get_frags();
+      FragVec ret(N);
+      for(size_t i = 0; i < N; i++) {
+        ret[i] = frags[i];
+      }
+      return ret;
+    }
+
+    const FragVec& get_frags_reverse() const {
+      return frags_reverse_;
+    }
+
+    // This returns the number of fragments in the original map,
+    // before doubling for circularization.
     size_t num_frags() const {
       return map_data_.num_frags_;
     }
@@ -64,23 +128,32 @@ namespace maligner_maps {
     // Members
     Map map_;
     maligner_maps::MapData map_data_; // Metadata about the map
+    FragVec frags_reverse_;
     IntVec ix_to_locs_;
-
-
 
     ////////////////////////////////////////
     private:
 
-    void __compute_index(bool is_circular) {
 
+    void __circularize() {
+
+      // Repeat the fragment vector.
       FragVec& frags = map_.frags_;
 
-      // If the map is circular, double the fragments (for the purposes of alignment)
-      if(is_circular) {
-        frags.reserve(2*frags.size());
-        frags.insert(frags.end(), frags.begin(), frags.end()); 
+      if(frags.size() == 2*num_frags()) {
+        // Looks like it's already circularized!
+        return;
       }
 
+      frags.reserve(2*frags.size());
+      frags.insert(frags.end(), frags.begin(), frags.end()); 
+      frags_reverse_ = FragVec(frags.rbegin(), frags.rend());
+
+    }
+
+    void __compute_index() {
+
+      const FragVec& frags = map_.frags_;
       // Compute the index to start loc
       ix_to_locs_.resize(frags.size());
       int s = 0;
@@ -88,6 +161,7 @@ namespace maligner_maps {
         ix_to_locs_[i] = s;
         s += frags[i];
       }
+
     } 
     
 
