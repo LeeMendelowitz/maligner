@@ -14,6 +14,7 @@ set(DP_SOURCES
   "alignment.cpp"
   "chunk.cpp"
   "matched_chunk.cpp"
+  "partialsums.cpp"
 )
 
 # Build Library

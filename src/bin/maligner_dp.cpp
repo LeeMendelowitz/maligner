@@ -384,6 +384,8 @@ int main(int argc, char* argv[]) {
     // Sort alignments by the rescaled scores.
     std::sort(all_alignments.begin(), all_alignments.end(), AlignmentRescaledScoreComp());
 
+    const size_t num_all_alignments = all_alignments.size();
+
     // Compute the mad score for the alignments.
     compute_mad_scores(all_alignments, maligner_dp::opt::max_alignments_mad);
 
@@ -391,13 +393,13 @@ int main(int argc, char* argv[]) {
     
     query_timer.end();    
 
-    std::cerr << "Aligned query " << query_map.name_ << " to all references.\n"
+    std::cerr << "done aligning query: " << query_map.name_ << " "
+              << "aln_num: " << num_all_alignments << "\n"
               << query_timer << "\n";
 
 
     //////////////////////////////////////////////////           
     // Run permutation test to assign bootstrapped p-values, if necessary
-    
 
     if(opt::num_permutation_trials > 0) {
 

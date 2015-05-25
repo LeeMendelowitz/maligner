@@ -21,14 +21,19 @@ namespace maligner_dp {
 
     const size_t l = rescaled_matched_chunks.size();
     for (size_t i = 0; i < l; i++) {
+
       const MatchedChunk& mc = matched_chunks[i];
       MatchedChunk& rmc =  rescaled_matched_chunks[i];
       int old_query_size = mc.query_chunk.size;
       int new_query_size = query_scaling_factor*old_query_size;
+      const int ref_size = mc.ref_chunk.size;
       double old_sizing_score = mc.score.sizing_score;
-      double new_sizing_score = sizing_penalty(new_query_size, mc.ref_chunk.size, align_opts);
+      double new_sizing_score = sizing_penalty(new_query_size, ref_size, align_opts);
       rmc.query_chunk.size = new_query_size;
-      if (!mc.query_chunk.is_boundary && !mc.ref_chunk.is_boundary) {
+
+      if (!mc.ref_chunk.is_boundary &&
+          (!mc.query_chunk.is_boundary || new_query_size > ref_size)) {
+
         rmc.score.sizing_score = new_sizing_score;
         rescaled_score.sizing_score += new_sizing_score;
         #if RESCALE_DEBUG > 10
@@ -36,6 +41,7 @@ namespace maligner_dp {
                 << " old_sizing_score: " << old_sizing_score << " new: " << new_sizing_score << "\n";
         #endif
       }
+
     }
 
     total_rescaled_score = rescaled_score.total();

@@ -1,6 +1,10 @@
 #ifndef PARTIALSUMS_H
 #define PARTIALSUMS_H
 
+#include <ostream>
+#include <algorithm>
+#include "common_types.h"
+
 namespace maligner_dp {
 
   class PartialSums {
@@ -21,6 +25,7 @@ namespace maligner_dp {
     friend class SDInv;
     IntVec d_;
     const size_t m_;
+    friend std::ostream& operator<<(std::ostream&, const PartialSums&);
 
   public:
 
@@ -28,15 +33,15 @@ namespace maligner_dp {
     struct reverse_tag {};
 
     PartialSums(const IntVec& d, int max_miss) : m_(max_miss + 1) {
-      fill_forward(d, max_miss); 
+      fill_forward(d); 
     }
 
     PartialSums(const IntVec& d, int max_miss, forward_tag) : m_(max_miss + 1) {
-      fill_forward(d, max_miss);
+      fill_forward(d);
     }
 
     PartialSums(const IntVec& d, int max_miss, reverse_tag) : m_(max_miss + 1) {
-      fill_reverse(d, max_miss);
+      fill_reverse(d);
     }
 
     int operator()(size_t i, size_t num_miss) const {
@@ -45,7 +50,7 @@ namespace maligner_dp {
 
   private:
 
-    void fill_forward(const IntVec& d, int max_miss) {
+    void fill_forward(const IntVec& d) {
       const size_t n = d.size();
       d_ = IntVec(n*m_);
 
@@ -55,18 +60,16 @@ namespace maligner_dp {
         
         // Constraints: s - i >= 0 -> i <= s -> i < s + 1
         // i < m_
-        const size_t L = min(m_, s + 1);
+        const size_t L = std::min(m_, s + 1);
         int a = 0;
         for(size_t i = 0; i < L; i++) {
           a += d[s - i];
           d_[offset+i] = a;
         }
-
       }
-
     }
 
-    void fill_reverse(const IntVec& d, int max_miss) {
+    void fill_reverse(const IntVec& d) {
       const size_t n = d.size();
       d_ = IntVec(n*m_);
 
@@ -77,15 +80,14 @@ namespace maligner_dp {
       
         // Constraints: sr - i >= 0 -> i <= sr -> i < sr + 1
         // i < m_
-        const size_t L = min(m_, sr + 1);
+        const size_t L = std::min(m_, s + 1);
         int a = 0;
         for(size_t i = 0; i < L; i++) {
-          a += d[sr - i];
+          a += d[sr + i];
           d_[offset+i] = a;
         }
 
       }
-
     }
 
   };

@@ -35,14 +35,15 @@ include_directories(
 # add_executable(test_maligner_dp_get_all "test_maligner_dp_get_all.cpp")
 # target_link_libraries(test_maligner_dp_get_all dp kmer_match common)
 
-# add_executable(test_PartialSumsC "test_PartialSumsC.cpp")
-# target_link_libraries(test_PartialSumsC dp kmer_match common)
 
 add_executable(test_mad "test_mad.cpp")
 target_link_libraries(test_mad common)
 
 add_executable(test_map_sampler "test_map_sampler.cpp")
 target_link_libraries(test_map_sampler common)
+
+add_executable(test_partial_sums "test_PartialSumsC.cpp")
+target_link_libraries(test_partial_sums dp kmer_match common)
 
 # install directory
 # install(TARGETS
@@ -59,4 +60,5 @@ target_link_libraries(test_map_sampler common)
 #   DESTINATION "${MALIGNER_BIN_DIR}")
 install(TARGETS
   test_map_sampler
+  test_partial_sums
   DESTINATION "${MALIGNER_BIN_DIR}/test")

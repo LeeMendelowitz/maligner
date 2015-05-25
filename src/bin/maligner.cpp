@@ -8,6 +8,7 @@
 #include <getopt.h>
 #include <unordered_map>
 #include <stdexcept>
+#include <limits>
 
 #include "map.h"
 #include "map_reader.h"
@@ -32,7 +33,6 @@ using maligner_dp::Alignment;
 using maligner_dp::AlignmentVec;
 using maligner_common::Scorer;
 
-
 //
 // Getopt
 //
@@ -53,12 +53,13 @@ static const char *USAGE_MESSAGE =
 "      -h, --help                       display this help and exit\n"
 "      -v, --version                    display the version and exit\n"
 "      -u, --unmatched VAL              Maximum number of consecutive unmatched sites in reference\n"
-"      --rel_error VAL              Maximum allowed relative sizing error. Default: 0.05\n"
-"      -a, --abs_error VAL              Minimum sizing error setting. Default: 1000 bp\n"
-"      -m, --max_match VAL              Maximum number of matches per query. Default: 100\n"
+"      --rel-error VAL                  Maximum allowed relative sizing error. Default: 0.05\n"
+"      -a, --abs-error VAL              Minimum sizing error setting. Default: 1000 bp\n"
+"      -m, --max-match VAL              Maximum number of matches per query. Default: 100\n"
 "      --min-frag VAL                   Skip query maps with less than min-frag interior fragments. Default: 5\n"
 "      --ref-is-circular                Reference map(s) are circular. Default: false\n"
 "      --max-unmatched-rate  VAL        Maximum unmatched site rate of an alignment. Default: 0.50\n"
+"      --max-score-per-inner-chunk VAL  Maximum score per inner chunk for alignment to be reported. Default: inf\n"
 "\n\n"
 "Scoring Function Arguments:\n"
 "      -q,--query-miss-penalty          Query unmatched site penalty. Default: 18.0\n"
@@ -82,19 +83,21 @@ namespace opt
     static double ref_miss_penalty = 3.0;
     static double sd_rate = 0.05;
     static double min_sd = 500.0;
+    static double max_score_per_inner_chunk = std::numeric_limits<double>::infinity();
     static string query_maps_file;
     static string ref_maps_file;
     string program_name;
 }
 
 static const char* shortopts = "u:r:a:m:hv";
-enum {OPT_MIN_FRAG = 1, OPT_MAX_UNMATCHED_RATE, OPT_REF_IS_CIRCULAR, OPT_SD_RATE, OPT_MIN_SD, OPT_REL_ERROR};
+enum {OPT_MIN_FRAG = 1, OPT_MAX_UNMATCHED_RATE, OPT_REF_IS_CIRCULAR, OPT_SD_RATE, OPT_MIN_SD,
+  OPT_REL_ERROR, OPT_MAX_SCORE_PER_INNER_CHUNK};
 
 static const struct option longopts[] = {
     { "unmatched", required_argument, NULL, 'u' },
-    { "max_unmatched_rate", required_argument, NULL, OPT_MAX_UNMATCHED_RATE},
-    { "rel_error", required_argument, NULL, OPT_REL_ERROR },
-    { "abs_error", required_argument, NULL, 'a' },
+    { "max-unmatched-rate", required_argument, NULL, OPT_MAX_UNMATCHED_RATE},
+    { "rel-error", required_argument, NULL, OPT_REL_ERROR },
+    { "abs-error", required_argument, NULL, 'a' },
     { "min-frag", required_argument,  NULL, OPT_MIN_FRAG},
     { "max-match", required_argument, NULL, 'm'},
     { "query-miss-penalty", required_argument, NULL, 'q'},
@@ -102,6 +105,7 @@ static const struct option longopts[] = {
     { "min-sd", required_argument, NULL, OPT_MIN_SD},
     { "sd-rate", required_argument, NULL, OPT_SD_RATE},
     { "ref-is-circular", no_argument, NULL, OPT_REF_IS_CIRCULAR},
+    { "max-score-per-inner-chunk", required_argument, NULL, OPT_MAX_SCORE_PER_INNER_CHUNK},
     { "help",     no_argument,       NULL, 'h' },
     { "version",  no_argument,       NULL, 'v'},
     { NULL, 0, NULL, 0 }
@@ -126,19 +130,20 @@ void parse_args(int argc, char** argv)
             case OPT_MIN_SD: arg >> opt::min_sd; break;
             case OPT_MIN_FRAG: arg >> opt::min_frag; break;
             case OPT_MAX_UNMATCHED_RATE: arg >> opt::max_unmatched_rate; break;
+            case OPT_MAX_SCORE_PER_INNER_CHUNK: arg >> opt::max_score_per_inner_chunk; break;
             case OPT_REF_IS_CIRCULAR:
               opt::ref_is_circular = true;
               opt::ref_is_bounded = true;
               break;
             case 'h':
             {
-                std::cout << USAGE_MESSAGE;
+                std::cerr << USAGE_MESSAGE;
                 exit(EXIT_SUCCESS);
                 break;
             }
             case 'v':
             {
-                std::cout << VERSION_MESSAGE;
+                std::cerr << VERSION_MESSAGE;
                 exit(EXIT_SUCCESS);
                 break;
             }
@@ -184,7 +189,7 @@ void parse_args(int argc, char** argv)
 
     if (die) 
     {
-        std::cout << "\n" << USAGE_MESSAGE;
+        std::cerr << "\n" << USAGE_MESSAGE;
         exit(EXIT_FAILURE);
     }
 
@@ -210,6 +215,7 @@ maligner_dp::AlignmentVec convert_alignments(
   using maligner_dp::Chunk;
   using maligner_dp::ChunkVec;
   using maligner_dp::MapData;
+  using maligner_dp::AlignmentRescaledScoreComp;
 
 
   maligner_dp::AlignmentVec alns;
@@ -298,6 +304,9 @@ maligner_dp::AlignmentVec convert_alignments(
     alns.push_back(std::move(aln));
 
   }
+
+  // Sort the alignments by total rescaled score
+  std::sort(alns.begin(), alns.end(), AlignmentRescaledScoreComp());
 
   return alns;
 
@@ -442,7 +451,9 @@ int main(int argc, char* argv[]) {
 
     for(auto a = alns.begin(); a != alns.end(); a++) {
       const maligner_dp::Alignment& aln = *a;
-      maligner_dp::print_alignment(std::cout, aln);
+      if(aln.score_per_inner_chunk <= opt::max_score_per_inner_chunk) {
+        maligner_dp::print_alignment(std::cout, aln);
+      }
     }
 
   }

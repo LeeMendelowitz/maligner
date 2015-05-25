@@ -40,7 +40,7 @@ static const char *USAGE_MESSAGE =
 "      --max-alignments                 Max. number of alignments to output\n"
 "\n"
 " Alignment filters:\n"
-"      --max-score-per-inner-chunk      Report alignments a score per inner chunk less than this\n"
+"      --max-score-per-inner-chunk      Report alignments with a score per inner chunk less than this\n"
 "                                           threshold. Default: Inf\n"
 "\n"
 " General arguments:"

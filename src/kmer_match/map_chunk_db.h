@@ -422,7 +422,7 @@ namespace kmer_match {
 
         Node& cur = stack.back();
 
-        // If there is no next bound, we've reached the end of the search bounds and our currently alingment is compatible.
+        // If there is no next bound, we've reached the end of the search bounds and our currently alignment is compatible.
         // Save this alignment and backtrack.
         if(cur.bound_iter_next_ == bound_end) {
           alignments.push_back(cur_aln);

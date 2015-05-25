@@ -154,13 +154,18 @@ namespace maligner_maps {
     void __compute_index() {
 
       const FragVec& frags = map_.frags_;
+      
       // Compute the index to start loc
-      ix_to_locs_.resize(frags.size());
+      ix_to_locs_.resize(frags.size() + 1);
+
       int s = 0;
+
       for(size_t i = 0; i < frags.size(); i++) {
         ix_to_locs_[i] = s;
         s += frags[i];
       }
+
+      ix_to_locs_[frags.size()] = s;
 
     } 
     

@@ -74,6 +74,7 @@ namespace kmer_match {
   };
 
 
+  // Sort chunks by size
   void MapChunkDB::sort_chunks() {
     map_chunk_index_ = MapChunkConstPVec(map_chunks_.size());
     
@@ -296,7 +297,6 @@ namespace kmer_match {
   AlignmentVector MapChunkDB::get_compatible_alignments(const IntPairVec& bounds, size_t max_unmatched) const {
 
     // See if there is a sequence of fragments in the database within the error bounds.
-    // For now we are only matching in the forward direction.
 
     if (bounds.empty()) {
       return AlignmentVector();
