@@ -22,6 +22,7 @@
 #include "map_wrapper_base.h"
 #include "alignment.h"
 #include "scorer.h"
+#include "bitcover.h"
 
 #include "common_defs.h"
 
@@ -201,12 +202,48 @@ void parse_args(int argc, char** argv)
 
 typedef std::unordered_map<std::string, MapWrapper> MapDB;
 
+// Select the non overlapping set of alignments. Alignment should already be sorted in the desired order.
+maligner_dp::AlignmentVec sift_alignments(maligner_dp::AlignmentVec& alns, MapDB& ref_map_db) {
+
+  maligner_dp::AlignmentVec alns_out;
+  alns_out.reserve(alns.size());
+
+  // Reset the bitcovers of the reference maps.
+  for(auto i = ref_map_db.begin(); i != ref_map_db.end(); i++) {
+    MapWrapper& ref_map = i->second;
+    ref_map.bit_cover_.reset();
+  }
+
+  for(auto i = alns.begin(); i != alns.end(); i++) {
+
+    maligner_dp::Alignment aln = *i;
+    MapWrapper& ref_map = ref_map_db.at(aln.ref_map_data.map_name_);
+
+    if(ref_map.bit_cover_.is_covered(aln.ref_start, aln.ref_end)) {
+      continue;
+    }
+
+    // Make sure that the alignment does not start past the point of doubling
+    // for circular maps
+    if(aln.ref_start > ref_map.num_frags()) {
+      continue;
+    }
+
+    ref_map.bit_cover_.cover(aln.ref_start, aln.ref_end);
+    alns_out.push_back(std::move(aln));
+
+  }
+
+  return alns_out;
+
+}
+
 ////////////////////////////////////////////////////////////////////
 // Convert alignments to the common format used by maligner dp.
 maligner_dp::AlignmentVec convert_alignments(
   const RefAlignmentVec& ref_alignments,
   const MapWrapper& query,
-  const MapDB& ref_map_db,
+  MapDB& ref_map_db,
   const Scorer& scorer) {
 
   using maligner_dp::Score;
@@ -307,6 +344,8 @@ maligner_dp::AlignmentVec convert_alignments(
 
   // Sort the alignments by total rescaled score
   std::sort(alns.begin(), alns.end(), AlignmentRescaledScoreComp());
+
+  alns = sift_alignments(alns, ref_map_db);
 
   return alns;
 
@@ -409,7 +448,6 @@ int main(int argc, char* argv[]) {
 
     const FragVec& frags = query.get_frags();
 
-
     // Note: We ignore boundary fragments
     IntPairVec bounds = error_model.compute_bounds(frags.begin() + 1, frags.end() - 1);
 
@@ -418,10 +456,10 @@ int main(int argc, char* argv[]) {
     size_t max_unmatched = mur > 0.0 ?
       size_t((mur/(1-mur)) * bounds.size()) : std::numeric_limits<size_t>::max();
 
+    // Determine the maximum allowed start location in the reference, due to circularlization.
+    
 
     RefAlignmentVec ref_alns = chunkDB.get_compatible_alignments_best(bounds, max_unmatched);
-    aln_count += ref_alns.size();
-
 
     // std::cerr << qi->name_ << "\n";
     // std::cerr << frags << "\n";
@@ -429,9 +467,6 @@ int main(int argc, char* argv[]) {
     // std::cerr << "num_frags: " << bounds.size() << "\n";
     // std::cerr << "num aln: " << " " << ref_alns.size() << std::endl;
 
-    if(!ref_alns.empty()) {
-      ++map_with_aln;
-    }
 
     // Sort the alignments in ascending order of miss_rate
     std::sort(ref_alns.begin(), ref_alns.end(), ReferenceAlignmentMissRateSort());
@@ -449,10 +484,15 @@ int main(int argc, char* argv[]) {
     AlignmentVec alns = convert_alignments(ref_alns, query, ref_map_db, scorer);
     cerr << "Converted " << alns.size() << " alignments.\n";
 
+    if(!alns.empty()) {
+      ++map_with_aln;
+    }
+
     for(auto a = alns.begin(); a != alns.end(); a++) {
       const maligner_dp::Alignment& aln = *a;
       if(aln.score_per_inner_chunk <= opt::max_score_per_inner_chunk) {
         maligner_dp::print_alignment(std::cout, aln);
+        ++aln_count;
       }
     }
 

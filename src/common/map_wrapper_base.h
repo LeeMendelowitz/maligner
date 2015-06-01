@@ -8,6 +8,7 @@
 
 #include "map.h"
 #include "map_data.h"
+#include "bitcover.h"
 
 namespace maligner_maps {
 
@@ -41,7 +42,8 @@ namespace maligner_maps {
     MapWrapper(const Map& map, bool is_circular, bool is_bounded) :
       map_(map),
       map_data_(map_.name_, map_.frags_.size(), map_.size_, is_circular, is_bounded),
-      frags_reverse_(map_.frags_.rbegin(), map_.frags_.rend())
+      frags_reverse_(map_.frags_.rbegin(), map_.frags_.rend()),
+      bit_cover_(map_.frags_.size())
     {
 
       // If the map is circular, double the fragments (for the purposes of alignment)
@@ -56,7 +58,8 @@ namespace maligner_maps {
     MapWrapper(Map&& map, bool is_circular, bool is_bounded) :
       map_(map),
       map_data_(map_.name_, map_.frags_.size(), map_.size_, is_circular, is_bounded),
-      frags_reverse_(map_.frags_.rbegin(), map_.frags_.rend())
+      frags_reverse_(map_.frags_.rbegin(), map_.frags_.rend()),
+      bit_cover_(map_.frags_.size())
     {
 
       // If the map is circular, double the fragments (for the purposes of alignment)
@@ -124,12 +127,14 @@ namespace maligner_maps {
       return map_.name_;
     }
 
+
     ///////////////////////////////////////
     // Members
     Map map_;
     maligner_maps::MapData map_data_; // Metadata about the map
     FragVec frags_reverse_;
     IntVec ix_to_locs_;
+    BitCover bit_cover_;
 
     ////////////////////////////////////////
     private:
@@ -148,6 +153,7 @@ namespace maligner_maps {
       frags.reserve(2*frags.size());
       frags.insert(frags.end(), frags.begin(), frags.end()); 
       frags_reverse_ = FragVec(frags.rbegin(), frags.rend());
+      bit_cover_.reset(frags.size());
 
     }
 
