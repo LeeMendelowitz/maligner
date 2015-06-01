@@ -89,7 +89,7 @@ namespace opt
     string program_name;
 }
 
-static const char* shortopts = "u:r:a:m:hv";
+static const char* shortopts = "u:r:a:m:q:r:hv";
 enum {OPT_MIN_FRAG = 1, OPT_MAX_UNMATCHED_RATE, OPT_REF_IS_CIRCULAR, OPT_SD_RATE, OPT_MIN_SD,
   OPT_REL_ERROR, OPT_MAX_SCORE_PER_INNER_CHUNK};
 
@@ -124,8 +124,8 @@ void parse_args(int argc, char** argv)
             case OPT_REL_ERROR: arg >> opt::rel_error; break;
             case 'a': arg >> opt::min_abs_error; break;
             case 'm': arg >> opt::max_match; break;
-            case 'q': arg >> opt::query_miss_penalty; break;
-            case 'r': arg >> opt::ref_miss_penalty; break;
+            case 'q': arg >> opt::query_miss_penalty; std::cerr << "Got Q\n"; break;
+            case 'r': arg >> opt::ref_miss_penalty; std::cerr << "Got R\n"; break;
             case OPT_SD_RATE: arg >> opt::sd_rate; break;
             case OPT_MIN_SD: arg >> opt::min_sd; break;
             case OPT_MIN_FRAG: arg >> opt::min_frag; break;

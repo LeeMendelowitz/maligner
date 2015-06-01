@@ -45,6 +45,7 @@ namespace maligner_dp {
     }
 
     total_rescaled_score = rescaled_score.total();
+    score_per_inner_chunk = total_rescaled_score/double(num_interior_chunks);
 
   }
 

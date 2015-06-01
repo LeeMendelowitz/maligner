@@ -3,6 +3,7 @@ set( FILES_TO_INSTALL
   alignment_chunks
   alignment_locs
   alignment_summary_stats
+  alignments_maligner_to_malign_viz  
   alignments_maligner_to_soma
   alignments_soma_to_maligner
   convert_maps
@@ -19,6 +20,7 @@ set( FILES_TO_INSTALL
   make_insilico_map
   generate_random_maps
   parse_nucmer_coords
+  parse_somacbcb_locs
 )
 
 install(FILES ${FILES_TO_INSTALL}

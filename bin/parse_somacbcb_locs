@@ -1,0 +1,117 @@
+#!/usr/bin/env python
+#
+# parse SOMA-V2 match file
+# SOMA can only handle a single reference map,
+#########################################################
+import argparse
+import numpy as np
+import sys
+from malignpy.maps.utils import read_maps
+
+parser = argparse.ArgumentParser(description="""Extract SOMA-V2 alignment locations""")
+parser.add_argument('soma_match_file', metavar='SOMA_MATCH_FILE', type=str)
+parser.add_argument('ref_maps_file', metavar='REF_MAPS_FILE', type=str,
+  help="""Reference map in maligner format. This script
+  only uses the first reference map and ignores others, as SOMA-V2 can only handle one input map.""")
+parser.add_argument('-o', '--output', metavar='OUTPUT_FILE', help = "Output file name. (Default: STDOUT)")
+
+def iter_lines(f):
+  while True:
+    lines = tuple(f.next().strip() for i in range(5))
+    if len(lines) == 5:
+      yield lines
+    else:
+      return
+
+def iter_records(f):
+  for ls in iter_lines(f):
+    yield Record(*ls)
+
+def parse_opt_chunk(f):
+  f = f.strip()
+  return tuple(int(p) for p in f.strip().split(','))
+
+def parse_opt_chunks(f):
+  return [parse_opt_chunk(p) for p in f.split()]
+
+def parse_query_chunk(f):
+  return [int(p) for p in f.strip().split()]
+
+
+class Record(object):
+
+  output_fields = ['id', 'num_matched_frags','ref_start_bp','ref_end_bp', 'misses', 'forward', 'pval','fval','chi2']
+
+  def __init__(self, l1, l2, l3, l4, l5):
+
+    self._l1 = l1
+    self._l2 = l2
+    self._l3 = l3
+    self._l4 = l4
+    self._l5 = l5
+
+    l1 = l1.split()
+    self.id = l1[0]
+    self.size = l1[1]
+    self.forward = int(l1[2])
+    self.ref_start = int(l1[3])
+    self.ref_end = int(l1[4]) + 1 # Convert to python indexing
+
+    l2 = l2.split()
+    self.misses = int(l2[0])
+    self.chi2 = float(l2[1])
+    self.pval = float(l2[2])
+    self.fval = float(l2[3])
+
+    # l3 = l3.replace(';', ' ')
+    # l4 = l4.replace(';', ' ')
+    self.opt_match = [parse_opt_chunks(f) for f in l3.split(';')]
+    self.query_match = [parse_query_chunk(p) for p in l4.strip().split(';')]
+    self.query_frag_lengths = [np.sum(qf) for qf in self.query_match]
+
+    self.num_matched_frags = len(self.query_frag_lengths)
+
+    self.ref_start_bp = 0
+    self.ref_end_bp = 0
+
+    ref_start_bp = ref_frags_cumsum[self.ref_start]
+    ref_end_bp = ref_frags_cumsum[self.ref_end - 1]
+
+    # Adjust for partial boundary fragments
+    ref_start_bp = ref_start_bp - self.query_frag_lengths[0]
+    ref_end_bp = ref_end_bp + self.query_frag_lengths[-1]
+
+    self.ref_start_bp = ref_start_bp
+    self.ref_end_bp = ref_end_bp
+
+  def write_location(self, f = sys.stdout):
+    output = [str(getattr(self, k)) for k in self.output_fields]
+    output = "\t".join(output) + "\n"
+    f.write(output)
+
+  @classmethod
+  def write_location_header(cls, f = sys.stdout):
+    f.write('\t'.join(cls.output_fields) + '\n')
+
+##################################################################################
+
+if __name__ == '__main__':
+
+  args = parser.parse_args()
+
+  if args.output:
+    fout = open(args.output, 'w')
+  else:
+    fout = sys.stdout
+
+  # Read ref maps
+  ref_map = read_maps(args.ref_maps_file).values()[0]
+  ref_frags = ref_map.frags + ref_map.frags # Double
+  ref_frags_cumsum = np.cumsum(ref_frags)
+
+  # Parse records
+  with open(args.soma_match_file) as f:
+    recs = list(iter_records(f))
+    Record.write_location_header(fout)
+    for r in recs:
+      r.write_location(fout)

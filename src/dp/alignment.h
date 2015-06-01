@@ -50,6 +50,38 @@ namespace maligner_dp {
 
       }
       #endif
+
+      //////////////////////////////////////////////
+      // DEBUG:
+      #if ALIGNMENT_CLASS_DEBUG > 0
+      {
+        std::cerr << "Aligment before flip. is_forward: " << is_forward << " chunk_string: ";
+        for(auto& mc : rescaled_matched_chunks) {
+          std::cerr << mc << ";";
+        }
+        std::cerr << "\n";
+      }
+      #endif
+      ///////////////////////////////////////////////
+
+      // Fix query coordinates to match forward coordinates of query
+      if(!is_forward) {
+        flip_query_coords(); 
+      }
+
+      ////////////////////////////////////////////////
+      // DEBUG
+      #if ALIGNMENT_CLASS_DEBUG > 0
+      {
+        std::cerr << "Aligment after flip. is_forward: " << is_forward << " chunk_string: ";
+        for(auto& mc : rescaled_matched_chunks) {
+          std::cerr << mc << ";";
+        }
+        std::cerr << "\n";
+      }
+      #endif
+      ////////////////////////////////////////////////
+
       summarize();
     }
 
@@ -174,32 +206,6 @@ namespace maligner_dp {
       total_rescaled_score = rescaled_score.total();
 
       is_valid = !matched_chunks.empty();
-
-      #if ALIGNMENT_CLASS_DEBUG > 0
-      {
-        std::cerr << "Aligment before flip. is_forward: " << is_forward << " chunk_string: ";
-        for(auto& mc : rescaled_matched_chunks) {
-          std::cerr << mc << ";";
-        }
-        std::cerr << "\n";
-      }
-      #endif
-
-      // Fix query coordinates to match forward coordinates of query
-      if(!is_forward) {
-        flip_query_coords(); 
-      }
-
-      #if ALIGNMENT_CLASS_DEBUG > 0
-      {
-        std::cerr << "Aligment after flip. is_forward: " << is_forward << " chunk_string: ";
-        for(auto& mc : rescaled_matched_chunks) {
-          std::cerr << mc << ";";
-        }
-        std::cerr << "\n";
-      }
-      #endif
-
 
       std::size_t l(matched_chunks.size());
       num_interior_chunks = 0;

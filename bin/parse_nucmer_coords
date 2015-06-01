@@ -1,0 +1,86 @@
+#!/usr/bin/env python
+import pandas as pd
+import argparse
+
+parser = argparse.ArgumentParser(description="""Parse mummer show-coords output.
+    outputs PFX.nucmer.coords.tsv and PFX.nucmer.locations.tsv""")
+
+parser.add_argument('coords_file', metavar='COORDS_FILE', type=str,
+                   help='Coords file. Use "-" for STDIN')
+parser.add_argument('--circularize', action = 'store_true', help="Merge query if it spans the origin of replication.")
+parser.add_argument('-o', '--output', help="Output prefix")
+parser.add_argument('--min-query-length', help="minimum query length in bp (default: 1000)", default=1000, type=int)
+parser.add_argument('--min-covq', help='minimum query coverage as percentage [0, 100]. (default: 90)', default= 90, type=float)
+
+
+class Record(object):
+    num_fields = 13
+
+    keys = ['s1', 'e1', 's2', 'e2', 'l1', 'l2','idy','lenr','lenq','covr','covq', 'r','q']
+    index = keys + ['orientation']
+
+    def __init__(self, s1, e1, s2, e2, l1, l2, idy, lenr, lenq, covr, covq, r, q):
+        self.s1 = int(s1)
+        self.e1 = int(e1)
+        self.s2 = int(s2)
+        self.e2 = int(e2)
+        self.l1 = int(l1)
+        self.l2 = int(l2)
+        self.idy = float(idy)
+        self.lenr = int(lenr)
+        self.lenq = int(lenq)
+        self.covr = float(covr)
+        self.covq = float(covq)
+        self.r = r
+        self.q = q
+
+    @classmethod
+    def from_line(cls, line):
+        fields = line.strip().split()
+        fields = [f for f in fields if f != '|']
+        if len(fields) != cls.num_fields:
+            return None
+        return cls(*fields)
+        
+    @property
+    def is_forward(self):
+        return self.e2 > self.s2
+    
+    @property
+    def is_reverse(self):
+        return not self.is_forward
+
+    def to_dict(self):
+        ret = {k:getattr(self,k,None) for k in self.keys}
+        ret['orientation'] = 'F' if self.is_forward else 'R'
+        return pd.Series(ret, index = self.index, dtype=object)
+
+
+def parse_file(f):
+    with open(f) as fin:
+        # Skip 5 line header
+        for i in range(5):
+            fin.next()
+        records = [Record.from_line(l).to_dict() for l in fin]
+    d = pd.DataFrame(records)
+    # Reorder columns
+    d = d[Record.index]
+    d.sort('s1', inplace=True)
+    return d
+
+
+def run(f, pfx, circularize, min_query_length, min_covq):
+    d = parse_file(f)
+    d.to_csv('%s.nucmer.coords.tsv'%pfx, sep='\t', index=False)
+    d2 = d[(d.covq >= min_covq) & (d.lenq >= min_query_length)]
+    d2 = d2[['q', 's1', 'e1', 'orientation']]
+    d2.to_csv('%s.nucmer.locations.tsv'%pfx, sep='\t', index=False)
+    return d
+    
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+    run(args.coords_file, args.output, args.circularize, args.min_query_length, args.min_covq)
+
+
+ 

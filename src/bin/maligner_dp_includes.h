@@ -79,6 +79,7 @@ namespace maligner_dp {
       static bool query_rescaling = true;
       static bool verbose = false;
       static bool reference_is_circular = false;
+      static double min_mad = 1.0; // Minimum mad to use when computing mad scores.
 
   }
 }

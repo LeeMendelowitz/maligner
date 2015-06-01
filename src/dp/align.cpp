@@ -81,7 +81,7 @@ namespace maligner_dp {
   }
 
   // Compute and assign mad scores to a list of alignments.
-  void compute_mad_scores(AlignmentVec& alignments, const int max_alignments_mad) {
+  double compute_mad_scores(AlignmentVec& alignments, const int max_alignments_mad, double min_mad) {
     
     // Only use the top max_alignments_mad number of alignments for computing the mad
     const size_t N = std::min(int(alignments.size()), int(max_alignments_mad));
@@ -93,7 +93,7 @@ namespace maligner_dp {
     }
 
     const double m = median(scores);
-    const double md = mad(scores);
+    const double md = std::max(mad(scores, m), min_mad);
 
     const size_t n_aln = alignments.size();
 
@@ -106,6 +106,8 @@ namespace maligner_dp {
       aln.m_score = s;
 
     }
+
+    return md;
 
   }
 

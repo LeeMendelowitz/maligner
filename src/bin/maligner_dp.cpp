@@ -387,14 +387,15 @@ int main(int argc, char* argv[]) {
     const size_t num_all_alignments = all_alignments.size();
 
     // Compute the mad score for the alignments.
-    compute_mad_scores(all_alignments, maligner_dp::opt::max_alignments_mad);
+    double mad = compute_mad_scores(all_alignments, maligner_dp::opt::max_alignments_mad, maligner_dp::opt::min_mad);
 
     const int max_ind = std::min(int(all_alignments.size()), opt::max_alignments);
     
     query_timer.end();    
 
     std::cerr << "done aligning query: " << query_map.name_ << " "
-              << "aln_num: " << num_all_alignments << "\n"
+              << "aln_num: " << num_all_alignments << " "
+              << "mad: " << mad << "\n"
               << query_timer << "\n";
 
 

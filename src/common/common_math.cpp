@@ -23,6 +23,25 @@ double mad(const std::vector<double>& in) {
 
 }
 
+// Compute the median absolute deviation, if the median m already known.
+double mad(const std::vector<double>& in, double m) {
+
+  using std::size_t;
+  if(in.empty()) return 0.0;
+
+  std::vector<double> v(in);
+
+  const size_t N = v.size();
+
+  for(size_t i = 0; i < N; i++) {
+    v[i] = fabs(v[i] - m);
+  }
+
+  return median(v);
+
+}
+
+
 
 // Compute the median
 double median(const std::vector<double>& in) {

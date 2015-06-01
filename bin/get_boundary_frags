@@ -1,0 +1,34 @@
+#!/usr/bin/env python
+"""
+Produce summary statistics for a maps file.
+"""
+
+import argparse, sys, os
+from malignpy.maps.MalignerMap import MalignerMap, smooth
+from malignpy.maps.utils import gen_maps
+from malignpy.common import wrap_file_function
+
+@wrap_file_function('r', 'w')
+def run(input_maps_file, fout):
+  map_gen = gen_maps(input_maps_file)
+
+  for m in map_gen:
+    if m.numFrags < 2:
+      continue
+    fields = [m.mapId, m.length, m.numFrags, m.frags[0], m.frags[-1]]
+    fout.write('\t'.join(str(f) for f in fields) + '\n')
+
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description="""Get the length of the first and last fragment in a map.""")
+  parser.add_argument('maps_file', metavar='MAPS_FILE', type=str,
+                   help='Input maps file in the maligner maps format.')
+  parser.add_argument('-o', '--output', metavar='OUTPUT_FILE',
+      help = "Output file name. (Default: STDOUT)")
+
+  args = parser.parse_args()
+
+  if args.output is None:
+    args.output = sys.stdout
+
+  run(args.maps_file, args.output)

@@ -352,7 +352,8 @@ namespace maligner_dp {
   template<class ScoreMatrixType, class SizingPenaltyType>
   int make_best_alignments_using_partials(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task);
 
-  void compute_mad_scores(AlignmentVec& alignments, const int max_alignments_mad);
+  // Assigns mad scores to the alignments, and returns the mad.
+  double compute_mad_scores(AlignmentVec& alignments, const int max_alignments_mad, double min_mad);
 
 
   ///////////////////////////////////////////////////////////////////////////
