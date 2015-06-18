@@ -109,7 +109,8 @@ def run_fasta(fasta_file, forward_rec_seq, output_pfx):
     bn, ext = os.path.splitext(fn)
 
     map_handle = open('%s.maps'%output_pfx, 'w')
-    site_handle = open('%s.sites'%output_pfx, 'w')
+    site_handle = None
+    #site_handle = open('%s.sites'%output_pfx, 'w')
 
     
     seq_gen = SeqIO.parse(fasta_file, 'fasta')
