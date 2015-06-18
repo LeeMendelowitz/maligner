@@ -6,7 +6,7 @@ include_directories(
 )
 
 # source files
-set(KMER_MATCH_SOURCES
+set(IX_SOURCES
   "error_model.cpp"
   # "map.cpp"
   # "map_reader.cpp"
@@ -17,7 +17,7 @@ set(KMER_MATCH_SOURCES
 )
 
 # Build Library
-add_library(kmer_match STATIC ${KMER_MATCH_SOURCES})
+add_library(ix STATIC ${IX_SOURCES})
 
 # install directory
-# install(TARGETS kmer_match ARCHIVE DESTINATION "${MALIGNER_LIB_DIR}")
+# install(TARGETS ix ARCHIVE DESTINATION "${MALIGNER_LIB_DIR}")
