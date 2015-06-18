@@ -7,6 +7,7 @@
 namespace maligner_maps {
 
   typedef std::vector<int> IntVec;
+
   ///////////////////////////////////////////
   // Store MetaData for a map.
   class MapData {
@@ -48,7 +49,7 @@ namespace maligner_maps {
       // }
 
       std::string map_name_;
-      size_t num_frags_;
+      size_t num_frags_; // The number of fragments in the original (non-circularized) map.
       int length_; // number of bp
       bool is_circular_; // Is the map circular?
       bool is_bounded_; // Are the leftmost/rightmost fragments bounded by sites? NOTE: This is not yet used in code, and duplicates an argument in AlignOpts

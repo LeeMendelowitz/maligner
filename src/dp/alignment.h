@@ -51,38 +51,41 @@ namespace maligner_dp {
       }
       #endif
 
+      // We have moved coord flipping OUTSIDE of the alignment class. The person
+      // constructing the Alignment is responsible for handling that.
       //////////////////////////////////////////////
       // DEBUG:
-      #if ALIGNMENT_CLASS_DEBUG > 0
-      {
-        std::cerr << "Aligment before flip. is_forward: " << is_forward << " chunk_string: ";
-        for(auto& mc : rescaled_matched_chunks) {
-          std::cerr << mc << ";";
-        }
-        std::cerr << "\n";
-      }
-      #endif
-      ///////////////////////////////////////////////
+      // #if ALIGNMENT_CLASS_DEBUG > 0
+      // {
+      //   std::cerr << "Aligment before flip. is_forward: " << is_forward << " chunk_string: ";
+      //   for(auto& mc : rescaled_matched_chunks) {
+      //     std::cerr << mc << ";";
+      //   }
+      //   std::cerr << "\n";
+      // }
+      // #endif
+      // ///////////////////////////////////////////////
 
-      // Fix query coordinates to match forward coordinates of query
-      if(!is_forward) {
-        flip_query_coords(); 
-      }
+      // // Fix query coordinates to match forward coordinates of query
+      // if(!is_forward) {
+      //   flip_query_coords(); 
+      // }
 
-      ////////////////////////////////////////////////
-      // DEBUG
-      #if ALIGNMENT_CLASS_DEBUG > 0
-      {
-        std::cerr << "Aligment after flip. is_forward: " << is_forward << " chunk_string: ";
-        for(auto& mc : rescaled_matched_chunks) {
-          std::cerr << mc << ";";
-        }
-        std::cerr << "\n";
-      }
-      #endif
+      // ////////////////////////////////////////////////
+      // // DEBUG
+      // #if ALIGNMENT_CLASS_DEBUG > 0
+      // {
+      //   std::cerr << "Aligment after flip. is_forward: " << is_forward << " chunk_string: ";
+      //   for(auto& mc : rescaled_matched_chunks) {
+      //     std::cerr << mc << ";";
+      //   }
+      //   std::cerr << "\n";
+      // }
+      // #endif
       ////////////////////////////////////////////////
 
       summarize();
+
     }
 
     
@@ -94,7 +97,7 @@ namespace maligner_dp {
     Alignment(Alignment&&) = default;
     Alignment& operator=(Alignment&&) = default;
 
-    void add_alignment_locs(const IntVec& query_ix_to_loc, const IntVec& ref_ix_to_loc);
+    
 
     // rescale the query chunks using the query_scaling_factor, and
     // recompute the sizing error for those chunks.
@@ -106,7 +109,10 @@ namespace maligner_dp {
     // Reset the summary
     void reset_stats();
 
+    void flip_query_coords();
+    void flip_ref_coords();
     void compute_index_locs();
+    void add_alignment_locs(const IntVec& query_ix_to_loc, const IntVec& ref_ix_to_loc);
 
     int get_ref_start() const {
       if (is_valid) {
@@ -151,7 +157,7 @@ namespace maligner_dp {
     int ref_interior_size; // total size of non-boundary fragments
     double interior_size_ratio;
     double query_scaling_factor;
-    bool is_forward;
+    bool is_forward; // query is forward (i.e. same orientation as reference)
     bool is_valid;
     double score_per_inner_chunk;
 
@@ -169,7 +175,8 @@ namespace maligner_dp {
 
     private:
 
-    void flip_query_coords();
+
+    
 
   };
 
@@ -305,7 +312,7 @@ namespace maligner_dp {
     for (size_t i = 0; i < num_chunks; i++) {
 
       // Had an embarassing bug here when using references.
-      // So we use pointers instead and are careful not to use bracked to protect the scope
+      // So we use pointers instead and are careful not to use brackets to protect the scope
       // of local variables used to flip coordinates.
       //
       // Reason why references are dangerous:
@@ -335,6 +342,41 @@ namespace maligner_dp {
         std::swap(qc->start, qc->end);
         qc->start = num_query_frags - qc->start;
         qc->end = num_query_frags - qc->end;
+      }
+
+    }
+  }
+
+  // Flip the ref coordinates in every matched chunk
+  inline void Alignment::flip_ref_coords() {
+
+    #if ALIGNMENT_CLASS_DEBUG > 0
+    {
+      std::cerr << "IN FLIP REF_COORDS\n";
+    }
+    #endif
+
+    size_t num_chunks {matched_chunks.size()};
+    const size_t num_ref_frags = ref_map_data.num_frags_;
+
+    for (size_t i = 0; i < num_chunks; i++) {
+
+      {
+        MatchedChunk * mc = &matched_chunks[i];
+        Chunk * rc = &mc->ref_chunk;
+
+        std::swap(rc->start, rc->end);
+        rc->start = num_ref_frags - rc->start;
+        rc->end = num_ref_frags - rc->end;
+      }
+
+      {
+        MatchedChunk * mc = &rescaled_matched_chunks[i];
+        Chunk * rc = &mc->query_chunk;
+
+        std::swap(rc->start, rc->end);
+        rc->start = num_ref_frags - rc->start;
+        rc->end = num_ref_frags - rc->end;
       }
 
     }

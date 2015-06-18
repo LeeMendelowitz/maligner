@@ -3,7 +3,7 @@
 //
 #include <limits>
 
-#define PACKAGE_NAME "maligner dp"
+
 
 static const char *VERSION_MESSAGE = "Version " PACKAGE_VERSION "\n"
 "Written by " AUTHOR "(" AUTHOR_EMAIL ") \n"
@@ -43,7 +43,7 @@ static const char *USAGE_MESSAGE =
 "      --max-score-per-inner-chunk      Report alignments with a score per inner chunk less than this\n"
 "                                           threshold. Default: Inf\n"
 "\n"
-" General arguments:"
+" General arguments:\n"
 "      -h, --help                       display this help and exit\n"
 "      -v, --version                    display the version and exit\n"
 "      --verbose                        Verbose output\n";

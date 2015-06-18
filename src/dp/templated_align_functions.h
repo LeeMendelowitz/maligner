@@ -3571,9 +3571,11 @@ namespace maligner_dp {
       }
 
       // return Alignment(std::move(matched_chunks), total_score);
+
+      bool alignment_is_forward = (task.query_is_forward == task.ref_is_forward);
       return Alignment(matched_chunks, total_score,
              *task.query_map_data, *task.ref_map_data,
-             task.is_forward);
+             alignment_is_forward);
   }
 
   template<class ScoreMatrixType, class SizingPenaltyType>
@@ -3591,6 +3593,9 @@ namespace maligner_dp {
     if (align_opts.rescale_query) {
       aln.rescale_matched_chunks(align_opts);
     }
+
+    if (!task.query_is_forward) aln.flip_query_coords();
+    if (!task.ref_is_forward) aln.flip_ref_coords();
     aln.add_alignment_locs(*task.query_ix_to_locs, *task.ref_ix_to_locs);
 
     return aln;
@@ -3618,7 +3623,10 @@ namespace maligner_dp {
       aln.rescale_matched_chunks(align_opts);
     }
 
+    if (!task.query_is_forward) aln.flip_query_coords();
+    if (!task.ref_is_forward) aln.flip_ref_coords();
     aln.add_alignment_locs(*task.query_ix_to_locs, *task.ref_ix_to_locs);
+
     return aln;
 
   }
@@ -3645,7 +3653,11 @@ namespace maligner_dp {
     if (align_opts.rescale_query) {
       aln.rescale_matched_chunks(align_opts);
     }
+
+    if (!task.query_is_forward) aln.flip_query_coords();
+    if (!task.ref_is_forward) aln.flip_ref_coords();
     aln.add_alignment_locs(*task.query_ix_to_locs, *task.ref_ix_to_locs);
+
     return aln;
   }
 
@@ -3677,13 +3689,13 @@ namespace maligner_dp {
        << "\tref: " << task.ref << "\n"
        << "\tnum_query_frags: " << task.query->size() << "\n"
        << "\tnum_ref_frags: " << task.ref->size() << "\n"
-       << "\tis_forward: " << task.is_forward << "\n"
+       << "\tquery_is_forward: " << task.query_is_forward << "\n"
+       << "\tref_is_forward: " << task.ref_is_forward << "\n"
        << std::endl;
 
     return os;
+
   }
-
-
 
 }
 

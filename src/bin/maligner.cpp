@@ -238,8 +238,11 @@ maligner_dp::AlignmentVec sift_alignments(maligner_dp::AlignmentVec& alns, MapDB
 
 }
 
-////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 // Convert alignments to the common format used by maligner dp.
+// maligner_ix handles reverse alignments by reversing the reference (since we index the reverse of the reference)
+// maligner_dp handles reverse alignments by reversing the query and aligning it to the forward of the reference.
+// Therefore, we must carefully convert indices and orientation in this function to end up with a maligner_dp::Alignment.
 maligner_dp::AlignmentVec convert_alignments(
   const RefAlignmentVec& ref_alignments,
   const MapWrapper& query,
@@ -254,7 +257,6 @@ maligner_dp::AlignmentVec convert_alignments(
   using maligner_dp::MapData;
   using maligner_dp::AlignmentRescaledScoreComp;
 
-
   maligner_dp::AlignmentVec alns;
 
   const MapData& query_map_data = query.map_data_;
@@ -266,24 +268,29 @@ maligner_dp::AlignmentVec convert_alignments(
   Score zero_score;
 
   //////////////////////////////////////////////////////////////////////
-  // Build the query chunks forward and reverse, no unmatched sites.
-  // query_chunks_forward and query_chunks_reverse both must have increasing indices,
-  // but query_chunks_reverse has the chunk sizes in the reverse direction.
+  // Our approach is to represent the query_chunks the same way that the query map would
+  // be presented in maligner_dp for forward and reverse alignments.
+  // This means that query_chunks_forward and query_chunks_reverse both must have increasing indices,
+  // but query_chunks_reverse has the chunk sizes in the *reverse* direction.
   ChunkVec query_chunks_forward;
   ChunkVec query_chunks_reverse;
   const size_t num_query_frags = query_map.frags_.size();
   for(size_t i = 1; i < num_query_frags - 1; i++) {
+
     const bool is_boundary_chunk_query = (i == 0) || (i == num_query_frags - 1);
+
     query_chunks_forward.emplace_back(i, i + 1, query_map.frags_[i], is_boundary_chunk_query);
+
     query_chunks_reverse.emplace_back(i, i + 1, query_map.frags_[i], is_boundary_chunk_query);
     query_chunks_reverse.back().reverse_coords(num_query_frags);
+
   }
   std::reverse(query_chunks_reverse.begin(), query_chunks_reverse.end());
 
   
   ///////////////////////////////////////////////////////////////////////////////////
-  // Ref alignments are oriented forward with respect to the query
-  // MatchedChunks must be constructed, oriented with respect to forward strand of reference.
+  // In maligner_ix, ref alignments are oriented forward with respect to the query.
+  // In maligner_dp, MatchedChunks must be constructed, oriented with respect to forward strand of reference.
   // This means if the alignment is reverse, we need to reverse the reference chunks,
   // and use the reverse representation of the query chunks.
   for(auto i = ref_alignments.begin(); i != ref_alignments.end(); i++) {
@@ -291,17 +298,21 @@ maligner_dp::AlignmentVec convert_alignments(
     const ReferenceAlignment& ref_alignment = *i;
     const Map * p_ref_map = ref_alignment.get_map();
     const MapWrapper& ref = ref_map_db.find(p_ref_map->name_)->second;
-    MapData ref_map_data(p_ref_map->name_, p_ref_map->frags_.size(), p_ref_map->size_, opt::ref_is_circular, opt::ref_is_bounded);
+    const MapData& ref_map_data = ref.map_data_;
+    const bool ref_is_circular = ref.is_circular();
 
-    // DETERMINE IF THIS IS A BOUNDARY CHUNK
-    const bool is_boundary = false;
-
-    // Extract the reference chunks
+    /////////////////////////////////////////////////////////////////////////////////////////
+    // Extract the reference chunks as maligner_dp chunks.
     ChunkVec ref_chunks;
     for(auto rc = ref_alignment.chunks_.begin(); rc != ref_alignment.chunks_.end(); rc++) {
+
       const MapChunk* p_chunk = *rc;
-      // Adjust indices by one because the chunks start in the interior.
-      ref_chunks.emplace_back(p_chunk->start_ + 1, p_chunk->end_ + 1, p_chunk->size_, is_boundary);
+
+      bool ref_chunk_is_boundary = ref_is_circular && !opt::ref_is_bounded && 
+        ( (p_chunk->start_ == 0) || (p_chunk->end_ == ref.num_frags()) );
+
+      ref_chunks.emplace_back(p_chunk->start_, p_chunk->end_, p_chunk->size_, ref_chunk_is_boundary);
+
     }
 
     // Orient the reference chunks forward if necessary
@@ -336,7 +347,9 @@ maligner_dp::AlignmentVec convert_alignments(
 
     /////////////////////////
     // Construct Alignment
-    maligner_dp::Alignment aln(matched_chunks, total_score, query_map_data, ref_map_data, ref_alignment.is_forward());
+    bool aln_is_forward = ref_alignment.is_forward();
+    maligner_dp::Alignment aln(matched_chunks, total_score, query_map_data, ref_map_data, aln_is_forward);
+    if (!aln_is_forward) aln.flip_query_coords();
     aln.add_alignment_locs(query.ix_to_locs_, ref.ix_to_locs_);
     alns.push_back(std::move(aln));
 

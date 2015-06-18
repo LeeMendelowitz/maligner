@@ -33,6 +33,8 @@ using std::string;
 using std::unordered_map;
 // using namespace std;
 
+
+#define PACKAGE_NAME "maligner dp"
 #include "maligner_dp_includes.h"
 
 
@@ -147,7 +149,8 @@ AlignmentVec run_permutation_test(RefMapDB& permuted_map_db, const QueryMapWrapp
         0, // ref_offset
         &sm,
         nullptr,
-        true, // is_forward
+        true, // query_is_forward
+        true, // ref_is_forward
         align_opts
       );
 
@@ -164,7 +167,8 @@ AlignmentVec run_permutation_test(RefMapDB& permuted_map_db, const QueryMapWrapp
         0, // ref_offset
         &sm,
         nullptr,
-        false, // is_forward
+        true, // query_is_forward
+        false, // ref_is_forward
         align_opts
       );
 
@@ -213,8 +217,6 @@ void assign_pval(const AlignmentVec& sorted_random_alns, Alignment& aln) {
 
   return;
 }
-
-
 
 
 int main(int argc, char* argv[]) {
@@ -323,7 +325,8 @@ int main(int argc, char* argv[]) {
         0, // ref_offset
         &sm,
         &all_alignments,
-        true, // is_forward
+        true, // query_is_forward
+        true, // ref_is_forward
         align_opts
       );
 
@@ -340,7 +343,8 @@ int main(int argc, char* argv[]) {
         0, // ref_offset
         &sm,
         &all_alignments,
-        false, // is_forward
+        false, // query_is_forward
+        true, // ref_is_forward
         align_opts
       );
 

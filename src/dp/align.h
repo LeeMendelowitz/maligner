@@ -159,8 +159,6 @@ namespace maligner_dp {
 
   public:
 
-
-
     AlignTask(const MapDataPtr qmd,
               const MapDataPtr rmd,
               const std::vector<int>* q,
@@ -172,7 +170,8 @@ namespace maligner_dp {
               const IntVec* ref_ix_to_locs_in,
               ScoreMatrixPtr m,
               AlignmentVec * alns,
-              bool is_forward_in,
+              bool query_is_forward_in,
+              bool ref_is_forward_in,
               bool is_circular_in,
               AlignOpts& ao) :
       query_map_data(qmd),
@@ -187,9 +186,11 @@ namespace maligner_dp {
       ref_offset(0),
       mat(m),
       alignments(alns),
-      is_forward(is_forward_in),
+      query_is_forward(query_is_forward_in),
+      ref_is_forward(ref_is_forward_in),
       align_opts(&ao) { compute_max_misses(); }
 
+    // Takes an additional parameter: ref_offset_in
     AlignTask(const MapDataPtr qmd,
               const MapDataPtr rmd,
               const std::vector<int>* q,
@@ -202,7 +203,8 @@ namespace maligner_dp {
               int ref_offset_in,
               ScoreMatrixPtr m,
               AlignmentVec * alns,
-              bool is_forward_in,
+              bool query_is_forward_in,
+              bool ref_is_forward_in,
               AlignOpts& ao) :
       query_map_data(qmd),
       ref_map_data(rmd),
@@ -216,7 +218,8 @@ namespace maligner_dp {
       ref_offset(ref_offset_in),
       mat(m),
       alignments(alns),
-      is_forward(is_forward_in),
+      query_is_forward(query_is_forward_in),
+      ref_is_forward(ref_is_forward_in),
       align_opts(&ao)
     { compute_max_misses(); }
 
@@ -227,14 +230,17 @@ namespace maligner_dp {
     const PartialSums* query_partial_sums;
     const PartialSums* ref_partial_sums;
     const SDInv* ref_sd_inv; // 1.0/(sd^2) precomputed for each reference chunk.
-    const IntVec* query_ix_to_locs;
-    const IntVec* ref_ix_to_locs;
+    const IntVec* query_ix_to_locs; // Fragment index to bp location (always oriented forward)
+    const IntVec* ref_ix_to_locs; // Fragment index to bp location (always oriented forward)
     int query_max_total_misses;
     int ref_max_total_misses;
+
     int ref_offset; // index of the first fragment in ref. This will be nonzero if aligning to slice of reference.
     ScoreMatrixPtr mat;
     AlignmentVec* alignments; // Alignment vector to append all found alignments to.
-    bool is_forward; // true if the alignment is forward in the reference, false otherwise.
+
+    bool query_is_forward; // true if the query data is given as forward (i.e. query, query_partial_sums)
+    bool ref_is_forward; // true if reference data is given as forward(i.e. ref, ref_partial_sums)
     SizingPenaltyType sizing_penalty;
     AlignOpts * align_opts;
 
@@ -261,6 +267,7 @@ namespace maligner_dp {
     };
 
   };
+
 
   template<class ScoreMatrixType, class SizingPenaltyType>
   std::ostream& print_align_task(std::ostream& os, const AlignTask<ScoreMatrixType, SizingPenaltyType>& task);

@@ -36,17 +36,10 @@ namespace maligner_dp {
     RefMapWrapper(const Map& map, bool is_circular, int num_missed_sites, double sd_rate, double min_sd) :
       MapWrapper(map, is_circular, false),
       ps_(map_.frags_, num_missed_sites),
-      sd_inv_(ps_, sd_rate, min_sd )
+      ps_reverse_(get_frags_reverse(), num_missed_sites),
+      sd_inv_(ps_, sd_rate, min_sd),
+      sd_inv_reverse_(ps_reverse_, sd_rate, min_sd)
     {
-
-      // if(is_circular) {
-
-      //   // Circularize the frags_ by doubling.
-      //   // Copy fragments from the Map's fragment vector.
-      //   frags_.insert(frags_.end(), map.frags_.begin(), map.frags_.end());
-      //   frags_reverse_ = FragVec(frags_.rbegin(), frags_.rend());
-
-      // }
 
     }
 
@@ -55,17 +48,10 @@ namespace maligner_dp {
       int num_missed_sites, double sd_rate, double min_sd) :
       MapWrapper(map, map_data),
       ps_(map_.frags_, num_missed_sites),
-      sd_inv_(ps_, sd_rate, min_sd )
+      ps_reverse_(get_frags_reverse(), num_missed_sites),
+      sd_inv_(ps_, sd_rate, min_sd ),
+      sd_inv_reverse_(ps_reverse_, sd_rate, min_sd)
     {
-
-      // if(map_data.is_circular_) {
-
-      //   // Circularize the frags_ by doubling.
-      //   // Copy fragments from the Map's fragment vector.
-      //   frags_.insert(frags_.end(), map.frags_.begin(), map.frags_.end());
-      //   frags_reverse_ = FragVec(frags_.rbegin(), frags_.rend());
-
-      // }
 
     }
 
@@ -73,11 +59,17 @@ namespace maligner_dp {
       return ps_;
     }
 
+    const PartialSums& get_partial_sums_reverse() const {
+      return ps_reverse_;
+    }
+
     PartialSums ps_;
+    PartialSums ps_reverse_;
     SDInv sd_inv_;
-    // FragVec frags_;
+    SDInv sd_inv_reverse_;
 
   };
+
 
 }
 

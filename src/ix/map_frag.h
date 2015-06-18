@@ -40,7 +40,7 @@ namespace kmer_match {
       if (!valid_) { return *this; }
 
       index_++;
-      valid_ = (index_ < pMap_->frags_.size()) && (index_ >= 0);
+      valid_ = (index_ < pMap_->frags_.size());
 
       return *this;
 
@@ -51,7 +51,7 @@ namespace kmer_match {
       if (!valid_) { return *this; }
 
       index_--;
-      valid_ = (index_ < pMap_->frags_.size()) && (index_ >= 0);
+      valid_ = (index_ < pMap_->frags_.size());
 
       return *this;
 
@@ -62,7 +62,7 @@ namespace kmer_match {
       if (!valid_) { return *this; }
 
       index_ += o;
-      valid_ = (index_ < pMap_->frags_.size()) && (index_ >= 0);
+      valid_ = (index_ < pMap_->frags_.size());
 
       return *this;
 
@@ -120,7 +120,7 @@ namespace kmer_match {
 
       index_--;
 
-      valid_ = (index_ < pMap_->frags_.size()) && (index_ >= 0);
+      valid_ = (index_ < pMap_->frags_.size());
 
 
       return *this;
@@ -132,7 +132,7 @@ namespace kmer_match {
       if(!valid_) { return *this; }
 
       index_++;
-      valid_ = (index_ < pMap_->frags_.size()) && (index_ >= 0);
+      valid_ = (index_ < pMap_->frags_.size());
 
       return *this;
 
@@ -143,7 +143,7 @@ namespace kmer_match {
       if (!valid_) { return *this; }
 
       index_ -= o; // Notice -=, because forward is in the reverse directino for MapFragReverse
-      valid_ = (index_ < pMap_->frags_.size()) && (index_ >= 0);
+      valid_ = (index_ < pMap_->frags_.size());
 
       return *this;
 

@@ -119,12 +119,20 @@ namespace maligner_maps {
       return map_data_.num_frags_;
     }
 
+    size_t num_frags_after_circularization() const {
+      return map_.frags_.size();
+    }
+
     Map& get_map() {
       return map_;
     }
 
-    std::string get_name() {
+    std::string get_name() const {
       return map_.name_;
+    }
+
+    bool is_circular() const {
+      return map_data_.is_circular_;
     }
 
 
