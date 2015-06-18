@@ -4,22 +4,46 @@ from itertools import izip
 import numpy as np
 from numpy import array
 
+def safe_int(v):
+  try:
+    return int(v)
+  except ValueError:
+    return None
+
+def safe_float(v):
+  try:
+    return float(v)
+  except ValueError:
+    return None
+
 INPUT_FIELDS_TYPES = [
   ("query_map", str),
-  ("ref_map", str),
-  ("is_forward", str),
-  ("num_matched_chunks", int),
-  ("query_misses", int),
-  ("ref_misses", int),
-  ("query_miss_rate", float),
-  ("ref_miss_rate", float),
-  ("total_score", float),
-  ("total_rescaled_score", float),
-  ("m_score", float),
-  ("sizing_score", float),
-  ("sizing_score_rescaled", float),
-  ("query_scaling_factor", float),
-  ("chunk_string", str)
+  ("ref_map", str), 
+  ("is_forward", str), 
+  ("query_start", int),
+  ("query_end", safe_int),
+  ("ref_start", safe_int),
+  ("ref_end", safe_int),
+  ("query_start_bp", safe_int),
+  ("query_end_bp", safe_int),
+  ("ref_start_bp", safe_int),
+  ("ref_end_bp", safe_int),
+  ("num_matched_chunks", safe_int),
+  ("query_misses", safe_int),
+  ("ref_misses", safe_int),
+  ("query_miss_rate", safe_float),
+  ("ref_miss_rate", safe_float),
+  ("total_score", safe_float),
+  ("total_rescaled_score", safe_float),
+  ("m_score", safe_float),
+  ("p_val", safe_float),
+  ("sizing_score", safe_float),
+  ("sizing_score_rescaled", safe_float),
+  ("query_scaling_factor", safe_float),
+  ("num_interior_chunks", safe_int),
+  ("score_per_inner_chunk", safe_float),
+  ("chunk_string", str),
+  ("score_string", str)
 ]
 
 FIELDS = [f[0] for f in INPUT_FIELDS_TYPES]
@@ -42,6 +66,7 @@ class Chunk(object):
     self.re = int(t[4])
     self.rl = int(t[5])
     self.is_boundary = False
+    self.score = None
 
     self.chi2 = None
 
@@ -51,6 +76,9 @@ class Chunk(object):
 
   def __repr__(self):
     return str(self)
+
+  def set_score(self, score):
+    self.score = score
 
   @property
   def query_misses(self):
@@ -74,6 +102,16 @@ class Chunk(object):
     sd = max(sd_rate*self.rl, min_sd)
     self.chi2 = (delta/sd)**2
 
+class ChunkScore(object):
+  def __init__(self, t):
+    """Initialize from a tuple"""
+    self.query_miss = float(t[0])
+    self.ref_miss = float(t[1])
+    self.sizing = float(t[2])
+
+  def __str__(self):
+    return "(%.3f, %.3f, %.3f)"%(self.query_miss, self.ref_miss, self.sizing)
+
 class Alignment(object):
   """A MalignerDP Alignment"""
 
@@ -82,7 +120,7 @@ class Alignment(object):
 
     self.has_boundary_chunks = has_boundary_chunks
 
-    fields = line.strip().split()
+    fields = line.strip().split('\t')
 
     for k,t,f in izip(FIELDS, TYPES, fields):
       setattr(self, k, t(f))
@@ -93,6 +131,16 @@ class Alignment(object):
     self.chunks = [Chunk(c.split(',')) for c in chunks]
     assert(self.num_matched_chunks) == len(self.chunks)
 
+    # Parse the score string
+    score_string = (c.strip("()").replace(" ","") for c in self.score_string.split(";") if c)
+    self.scores = [ChunkScore(s.split(',')) for s in score_string]
+
+    for c,s in zip(self.chunks, self.scores):
+      c.set_score(s)
+
+    self.query_miss_penalty = sum(s.query_miss for s in self.scores)
+    self.ref_miss_penalty = sum(s.ref_miss for s in self.scores)
+    self.sizing_penalty = sum(s.sizing for s in self.scores)
 
     if self.has_boundary_chunks:
 

@@ -28,7 +28,7 @@ namespace kmer_match {
     
   public:
 
-    MapChunkDB(const MapPVec& maps, size_t frags_per_chunk);
+    MapChunkDB(const MapWrapperPVec& maps, size_t frags_per_chunk);
 
     void sort_chunks();
 
@@ -123,7 +123,7 @@ namespace kmer_match {
     active_set.reserve(num_bounds);
     active_set.push_back(p_start_chunk);
 
-    const Map* p_map = p_start_chunk->pMap_;
+    const Map* p_map = p_start_chunk->get_map();
     const ChunksAtIndex& chunks_at_start = map_to_chunks_at_start_.at(p_map);
 
     for(BoundIter bi = bound_start; bi != bound_end; bi++) {
@@ -138,7 +138,7 @@ namespace kmer_match {
         const MapChunk* p_chunk = *ci;
 
         // Get chunks that follow this one from the database.
-        const Map* p_map = p_chunk->pMap_;
+        const Map* p_map = p_chunk->get_map();
         if(p_chunk->end_ == p_map->frags_.size()) {
 
           // We've reached the end of the map!
@@ -181,7 +181,7 @@ namespace kmer_match {
     active_set.reserve(num_bounds);
     active_set.push_back(p_start_chunk);
 
-    const Map* p_map = p_start_chunk->pMap_;
+    const Map* p_map = p_start_chunk->get_map();
     const ChunksAtIndex& chunks_at_end = map_to_chunks_at_end_.at(p_map);
 
     for(BoundIter bi = bound_start; bi != bound_end; bi++) {
@@ -243,7 +243,7 @@ namespace kmer_match {
     cur_alignment.push_back(p_start_chunk);
     active_set.push_back(cur_alignment);
 
-    const Map* p_map = p_start_chunk->pMap_;
+    const Map* p_map = p_start_chunk->get_map();
     const ChunksAtIndex& chunks_at_start = map_to_chunks_at_start_.at(p_map);
 
     for(BoundIter bi = bound_start; bi != bound_end; bi++) {
@@ -315,7 +315,7 @@ namespace kmer_match {
 
     /////////////////////////////////////////////////////////////
     // Find the first chunk which extends left.
-    const Map* p_map = p_start_chunk->pMap_;
+    const Map* p_map = p_start_chunk->get_map();
     const ChunksAtIndex& chunks_at_end = map_to_chunks_at_end_.at(p_map);
     BoundIter bi = bound_start;
     auto lb = bi->first;
@@ -388,14 +388,14 @@ namespace kmer_match {
     
     using std::vector;
 
-    // std::cerr << "get_compatible_right: " << p_start_chunk->pMap_->name_ << " " << *p_start_chunk << std::endl;
+    // std::cerr << "get_compatible_right: " << p_start_chunk.get_map()->name_ << " " << *p_start_chunk << std::endl;
 
     // Get all chunks which follow this one and test which are compatible with the rest of the bounds
     if(bound_start >= bound_end) {
       return AlignmentVector();
     }
 
-    const Map* p_map = p_start_chunk->pMap_;
+    const Map* p_map = p_start_chunk->get_map();
     const ChunksAtIndex& chunks_at_start = map_to_chunks_at_start_.at(p_map);
 
     if(p_start_chunk->end_ >= p_map->frags_.size()) {
@@ -433,7 +433,7 @@ namespace kmer_match {
         }
 
         // std::cerr << "Stack size: " << stack.size()
-        //       << " cur node: " << cur.chunk_->pMap_->name_ << " " << *cur.chunk_
+        //       << " cur node: " << cur.chunk_.get_map()->name_ << " " << *cur.chunk_
         //       << " lb: " << cur.bound_iter_next_->first
         //       << " ub: " << cur.bound_iter_next_->second
         //       << std::endl;
@@ -493,14 +493,14 @@ namespace kmer_match {
 
     using std::vector;
 
-    // std::cerr << "get_compatible_left2: " << p_start_chunk->pMap_->name_ << " " << *p_start_chunk << std::endl;
+    // std::cerr << "get_compatible_left2: " << p_start_chunk.get_map()->name_ << " " << *p_start_chunk << std::endl;
 
     // Get all chunks which follow this one and test which are compatible with the rest of the bounds
     if(bound_start >= bound_end) {
       return AlignmentVector();
     }
 
-    const Map* p_map = p_start_chunk->pMap_;
+    const Map* p_map = p_start_chunk->get_map();
     const ChunksAtIndex& chunks_at_end = map_to_chunks_at_end_.at(p_map);
 
     if(p_start_chunk->start_ == 0) {

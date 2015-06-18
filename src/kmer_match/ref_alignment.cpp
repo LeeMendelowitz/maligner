@@ -9,7 +9,7 @@ namespace kmer_match {
     const MapChunk * last = aln.chunks_.back();
     bool is_forward = first->start_ < last->start_;
     
-    os << first->pMap_->name_ << " ";
+    os << first->get_map()->name_ << " ";
 
     if(is_forward) {
       os << "F " << first->start_ << " " << last->end_ << " ";

@@ -312,10 +312,10 @@ maligner_dp::AlignmentVec convert_alignments(
     }
 
 
-    std::cerr << "query:\n\t" << *p_query_chunks << "\n"
-              << "ref:\n\t" << ref_chunks << "\n"
-              << "is_forward: " << ref_alignment.is_forward()
-              << "\n";
+    // std::cerr << "query:\n\t" << *p_query_chunks << "\n"
+    //           << "ref:\n\t" << ref_chunks << "\n"
+    //           << "is_forward: " << ref_alignment.is_forward()
+    //           << "\n";
 
     /////////////////////////
     // Build matched chunks
@@ -399,9 +399,9 @@ int main(int argc, char* argv[]) {
   MapWrapperVec ref_maps = read_ref_maps(opt::ref_maps_file, opt::ref_is_circular, opt::ref_is_bounded);
  
   // Store a vector of pointers to the underlying Maps.
-  MapPVec p_ref_maps(ref_maps.size());
+  MapWrapperPVec p_ref_maps(ref_maps.size());
   for(size_t i = 0; i < ref_maps.size(); i++) {
-    p_ref_maps[i] = &ref_maps[i].map_;
+    p_ref_maps[i] = &ref_maps[i];
   }
 
   // Store reference maps in an unordered map.
@@ -456,8 +456,6 @@ int main(int argc, char* argv[]) {
     size_t max_unmatched = mur > 0.0 ?
       size_t((mur/(1-mur)) * bounds.size()) : std::numeric_limits<size_t>::max();
 
-    // Determine the maximum allowed start location in the reference, due to circularlization.
-    
 
     RefAlignmentVec ref_alns = chunkDB.get_compatible_alignments_best(bounds, max_unmatched);
 
@@ -470,30 +468,29 @@ int main(int argc, char* argv[]) {
 
     // Sort the alignments in ascending order of miss_rate
     std::sort(ref_alns.begin(), ref_alns.end(), ReferenceAlignmentMissRateSort());
-    int num_written = 0;
-    // for(RefAlignmentVec::const_iterator ai = ref_alns.begin();
-    //     ai != ref_alns.end();
-    //     ai++, num_written++) {
-
-    //    if(ai->miss_rate_ > opt::max_unmatched_rate) continue;
-    //    if(num_written >= opt::max_match) break;
-
-    //    cout << qi->name_ << " " << *ai << "\n";
-    // }
-
     AlignmentVec alns = convert_alignments(ref_alns, query, ref_map_db, scorer);
     cerr << "Converted " << alns.size() << " alignments.\n";
-
-    if(!alns.empty()) {
-      ++map_with_aln;
-    }
-
+    int query_aln_count = 0;
+    bool map_has_alignment = false;
     for(auto a = alns.begin(); a != alns.end(); a++) {
+
+      if(query_aln_count == opt::max_match) break;
+
       const maligner_dp::Alignment& aln = *a;
+      bool have_aln = false;
+
       if(aln.score_per_inner_chunk <= opt::max_score_per_inner_chunk) {
         maligner_dp::print_alignment(std::cout, aln);
         ++aln_count;
+        ++query_aln_count;
+        have_aln = true;
+        map_has_alignment = true;
       }
+
+    }
+
+    if(map_has_alignment) {
+      ++map_with_aln;
     }
 
   }

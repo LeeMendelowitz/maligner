@@ -179,6 +179,7 @@ namespace maligner_maps {
   };
 
   typedef std::vector<MapWrapper> MapWrapperVec;
+  typedef std::vector<MapWrapper*> MapWrapperPVec;
 
 }
 

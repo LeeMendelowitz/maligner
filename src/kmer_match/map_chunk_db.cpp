@@ -12,13 +12,13 @@ using namespace maligner_maps;
 
 namespace kmer_match {
 
-  MapChunkDB::MapChunkDB(const MapPVec& maps, size_t frags_per_chunk) :
+  MapChunkDB::MapChunkDB(const MapWrapperPVec& maps, size_t frags_per_chunk) :
   frags_per_chunk_(frags_per_chunk) {
     
     size_t num_frags = 0;
 
     for(auto mi = maps.begin(); mi != maps.end(); mi++) {
-      num_frags += (*mi)->frags_.size();
+      num_frags += (*mi)->map_.frags_.size();
     }
 
     // Reserve enough space to avoid reallocation.
@@ -27,7 +27,8 @@ namespace kmer_match {
     // For each map, compute the chunks.
     for(auto mi = maps.begin(); mi != maps.end(); mi++) {
 
-      const Map * pMap = *mi;
+      const MapWrapper* pMapWrapper = *mi;
+      const Map * pMap = &pMapWrapper->map_;
       
       const size_t num_frags = pMap->frags_.size();
 
@@ -37,7 +38,7 @@ namespace kmer_match {
       for(size_t start = 0; start < num_frags; start++) {
         const size_t last = min(start + frags_per_chunk, num_frags - 1);
         for(size_t end = start + 1; end <= last; end++) {
-          map_chunks_.emplace_back(pMap, start, end);
+          map_chunks_.emplace_back(pMapWrapper, start, end);
           chunks_at_index_start_[start].push_back(&map_chunks_.back());
           chunks_at_index_end_[end].push_back(&map_chunks_.back());
         } 
@@ -352,6 +353,11 @@ namespace kmer_match {
       if (middle_chunk->num_unmatched() > max_unmatched) continue;
       size_t extension_max_unmatched = max_unmatched - middle_chunk->num_unmatched();
 
+      // For the case of circular maps, do not work with a seed that starts more than bounds.size() fragments
+      // past the point of circularization.
+      size_t map_size_orig = middle_chunk->get_map_wrapper()->num_frags();
+      if (middle_chunk->start_ >= map_size_orig + bounds.size()) continue;
+
       RevIter rev_start(iter_max_bound); // Starts 1 to left of iter_max_bound
       RevIter rev_end(bounds.begin()); // Ends 1 to left of begin (exclusive).
 
@@ -469,6 +475,11 @@ namespace kmer_match {
       if (middle_chunk->num_unmatched() > max_unmatched) continue;
       size_t extension_max_unmatched = max_unmatched - middle_chunk->num_unmatched();
 
+      // For the case of circular maps, do not work with a seed that starts more than bounds.size() fragments
+      // past the point of circularization.
+      size_t map_size_orig = middle_chunk->get_map_wrapper()->num_frags();
+      if (middle_chunk->start_ >= map_size_orig + bounds.size()) continue;
+
       RevIter rev_start(iter_max_bound); // Starts 1 to left of iter_max_bound
       RevIter rev_end(bounds.begin()); // Ends 1 to left of begin (exclusive).
 
@@ -542,7 +553,7 @@ namespace kmer_match {
     const MapChunk * last = aln.back();
     bool is_forward = first->start_ < last->start_;
     
-    os << first->pMap_->name_ << " ";
+    os << first->get_map()->name_ << " ";
 
     if(is_forward) {
       os << "F " << first->start_ << " " << last->end_ << " ";

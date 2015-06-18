@@ -5,7 +5,8 @@
 #include <numeric>
 #include <iostream>
 
-#include "map.h"
+#include "map_wrapper_base.h"
+
 using namespace maligner_maps;
 
 namespace kmer_match {
@@ -13,15 +14,23 @@ namespace kmer_match {
   class MapChunk {
   public:
 
-    MapChunk(const Map * pMap, size_t s, size_t e) : 
+    MapChunk(const MapWrapper * pMap, size_t s, size_t e) : 
       pMap_(pMap), start_(s), end_(e),
-      size_(std::accumulate(pMap->frags_.begin() + s, pMap->frags_.begin() + e, 0))
+      size_(std::accumulate(pMap->map_.frags_.begin() + s, pMap->map_.frags_.begin() + e, 0))
     {};
 
-    const Map * pMap_;
+    const MapWrapper * pMap_;
     size_t start_;
     size_t end_;
     int size_;
+
+    const MapWrapper * get_map_wrapper() const {
+      return pMap_;
+    }
+
+    const Map * get_map() const {
+      return &pMap_->map_;
+    }
 
     size_t num_frags() const {
       return end_ - start_;

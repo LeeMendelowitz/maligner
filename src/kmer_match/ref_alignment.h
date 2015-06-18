@@ -31,7 +31,7 @@ namespace kmer_match {
     const Map * get_map() const {
 
       if (chunks_.size() > 0) {
-        return chunks_[0]->pMap_;
+        return chunks_[0]->get_map();
       }
 
       return nullptr;
@@ -175,7 +175,7 @@ namespace kmer_match {
     if (chunks_.empty()) return;
 
     bool aln_is_forward = is_forward();
-    const Map * pMap = chunks_[0]->pMap_;
+    const Map * pMap = chunks_[0]->get_map();
     size_t last_start = chunks_[0]->start_;
     size_t last_end = chunks_[0]->end_;
 
@@ -183,7 +183,7 @@ namespace kmer_match {
 
       for(auto i = chunks_.begin() + 1; i != chunks_.end(); i++) {
         const MapChunk* c = *i;
-        if ( (c->pMap_ != pMap) || (c->start_ != last_end) ) {
+        if ( (c->get_map() != pMap) || (c->start_ != last_end) ) {
           throw ReferenceAlignmentException();
         }
 
@@ -193,7 +193,7 @@ namespace kmer_match {
 
       for(auto i = chunks_.begin() + 1; i != chunks_.end(); i++) {
         const MapChunk* c = *i;
-        if ( (c->pMap_ != pMap) || (c->end_ != last_start) ) {
+        if ( (c->get_map() != pMap) || (c->end_ != last_start) ) {
           throw ReferenceAlignmentException();
         }
 
