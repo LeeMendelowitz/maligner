@@ -40,8 +40,6 @@ namespace maligner_vd {
 
   public:
 
-    enum class MatrixOrientation { RF_QF, RF_QR, RR_QF, RR_QR };
-
     RefScoreMatrixVD(const RefMapWrapper& ref) :
       ref_(ref) {};
 
@@ -54,6 +52,8 @@ namespace maligner_vd {
     void aln_to_reverse_ref(const QueryMapWrapper& q, const AlignOpts& ao);
     void get_prefix_scores(size_t row_number, std::vector<double>& scores);
     void get_suffix_scores(size_t row_number, std::vector<double>& scores);
+    void assign_prefix_mscores(size_t row_number, double median, double mad);
+    void assign_suffix_mscores(size_t row_number, double median, double mad);
 
     Alignment best_aln_rf_qf() const { return get_best_alignment_from_filled_scorematrix(aln_task_rf_qf_);}
     Alignment best_aln_rf_qr() const { return get_best_alignment_from_filled_scorematrix(aln_task_rf_qr_);}
@@ -71,7 +71,10 @@ namespace maligner_vd {
     size_t num_rows_rr_qf() const { return sm_rr_qf_.getNumRows(); }
     size_t num_rows_rr_qr() const { return sm_rr_qr_.getNumRows(); }
 
-    const ScoreMatrixType * get_score_matrix(MatrixOrientation orientation) const;
+    const ScoreMatrixType * get_score_matrix_rf_qf() const { return &sm_rf_qf_; }
+    const ScoreMatrixType * get_score_matrix_rf_qr() const { return &sm_rf_qr_; }
+    const ScoreMatrixType * get_score_matrix_rr_qf() const { return &sm_rr_qf_; }
+    const ScoreMatrixType * get_score_matrix_rr_qr() const { return &sm_rr_qr_; }
 
     void reset();
 
@@ -423,26 +426,63 @@ namespace maligner_vd {
 
   }
 
-  template<typename ScoreMatrixType>
-  const ScoreMatrixType * RefScoreMatrixVD<ScoreMatrixType>::get_score_matrix(MatrixOrientation orientation) const {
 
-    switch (orientation)
-    {
-      case MatrixOrientation::RF_QF:
-        return &sm_rf_qf_;
-        break;
-      case MatrixOrientation::RF_QR:
-        return &sm_rf_qr_;
-        break;
-      case MatrixOrientation::RR_QF:
-        return &sm_rr_qf_;
-        break;
-      case MatrixOrientation::RR_QR:
-        return &sm_rr_qr_;
-        break;
+  template<typename ScoreMatrixType>
+  void RefScoreMatrixVD<ScoreMatrixType>::assign_prefix_mscores(size_t row_number, double median, double mad) {
+
+    const size_t num_rows = num_rows_query_prefix();
+    const size_t num_cols = sm_rf_qf_.getNumCols();
+
+    if (row_number >= num_rows) {
+      throw std::runtime_error("Invalid row_number in assign_prefix_mscores. Exceeds number of rows.");
     }
-    return nullptr;
+
+    ScoreCell * p_cell;
+    for(size_t j = 1; j < num_cols; j++) {
+
+      p_cell = sm_rf_qf_.getCell(row_number, j);
+      if(p_cell->is_valid()) {
+        p_cell->m_score_ = (p_cell->score_ - median)/mad;
+      }
+
+      p_cell = sm_rr_qf_.getCell(row_number, j);
+      if(p_cell->is_valid()) {
+        p_cell->m_score_ = (p_cell->score_ - median)/mad;
+      }
+
+    }
+
+
   }
+
+  
+  template<typename ScoreMatrixType>
+  void RefScoreMatrixVD<ScoreMatrixType>::assign_suffix_mscores(size_t row_number, double median, double mad) {
+
+    const size_t num_rows = num_rows_query_suffix();
+    const size_t num_cols = sm_rf_qr_.getNumCols();
+
+    if (row_number >= num_rows) {
+      throw std::runtime_error("Invalid row_number in assign_suffix_mscores. Exceeds number of rows.");
+    }
+
+    ScoreCell * p_cell;
+    for(size_t j = 1; j < num_cols; j++) {
+
+      p_cell = sm_rf_qr_.getCell(row_number, j);
+      if(p_cell->is_valid()) {
+        p_cell->m_score_ = (p_cell->score_ - median)/mad;
+      }
+
+      p_cell = sm_rr_qr_.getCell(row_number, j);
+      if(p_cell->is_valid()) {
+        p_cell->m_score_ = (p_cell->score_ - median)/mad;
+      }
+
+    }
+
+  }
+
 
 }
 

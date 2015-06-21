@@ -86,6 +86,10 @@ namespace maligner_dp {
 
         }  
 
+        bool is_valid() const {
+            return score_ > -INF;
+        }
+
         void reset();
 
         void setColor(ScoreCellColor color) {

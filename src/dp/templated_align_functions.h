@@ -2,11 +2,15 @@
 #define TEMPLATED_ALN_FUNC
 
 #define FILL_DEBUG 0
-#define GET_BEST_DEBUG 1
+#define GET_BEST_DEBUG 0
 
 #include <limits>
 #include <algorithm>
-
+#include <stdexcept>
+#include <cmath>
+#include <sstream>
+#include <iomanip> 
+#include <iostream> 
 
 #include "safe_ptr_write.h"
 using lmm_utils::SAFE_WRITE;
@@ -3521,6 +3525,10 @@ namespace maligner_dp {
   template<class ScoreMatrixType, class SizingPenaltyType>
   Alignment alignment_from_trail(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task, ScoreCellPVec& trail) {
 
+      if (trail.empty()) {
+        return INVALID_ALIGNMENT;
+      }
+
       const AlignOpts& align_opts = *task.align_opts;
       const IntVec& query = *task.query;
 
@@ -3569,6 +3577,25 @@ namespace maligner_dp {
           // Try fancy C++11:
           matched_chunks.emplace_back(query_chunks[i], ref_chunks[i], score);
           
+      }
+
+      // Check that the total score assigned to the alignment matches that of the ScoreCell
+      // at the beginning of the trail (i.e. end of alignment)
+      // Note: ScoreCell scores are negative (so that higher is better)
+      // But alignment scores are positive (so lower is better).
+      // The Alignment score should be the negative of the score cell score.
+      const double TOL = 1E-9;
+      const double cell_score = -trail.front()->score_;
+      const double score_delta = std::abs(cell_score - total_score.total());
+      if(score_delta > TOL) {
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(12)
+            << "Score computed for alignment does not match ScoreCell! ScoreCell score: "
+            << cell_score << " "
+            << "Alignment Score: " << total_score.total()
+            << "delta: " << score_delta
+            << "pass: " << (score_delta > TOL) << "\n";
+        throw std::runtime_error(oss.str());
       }
 
       // return Alignment(std::move(matched_chunks), total_score);

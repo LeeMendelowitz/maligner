@@ -32,8 +32,8 @@ namespace maligner_vd {
     void aln_to_reverse_refs(const QueryMapWrapper& q, const AlignOpts& ao);
 
     void compute_mscores();
-    void compute_query_prefix_mscores();
-    void compute_query_suffix_mscores();
+    void compute_query_prefix_mscores(double min_mad);
+    void compute_query_suffix_mscores(double min_mad);
 
     size_t num_maps() const { return sm_vec_.size(); }
     size_t size() const { return sm_vec_.size(); }
@@ -119,7 +119,7 @@ namespace maligner_vd {
   }
 
   template<typename ScoreMatrixVDType>
-  void RefScoreMatrixVDDB<ScoreMatrixVDType>::compute_query_prefix_mscores() {
+  void RefScoreMatrixVDDB<ScoreMatrixVDType>::compute_query_prefix_mscores(double min_mad) {
    
     // Compute m_scores for prefix alignment of the query.
     // This corresponds to sm_rf_qf_ and sm_rr_qf_ score matrixes, as
@@ -142,21 +142,27 @@ namespace maligner_vd {
       row_scores_.reserve(_max_num_scores);
 
 
+      // Compute mad & median of scores for this row.
       for(auto& sm: sm_vec_) {
         sm.get_prefix_scores(row_num, row_scores_);
       }
 
       double med = median(row_scores_);
-      double md = mad(row_scores_, med);
+      double md = std::max(mad(row_scores_, med), min_mad);
 
       std::cerr << "prefix row: " << row_num << " median: " << med << " mad: " << md << "\n";
+
+      // Assign m-scores for this row.
+      for(auto& sm: sm_vec_) {
+        sm.assign_prefix_mscores(row_num, med, md);
+      }
 
     } 
   }
 
 
   template<typename ScoreMatrixVDType>
-  void RefScoreMatrixVDDB<ScoreMatrixVDType>::compute_query_suffix_mscores() {
+  void RefScoreMatrixVDDB<ScoreMatrixVDType>::compute_query_suffix_mscores(double min_mad) {
    
     // Compute m_scores for suffix alignment of the query.
     // This corresponds to sm_rf_qr_ and sm_rr_qr_ score matrixes, as
@@ -178,9 +184,14 @@ namespace maligner_vd {
       }
 
       double med = median(row_scores_);
-      double md = mad(row_scores_, med);
+      double md = std::max(mad(row_scores_, med), min_mad);
 
       std::cerr << "suffix row: " << row_num << " median: " << med << " mad: " << md << "\n";
+
+      // Assign m-scores for this row.
+      for(auto& sm: sm_vec_) {
+        sm.assign_suffix_mscores(row_num, med, md);
+      }
 
     } 
   }

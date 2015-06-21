@@ -154,8 +154,8 @@ int main(int argc, char* argv[]) {
     ref_score_matrix_db.aln_to_reverse_refs(qmw, align_opts);
 
 
-    ref_score_matrix_db.compute_query_prefix_mscores();
-    ref_score_matrix_db.compute_query_suffix_mscores();
+    ref_score_matrix_db.compute_query_prefix_mscores(maligner_dp::opt::min_mad);
+    ref_score_matrix_db.compute_query_suffix_mscores(maligner_dp::opt::min_mad);
 
     // Write the best alignments
     auto sms = ref_score_matrix_db.get_score_matrix_vec();
@@ -168,13 +168,12 @@ int main(int argc, char* argv[]) {
 
       // Print the best score in last row.
       // A little debugging action.
-
       const ScoreMatrixType* p_sm;
-      typedef RefScoreMatrixVDType::MatrixOrientation MatrixOrientation;
-      p_sm = sm.get_score_matrix(MatrixOrientation::RF_QF);
+
+      p_sm = sm.get_score_matrix_rf_qf();
       std::cerr << "RF_QF Best Score Last Row: " << p_sm->getMaxScoreByRow(p_sm->getNumRows()-1) << "\n";
 
-      p_sm = sm.get_score_matrix(MatrixOrientation::RR_QR);
+      p_sm = sm.get_score_matrix_rr_qr();
       std::cerr << "RR_QR Best Score Last Row: " << p_sm->getMaxScoreByRow(p_sm->getNumRows()-1) << "\n";
 
     }
