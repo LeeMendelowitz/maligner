@@ -4,6 +4,7 @@
 #include <vector>
 #include <ostream>
 
+#include "globals.h"
 #include "common_types.h"
 #include "map_data.h"
 #include "matched_chunk.h"
@@ -14,6 +15,7 @@ namespace maligner_dp {
 
   using std::size_t;
   using maligner_maps::MapData;
+  using maligner_dp::Constants::INF;
 
   // Forward Declarations
   class AlignOpts;
@@ -21,13 +23,10 @@ namespace maligner_dp {
   class AlignmentHeader {};
   std::ostream& operator<<(std::ostream& os, const AlignmentHeader& a);
 
+
   class Alignment {
   public:
 
-    //Alignment(MatchedChunkVec& mc) : matched_chunks(mc) {};
-
-    // We must provide a default constructor because
-    // we have provided a specialized constructor.
     Alignment() : is_valid(false) {
     }
 
@@ -41,8 +40,22 @@ namespace maligner_dp {
       rescaled_matched_chunks(matched_chunks),
       score(s),
       rescaled_score(s),
+      total_score(0.0),
+      total_rescaled_score(0.0),
+      m_score(INF),
+      p_val(0.0),
+      num_matched_sites(0),
+      query_misses(0),
+      ref_misses(0),
+      num_interior_chunks(0),
+      query_miss_rate(0.0),
+      ref_miss_rate(0.0),
+      total_miss_rate(0.0),
+      query_interior_size(0),
+      ref_interior_size(0),
+      interior_size_ratio(0.0),
       query_scaling_factor(1.0),
-      is_forward(is_forward_in)
+      is_forward(is_forward_in) // True if query is forward with respect to reference
     {
       #if ALIGNMENT_CLASS_DEBUG > 0
       {
@@ -51,8 +64,9 @@ namespace maligner_dp {
       }
       #endif
 
-      // We have moved coord flipping OUTSIDE of the alignment class. The person
-      // constructing the Alignment is responsible for handling that.
+      // We have moved coord flipping OUTSIDE of the alignment class. The function
+      // constructing the Alignment is responsible for handling that properly.
+      //
       //////////////////////////////////////////////
       // DEBUG:
       // #if ALIGNMENT_CLASS_DEBUG > 0
@@ -107,7 +121,7 @@ namespace maligner_dp {
     void summarize(); 
 
     // Reset the summary
-    void reset_stats();
+    // void reset_stats();
 
     void flip_query_coords();
     void flip_ref_coords();
@@ -251,30 +265,30 @@ namespace maligner_dp {
   }
 
 
-  inline void Alignment::reset_stats() {
-      is_valid = false;
-      is_forward = false;
-      query_misses = 0;
-      ref_misses = 0;
-      query_miss_rate = 0;
-      ref_miss_rate = 0;
-      total_miss_rate = 0;
-      query_interior_size = 0;
-      ref_interior_size = 0;
-      num_matched_sites = 0;
-      interior_size_ratio = 0;
-      num_interior_chunks = 0;
-      query_scaling_factor = 0;
-      total_score = 0;
-      total_rescaled_score = 0;
-      query_start_bp = 0;
-      query_end_bp = 0;
-      ref_start_bp = 0;
-      ref_end_bp = 0;
-      m_score = 0;
-      p_val = 0;
-      score_per_inner_chunk = 0.0;
-  }
+  // inline void Alignment::reset_stats() {
+  //     is_valid = false;
+  //     is_forward = false;
+  //     query_misses = 0;
+  //     ref_misses = 0;
+  //     query_miss_rate = 0.0;
+  //     ref_miss_rate = 0.0;
+  //     total_miss_rate = 0.0;
+  //     query_interior_size = 0;
+  //     ref_interior_size = 0;
+  //     num_matched_sites = 0;
+  //     interior_size_ratio = 0.0;
+  //     num_interior_chunks = 0;
+  //     query_scaling_factor = 0.0;
+  //     total_score = 0.0;
+  //     total_rescaled_score = 0.0;
+  //     query_start_bp = 0;
+  //     query_end_bp = 0;
+  //     ref_start_bp = 0;
+  //     ref_end_bp = 0;
+  //     m_score = 0.0;
+  //     p_val = 0.0;
+  //     score_per_inner_chunk = 0.0;
+  // }
 
   inline void Alignment::compute_index_locs() {
 
@@ -284,6 +298,7 @@ namespace maligner_dp {
 
     const MatchedChunk& first_chunk = matched_chunks[0];
     const MatchedChunk& last_chunk = matched_chunks[matched_chunks.size() - 1];
+
     ref_start = first_chunk.ref_start();
     ref_end  = last_chunk.ref_end();
 
@@ -348,7 +363,10 @@ namespace maligner_dp {
   }
 
   // Flip the ref coordinates in every matched chunk
+  // Then flip the matched_chunks vector.
   inline void Alignment::flip_ref_coords() {
+
+    if (matched_chunks.empty()) { return; }
 
     #if ALIGNMENT_CLASS_DEBUG > 0
     {
@@ -358,6 +376,7 @@ namespace maligner_dp {
 
     size_t num_chunks {matched_chunks.size()};
     const size_t num_ref_frags = ref_map_data.num_frags_;
+
 
     for (size_t i = 0; i < num_chunks; i++) {
 
@@ -372,7 +391,7 @@ namespace maligner_dp {
 
       {
         MatchedChunk * mc = &rescaled_matched_chunks[i];
-        Chunk * rc = &mc->query_chunk;
+        Chunk * rc = &mc->ref_chunk;
 
         std::swap(rc->start, rc->end);
         rc->start = num_ref_frags - rc->start;
@@ -380,6 +399,35 @@ namespace maligner_dp {
       }
 
     }
+
+    std::reverse(matched_chunks.begin(), matched_chunks.end());
+    std::reverse(rescaled_matched_chunks.begin(), rescaled_matched_chunks.end());
+
+    // If the reference is circular, we may end up with a starting location that is negative after flipping.
+    // If this is the case, increase all indices by num_ref_frags.
+    if(ref_map_data.is_circular_ && (matched_chunks.front().ref_chunk.start < 0)) {
+
+      for(size_t i = 0; i < num_chunks; i++) {
+
+        {
+          MatchedChunk * mc = &matched_chunks[i];
+          Chunk * rc = &mc->ref_chunk;
+          rc->start += num_ref_frags;
+          rc->end += num_ref_frags;
+        }
+
+        {
+          MatchedChunk * mc = &rescaled_matched_chunks[i];
+          Chunk * rc = &mc->ref_chunk;
+          rc->start += num_ref_frags;
+          rc->end += num_ref_frags;
+        }        
+
+      }
+
+    }
+
+
   }
 
   inline void Alignment::add_alignment_locs(const IntVec& query_ix_to_loc, const IntVec& ref_ix_to_loc) {
@@ -405,6 +453,8 @@ namespace maligner_dp {
   void print_alignment(std::ostream& os, const Alignment& aln);
 
   std::ostream& operator<<(std::ostream& os, const Alignment& aln);
+
+
 
 }
 

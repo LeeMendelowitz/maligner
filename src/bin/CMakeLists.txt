@@ -4,6 +4,7 @@ include_directories(
   ${MALIGNER_SOURCE_DIR}/src/ix
   ${MALIGNER_SOURCE_DIR}/src/dp
   ${MALIGNER_SOURCE_DIR}/src/common
+  ${MALIGNER_SOURCE_DIR}/src/vd
 )
 
 # source files
@@ -22,5 +23,11 @@ set(maligner_dp_SRCS "maligner_dp.cpp")
 add_executable(maligner_dp ${maligner_dp_SRCS})
 target_link_libraries(maligner_dp ix dp common)
 
+# build maligner_vd
+set(maligner_vd_SRCS "maligner_vd.cpp")
+add_executable(maligner_vd ${maligner_vd_SRCS})
+target_link_libraries(maligner_vd ix dp common)
+
+
 # install directory
-install(TARGETS maligner maligner_dp DESTINATION "${MALIGNER_BIN_DIR}")
+install(TARGETS maligner maligner_dp maligner_vd DESTINATION "${MALIGNER_BIN_DIR}")

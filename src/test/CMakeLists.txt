@@ -45,6 +45,10 @@ target_link_libraries(test_map_sampler common)
 add_executable(test_partial_sums "test_PartialSumsC.cpp")
 target_link_libraries(test_partial_sums dp ix common)
 
+add_executable(test_sizes "test_sizes.cpp")
+target_link_libraries(test_sizes dp ix common)
+
+
 # install directory
 # install(TARGETS
 #   test_scorematrix
@@ -61,4 +65,5 @@ target_link_libraries(test_partial_sums dp ix common)
 install(TARGETS
   test_map_sampler
   test_partial_sums
+  test_sizes
   DESTINATION "${MALIGNER_BIN_DIR}/test")

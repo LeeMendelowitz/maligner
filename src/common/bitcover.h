@@ -13,6 +13,12 @@ public:
   BitCover() : cover_(0, false) {};
   BitCover(size_t n) : cover_(n, false) {};
 
+  BitCover(const BitCover& o) = default;
+  BitCover& operator=(const BitCover& o) = default;
+
+  BitCover(BitCover&& o) = default;
+  BitCover& operator=(BitCover&& o) = default;
+
   // Mark locations from begin to end as covered.
   void cover(size_t begin, size_t end) {
     const size_t e = std::max(std::min(end, cover_.size()), begin);

@@ -2,7 +2,7 @@
 #define TEMPLATED_ALN_FUNC
 
 #define FILL_DEBUG 0
-#define GET_BEST_DEBUG 0
+#define GET_BEST_DEBUG 1
 
 #include <limits>
 #include <algorithm>
@@ -1451,7 +1451,7 @@ namespace maligner_dp {
     #endif
 
     // Unpack the alignment task
-    AlignOpts& align_opts = *align_task.align_opts;
+    const AlignOpts& align_opts = *align_task.align_opts;
     const IntVec& query = *align_task.query;
     const IntVec& ref = *align_task.ref;
     const PartialSums& query_partial_sums = *align_task.query_partial_sums;
@@ -2336,13 +2336,16 @@ namespace maligner_dp {
     Fill score matrix using partial sums
     */
 
+    using std::vector;
+    using std::greater;
+
     // Unpack the alignment task
     const IntVec& query = *align_task.query;
     const IntVec& ref = *align_task.ref;
     const PartialSums& query_partial_sums = *align_task.query_partial_sums;
     const PartialSums& ref_partial_sums = *align_task.ref_partial_sums;
 
-    typedef priority_queue< ScoreCell*, vector<ScoreCell*>, greater<ScoreCell*> > CellQueue;
+    typedef std::priority_queue< ScoreCell*, std::vector<ScoreCell*>, std::greater<ScoreCell*> > CellQueue;
 
     ScoreMatrixType& mat = *align_task.mat;
     mat.reset();
@@ -2960,6 +2963,8 @@ namespace maligner_dp {
     Fill score matrix using partial sums
     */
 
+    using std::vector;
+
     // Unpack the alignment task
     const IntVec& query = *align_task.query;
     const IntVec& ref = *align_task.ref;
@@ -3150,16 +3155,10 @@ namespace maligner_dp {
   bool get_best_alignment_trail(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task, ScoreCellPVec& trail) {
 
     // Go to the last row of the ScoreMatrix and identify the best score.
-    const IntVec& query = *task.query;
-    const IntVec& ref = *task.ref;
     ScoreMatrixType& mat = *task.mat;
-
-    const int m = query.size() + 1;
-    const int n = ref.size() + 1;
-    
     const int num_rows = mat.getNumRows();
     const int num_cols = mat.getNumCols();
-    const int last_row = m - 1;
+    const int last_row = num_rows - 1;
 
     double best_score = -INF;
     ScoreCell * p_best_cell = nullptr;
@@ -3171,8 +3170,8 @@ namespace maligner_dp {
       ScoreCell * pCell = mat.getCell(last_row, j);
 
       #if GET_BEST_DEBUG > 0
-      cerr << "index: " << index << ", ";
-      cerr << "cell: " << *pCell << "\n";
+      std::cerr << "index: " << index << ", ";
+      std::cerr << "cell: " << *pCell << "\n";
       #endif
 
       if (pCell->score_ > best_score) {
@@ -3183,16 +3182,16 @@ namespace maligner_dp {
 
     #if GET_BEST_DEBUG > 0
       if (p_best_cell) {
-          cerr << "\np_best_cell: " << *p_best_cell <<  "\n";
+          std::cerr << "\np_best_cell: " << *p_best_cell <<  "\n";
       } else {
-          cerr << "\np_best_cell: " << p_best_cell <<  "\n";
+          std::cerr << "\np_best_cell: " << p_best_cell <<  "\n";
       }
     #endif
    
     if (p_best_cell && p_best_cell->score_ > -INF) {
       // Get the traceback
       trail.clear();
-      trail.reserve(m);
+      trail.reserve(num_rows);
       build_trail(p_best_cell, trail);
       return true;
     }
@@ -3285,8 +3284,8 @@ namespace maligner_dp {
         neighborhood_alignments.clear();
         neighborhood_alignments.push_back(std::move(a));
 
-        int lb = max(seed_col - align_opts.neighbor_delta, 0);
-        int ub = min(seed_col + align_opts.neighbor_delta + 1, n);
+        int lb = std::max(seed_col - align_opts.neighbor_delta, 0);
+        int ub = std::min(seed_col + align_opts.neighbor_delta + 1, n);
         for (int col = lb; col < ub; col++) {
           if (col == seed_col) continue;
           ScoreCell * p_neighbor = mat.getCell(last_row, col);
@@ -3328,8 +3327,8 @@ namespace maligner_dp {
 
       // Mark neighboring cells as out of play.
       {
-        int lb = max(seed_col - align_opts.min_alignment_spacing + 1, 0);
-        int ub = min(seed_col + align_opts.min_alignment_spacing, n);
+        int lb = std::max(seed_col - align_opts.min_alignment_spacing + 1, 0);
+        int ub = std::min(seed_col + align_opts.min_alignment_spacing, n);
         cells_covered.cover(lb, ub);
 
         // Account for circularization, if necessary. Mark positions in
@@ -3373,7 +3372,7 @@ namespace maligner_dp {
   int get_best_alignments_try_all(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task) {
 
     // Go to the last row of the ScoreMatrix and identify the best score.
-    AlignOpts& align_opts = *task.align_opts;
+    const AlignOpts& align_opts = *task.align_opts;
     const IntVec& query = *task.query;
     const IntVec& ref = *task.ref;
     ScoreMatrixType& mat = *task.mat;
@@ -3538,6 +3537,7 @@ namespace maligner_dp {
 
       const size_t n = query_chunks.size();
       const int num_query_frags = query.size();
+      const int num_ref_frags = task.ref->size();
 
       Score total_score(0.0, 0.0, 0.0);
       matched_chunks.reserve(n);
@@ -3552,9 +3552,10 @@ namespace maligner_dp {
           double ref_miss_score = align_opts.ref_miss_penalty * ref_misses;
           double sizing_score = 0.0;
 
-          const bool query_is_boundary = (qc.start == 0 || qc.end == num_query_frags) && !align_opts.query_is_bounded;
+          const bool is_query_boundary = (qc.start == 0 || qc.end == num_query_frags) && !align_opts.query_is_bounded;
+          const bool is_ref_boundary = !align_opts.ref_is_bounded && (rc.start == 0 || rc.end == num_ref_frags);
 
-          if (!query_is_boundary || qc.size > rc.size ) {
+          if (!is_ref_boundary && (!is_query_boundary || qc.size > rc.size )) {
             sizing_score = sizing_penalty(qc.size, rc.size, align_opts);
           }
 
@@ -3610,6 +3611,32 @@ namespace maligner_dp {
 
     // populate the score matrix
     fill_score_matrix(task);
+
+    // get the best alignment.
+    ScoreCellPVec trail;
+    bool have_alignment = get_best_alignment_trail(task, trail);
+    if (!have_alignment) {
+      return INVALID_ALIGNMENT;
+    }
+
+    Alignment aln(alignment_from_trail(task, trail));
+    if (align_opts.rescale_query) {
+      aln.rescale_matched_chunks(align_opts);
+    }
+
+    if (!task.query_is_forward) aln.flip_query_coords();
+    if (!task.ref_is_forward) aln.flip_ref_coords();
+    aln.add_alignment_locs(*task.query_ix_to_locs, *task.ref_ix_to_locs);
+
+    return aln;
+
+  }
+
+  // Get best alignment from an already filled out score matrix.
+  template<class ScoreMatrixType, class SizingPenaltyType>
+  Alignment get_best_alignment_from_filled_scorematrix(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task) {
+
+    const AlignOpts& align_opts = *task.align_opts;
 
     // get the best alignment.
     ScoreCellPVec trail;

@@ -151,7 +151,10 @@ void parse_args(int argc, char** argv)
             case OPT_NUM_PERMUTATION_TRIALS: arg >> opt::num_permutation_trials; break;
             case OPT_VERBOSE: opt::verbose = true; break;
             case OPT_NO_QUERY_RESCALING: opt::query_rescaling = false; break;
-            case OPT_REFERENCE_IS_CIRCULAR: opt::reference_is_circular = true; break;
+            case OPT_REFERENCE_IS_CIRCULAR: 
+              opt::reference_is_circular = true;
+              opt::ref_is_bounded = true;
+              break;
             case 'h':
             {
                 std::cout << USAGE_MESSAGE;
@@ -250,6 +253,7 @@ std::ostream& print_args(std::ostream& os) {
      << "\tmin_alignment_spacing: " << min_alignment_spacing << "\n"
      << "\tnum_permutation_trials: " << num_permutation_trials << "\n"
      << "\tneighbor_delta: " << neighbor_delta << "\n"
+     << "\treference_is_circular: " << reference_is_circular << "\n"
      << "\tquery_rescaling: " << query_rescaling << "\n"
      << "\tquery_is_bounded: " << query_is_bounded << "\n"
      << "\tref_is_bounded: " << ref_is_bounded << "\n"

@@ -1,3 +1,6 @@
+#ifndef DP_ALIGN_H
+#define DP_ALIGN_H
+
 #include <iostream>
 #include <vector>
 #include <utility>
@@ -24,7 +27,6 @@ namespace maligner_dp {
   using namespace maligner_maps;
 
   typedef  MapData* MapDataPtr;
-
 
 
   //////////////////////////////////////////////////////////////
@@ -159,8 +161,8 @@ namespace maligner_dp {
 
   public:
 
-    AlignTask(const MapDataPtr qmd,
-              const MapDataPtr rmd,
+    AlignTask(const MapData* qmd,
+              const MapData* rmd,
               const std::vector<int>* q,
               const std::vector<int>* r,
               const PartialSums* qps,
@@ -173,7 +175,7 @@ namespace maligner_dp {
               bool query_is_forward_in,
               bool ref_is_forward_in,
               bool is_circular_in,
-              AlignOpts& ao) :
+              const AlignOpts& ao) :
       query_map_data(qmd),
       ref_map_data(rmd),
       query(q),
@@ -191,8 +193,8 @@ namespace maligner_dp {
       align_opts(&ao) { compute_max_misses(); }
 
     // Takes an additional parameter: ref_offset_in
-    AlignTask(const MapDataPtr qmd,
-              const MapDataPtr rmd,
+    AlignTask(const MapData* qmd,
+              const MapData* rmd,
               const std::vector<int>* q,
               const std::vector<int>* r,
               const PartialSums* qps,
@@ -205,7 +207,7 @@ namespace maligner_dp {
               AlignmentVec * alns,
               bool query_is_forward_in,
               bool ref_is_forward_in,
-              AlignOpts& ao) :
+              const AlignOpts& ao) :
       query_map_data(qmd),
       ref_map_data(rmd),
       query(q),
@@ -223,8 +225,12 @@ namespace maligner_dp {
       align_opts(&ao)
     { compute_max_misses(); }
 
-    const MapDataPtr query_map_data;
-    const MapDataPtr ref_map_data;
+    AlignTask() = default; // Creates an unitialized task.
+    AlignTask(const AlignTask& o) = default;
+    AlignTask& operator=(const AlignTask& o) = default;
+
+    const MapData* query_map_data;
+    const MapData* ref_map_data;
     const std::vector<int>* query; // query fragments
     const std::vector<int>* ref; // reference fragments
     const PartialSums* query_partial_sums;
@@ -242,7 +248,7 @@ namespace maligner_dp {
     bool query_is_forward; // true if the query data is given as forward (i.e. query, query_partial_sums)
     bool ref_is_forward; // true if reference data is given as forward(i.e. ref, ref_partial_sums)
     SizingPenaltyType sizing_penalty;
-    AlignOpts * align_opts;
+    const AlignOpts * align_opts;
 
     //////////////////////////////////////////
     // Compute the maximum number of allowed misses, given the 
@@ -345,6 +351,9 @@ namespace maligner_dp {
   PartialSums make_partial_sums(const IntVec& frags, const int missed_sites);
   PartialSums* make_partial_sums_new(const IntVec& frags, const int missed_sites);
 
+  template<class ScoreMatrixType, class SizingPenaltyType>
+  Alignment get_best_alignment_from_filled_scorematrix(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task);
+
 
   /////////////////////////////////////////
   // Friendly functions
@@ -396,4 +405,6 @@ namespace maligner_dp {
 // Bring in the definitions of templated functions
 #include "templated_align_functions.h"
 
+
+#endif
 

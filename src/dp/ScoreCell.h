@@ -72,6 +72,7 @@ namespace maligner_dp {
                                      (qm_ == o.qm_) &&
                                      (rm_ == o.rm_) &&
                                      (std::abs(score_ - o.score_) < TOL) &&
+                                     (std::abs(m_score_ - o.m_score_) < TOL) &&
                                      (b1 == nullptr) == (b2 == nullptr);
             
             if (!coord_score_match) return false;
@@ -97,6 +98,7 @@ namespace maligner_dp {
         int qm_; // cumulative query misses
         int rm_; // cumulative reference misses
         double score_;
+        double m_score_;
         ScoreCell * backPointer_; // back pointer for DP solution path
         ScoreCellColor color_;
 
@@ -112,6 +114,7 @@ namespace maligner_dp {
         rm_ = 0;
         backPointer_ = nullptr;
         score_ = -INF;
+        m_score_ = INF;
         color_ = ScoreCellColor::WHITE;
     }
 

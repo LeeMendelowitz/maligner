@@ -22,6 +22,8 @@ namespace maligner_dp {
     //
     // This indexing may be counterintuitive, but it works more seamlessly with the dynamic programming
 
+  private:
+
     friend class SDInv;
     IntVec d_;
     const size_t m_;
@@ -47,6 +49,12 @@ namespace maligner_dp {
     int operator()(size_t i, size_t num_miss) const {
       return d_[i*m_ + num_miss];
     }
+
+    PartialSums(const PartialSums& o) = default;
+    PartialSums& operator=(const PartialSums& o) = default;  
+
+    PartialSums(PartialSums&& o) = default;
+    PartialSums& operator=(PartialSums&& o) = default;   
 
   private:
 
@@ -110,7 +118,13 @@ namespace maligner_dp {
             d_[i] = sd_1;
           }
 
-      }     
+      }
+
+      SDInv(const SDInv& o) = default;
+      SDInv& operator=(const SDInv& o) = default;  
+
+      SDInv(SDInv&& o) = default;
+      SDInv& operator=(SDInv&& o) = default;   
       
       double operator()(size_t i, size_t num_miss) const {
         return d_[i*m_ + num_miss];

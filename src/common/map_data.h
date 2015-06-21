@@ -31,16 +31,24 @@ namespace maligner_maps {
 
       };
 
-      MapData(const MapData& o) :
-        num_frags_(o.num_frags_),
-        length_(o.length_),
-        map_name_(o.map_name_),
-        is_circular_(o.is_circular_),
-        is_bounded_(o.is_bounded_),
-        is_random_(o.is_random_)
-      {
-        // num_copies++;
-      };
+      // Copy constructor and assignment
+      MapData(const MapData& o) = default;
+      MapData& operator=(const MapData& o) = default;
+
+      // Move constructor and assignment
+      MapData(MapData&& o) = default;
+      MapData& operator=(MapData&& o) = default;
+
+      // MapData(const MapData& o) :
+      //   num_frags_(o.num_frags_),
+      //   length_(o.length_),
+      //   map_name_(o.map_name_),
+      //   is_circular_(o.is_circular_),
+      //   is_bounded_(o.is_bounded_),
+      //   is_random_(o.is_random_)
+      // {
+      //   // num_copies++;
+      // };
 
       // static void print_debug_stats() {
       //   std::cerr << "MapData Stats:\n"

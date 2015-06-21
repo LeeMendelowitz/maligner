@@ -20,15 +20,24 @@ namespace maligner_dp {
 
       }
 
+    QueryMapWrapper(const QueryMapWrapper& o) = default;
+    QueryMapWrapper& operator=(const QueryMapWrapper& o) = default;
+    
+    QueryMapWrapper(QueryMapWrapper&& o) = default;
+    QueryMapWrapper& operator=(QueryMapWrapper&& o) = default;
+
+
       PartialSums ps_forward_;
       PartialSums ps_reverse_;
 
     const PartialSums& get_partial_sums_forward() const {
       return ps_forward_;
     }
+
     const PartialSums& get_partial_sums_reverse() const {
       return ps_reverse_;
     }
+
   };
 
   struct RefMapWrapper : public maligner_maps::MapWrapper {
@@ -54,6 +63,12 @@ namespace maligner_dp {
     {
 
     }
+
+    RefMapWrapper(const RefMapWrapper& o) = default;
+    RefMapWrapper& operator=(const RefMapWrapper& o) = default;
+    
+    RefMapWrapper(RefMapWrapper&& o) = default;
+    RefMapWrapper& operator=(RefMapWrapper&& o) = default;
 
     const PartialSums& get_partial_sums() const {
       return ps_;

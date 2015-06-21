@@ -28,33 +28,17 @@ namespace maligner_maps {
     Map(const std::string& name, int size, const IntVec& frags);
     Map(const std::string& line);
 
-    Map(const Map& o) :
-      name_(o.name_),
-      size_(o.size_),
-      frags_(o.frags_) {}
+    // Copy constructor
+    Map(const Map& o) = default;
 
     // Move constructor
-    Map(Map&& o) :
-      name_(std::move(o.name_)),
-      size_(std::move(o.size_)),
-      frags_(std::move(o.frags_))
-    {}
+    Map(Map&& o) = default;
     
     // Copy assignment
-    Map& operator=(const Map& o) {
-      name_ = o.name_;
-      size_ = o.size_;
-      frags_ = o.frags_;
-      return *this;
-    }
+    Map& operator=(const Map& o) = default;
 
     // Move assignment
-    Map& operator=(Map&& o) {
-      name_ = std::move(o.name_);
-      size_ = o.size_;
-      frags_ = std::move(o.frags_);
-      return *this;
-    }
+    Map& operator=(Map&& o) = default;
 
     /////////////////////////////////////////////////
     // MEMBERS

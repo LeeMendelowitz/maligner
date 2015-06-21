@@ -85,6 +85,13 @@ namespace maligner_maps {
 
     }
 
+    MapWrapper(const MapWrapper& o) = default;
+    MapWrapper& operator=(const MapWrapper& o) = default;
+
+    MapWrapper(MapWrapper&& o) = default;
+    MapWrapper& operator=(MapWrapper&& o) = default;
+
+
     /////////////////////////////////////////////////////////////////////////////
     // Return the non-negative starting location in bp of the fragment at index.
     // -1 signals error
@@ -120,6 +127,10 @@ namespace maligner_maps {
     }
 
     size_t num_frags_after_circularization() const {
+      return map_.frags_.size();
+    }
+
+    size_t num_frags_total() const {
       return map_.frags_.size();
     }
 

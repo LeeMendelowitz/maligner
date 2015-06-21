@@ -40,6 +40,8 @@ namespace maligner_dp {
 
         size_t getSize() const { return size_; }
         size_t getCapacity() const { return data_.size(); }
+        uint64_t getMemoryUsage() const { return uint64_t(data_.size()) * sizeof(ScoreCell); }
+        uint64_t getMemoryCapacity() const { return uint64_t(data_.capacity()) * sizeof(ScoreCell); }
         size_t getNumRows() const { return numRows_; }
         size_t getNumCols() const { return numCols_; }
 
@@ -284,8 +286,9 @@ namespace maligner_dp {
         if (row >= numRows_) {
             return maxScore;
         }
-        for (size_t i = 0; i < numCols_; i++){
-            const ScoreCell * pCell = getCell(row-1, i);
+        for (size_t j = 0; j < numCols_; j++){
+            const ScoreCell * pCell = getCell(row, j);
+            if (pCell->score_ > maxScore) 
                 maxScore = pCell->score_;
         }
         return maxScore;

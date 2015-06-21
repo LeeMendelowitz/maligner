@@ -125,8 +125,8 @@ void parse_args(int argc, char** argv)
             case OPT_REL_ERROR: arg >> opt::rel_error; break;
             case 'a': arg >> opt::min_abs_error; break;
             case 'm': arg >> opt::max_match; break;
-            case 'q': arg >> opt::query_miss_penalty; std::cerr << "Got Q\n"; break;
-            case 'r': arg >> opt::ref_miss_penalty; std::cerr << "Got R\n"; break;
+            case 'q': arg >> opt::query_miss_penalty; break;
+            case 'r': arg >> opt::ref_miss_penalty; break;
             case OPT_SD_RATE: arg >> opt::sd_rate; break;
             case OPT_MIN_SD: arg >> opt::min_sd; break;
             case OPT_MIN_FRAG: arg >> opt::min_frag; break;

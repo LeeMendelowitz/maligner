@@ -31,6 +31,9 @@
 
 using std::string;
 using std::unordered_map;
+using std::ostringstream;
+using std::cerr;
+using std::cout;
 // using namespace std;
 
 

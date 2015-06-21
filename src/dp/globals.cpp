@@ -2,6 +2,8 @@
 #include <math.h>
 #include <limits>
 
+using namespace std;
+
 namespace maligner_dp {
 
     namespace Constants

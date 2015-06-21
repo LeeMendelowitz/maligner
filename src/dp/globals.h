@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 
-using namespace std;
+// using namespace std;
 
 namespace maligner_dp {
     namespace Constants
@@ -20,8 +20,8 @@ namespace maligner_dp {
     // Options set by ParseArgs
     namespace opt
     {
-        extern string silicoMap;
-        extern vector<string> opticalMapList;
+        extern std::string silicoMap;
+        extern std::vector<std::string> opticalMapList;
         extern bool   circular;
     //    extern bool allowFalseCuts;
     //    extern bool   matchFragmentOnce;
@@ -30,7 +30,7 @@ namespace maligner_dp {
         extern bool useBoundaries; // if true, treat first and last contig fragment as boundary fragment (bounded by only 1 restriction site, instead of 2).
         extern bool allowGaps;
         extern double pThreshold;
-        extern string outputPrefix;
+        extern std::string outputPrefix;
         extern double sdMin;
         extern double sdMax;
         extern double C_r_optical;
