@@ -3,8 +3,10 @@
 
 #include <vector>
 #include <iostream>
+#include <string>
 
 #include "score_matrix_vd.h"
+#include "score_matrix_profile.h"
 
 namespace maligner_vd {
 
@@ -14,10 +16,13 @@ namespace maligner_vd {
   using maligner_dp::AlignOpts;
   using maligner_dp::Chi2SizingPenalty;
   using maligner_dp::MapData;
+  using std::vector;
+  using std::string;
 
   // Define a class for storing ScoreMatrices
   template<typename ScoreMatrixVDType >
   class RefScoreMatrixVDDB {
+
 
     typedef std::vector<ScoreMatrixVDType> ScoreMatrixVDVec;
     typedef std::vector<double> DoubleVec;
@@ -31,7 +36,7 @@ namespace maligner_vd {
     void aln_to_forward_refs(const QueryMapWrapper& query, const AlignOpts& align_opts);
     void aln_to_reverse_refs(const QueryMapWrapper& q, const AlignOpts& ao);
 
-    void compute_mscores();
+    void compute_mscores(double min_mad);
     void compute_query_prefix_mscores(double min_mad);
     void compute_query_suffix_mscores(double min_mad);
 
@@ -39,6 +44,15 @@ namespace maligner_vd {
     size_t size() const { return sm_vec_.size(); }
 
     const ScoreMatrixVDVec& get_score_matrix_vec() const { return sm_vec_; }
+
+    ScoreMatrixProfile get_score_matrix_profile_rf_qf(const string& query);
+    ScoreMatrixProfile get_score_matrix_profile_rf_qf2(const string& query);
+    ScoreMatrixProfile get_score_matrix_profile_rf_qr(const string& query);
+    ScoreMatrixProfile get_score_matrix_profile_rr_qf(const string& query);
+    ScoreMatrixProfile get_score_matrix_profile_rr_qr(const string& query);
+
+    template<typename MatrixGetter>
+    ScoreMatrixProfile get_score_matrix_profile_helper(MatrixGetter g);
 
   private:
 
@@ -150,7 +164,7 @@ namespace maligner_vd {
       double med = median(row_scores_);
       double md = std::max(mad(row_scores_, med), min_mad);
 
-      std::cerr << "prefix row: " << row_num << " median: " << med << " mad: " << md << "\n";
+      std::cerr << "prefix row: " << row_num << " n: " << row_scores_.size() << " median: " << med << " mad: " << md << "\n";
 
       // Assign m-scores for this row.
       for(auto& sm: sm_vec_) {
@@ -186,7 +200,7 @@ namespace maligner_vd {
       double med = median(row_scores_);
       double md = std::max(mad(row_scores_, med), min_mad);
 
-      std::cerr << "suffix row: " << row_num << " median: " << med << " mad: " << md << "\n";
+      std::cerr << "suffix row: " << row_num << " n: " << row_scores_.size() << " median: " << med << " mad: " << md << "\n";
 
       // Assign m-scores for this row.
       for(auto& sm: sm_vec_) {
@@ -245,6 +259,86 @@ namespace maligner_vd {
     return sm_vec_.front().num_rows_query_suffix();
     
   }
+
+  // template<typename ScoreMatrixVDType>
+  // ScoreMatrixProfile RefScoreMatrixVDDB<ScoreMatrixVDType>::get_score_matrix_profile_rf_qf(const string& query) {
+
+  //   // Get the profile for each underlying matix
+  //   ScoreMatrixProfileVec profiles(sm_vec_.size());
+  //   std::transform(sm_vec_.begin(), sm_vec_.end(), profiles.begin(), [](const ScoreMatrixVDType& sm) {
+  //     return sm.get_score_matrix_profile_rf_qf();
+  //   });
+
+  //   // Merge the profiles
+  //   return merge_profiles(profiles);
+
+  // }
+
+  template<typename ScoreMatrixVDType>
+  template<typename MatrixGetter>
+  ScoreMatrixProfile RefScoreMatrixVDDB<ScoreMatrixVDType>::get_score_matrix_profile_helper(MatrixGetter g) {
+
+    // Get the profile for each underlying matix
+    ScoreMatrixProfileVec profiles(sm_vec_.size());
+    std::transform(sm_vec_.begin(), sm_vec_.end(), profiles.begin(), g);
+
+    // Merge the profiles
+    return merge_profiles(profiles);
+
+  }
+
+  template<typename ScoreMatrixVDType>
+  ScoreMatrixProfile RefScoreMatrixVDDB<ScoreMatrixVDType>::get_score_matrix_profile_rf_qf(const string& query) {
+
+    return get_score_matrix_profile_helper([&query](const ScoreMatrixVDType& sm) {
+      return sm.get_score_matrix_profile_rf_qf(query);
+    });
+
+  }
+
+  template<typename ScoreMatrixVDType>
+  ScoreMatrixProfile RefScoreMatrixVDDB<ScoreMatrixVDType>::get_score_matrix_profile_rf_qf2(const string& query) {
+
+      // Get the profile for each underlying matix
+    ScoreMatrixProfileVec profiles;
+    profiles.reserve(sm_vec_.size());
+
+    for(auto& sm: sm_vec_) {
+      profiles.push_back(sm.get_score_matrix_profile_rf_qf(query));
+    }
+
+    // Merge the profiles
+    return merge_profiles(profiles);
+
+  }
+
+  template<typename ScoreMatrixVDType>
+  ScoreMatrixProfile RefScoreMatrixVDDB<ScoreMatrixVDType>::get_score_matrix_profile_rf_qr(const string& query) {
+
+    return get_score_matrix_profile_helper([&query](const ScoreMatrixVDType& sm) {
+      return sm.get_score_matrix_profile_rf_qr(query);
+    });
+  }
+
+  
+  template<typename ScoreMatrixVDType>
+  ScoreMatrixProfile RefScoreMatrixVDDB<ScoreMatrixVDType>::get_score_matrix_profile_rr_qf(const string& query) {
+
+    return get_score_matrix_profile_helper([&query](const ScoreMatrixVDType& sm) {
+      return sm.get_score_matrix_profile_rr_qf(query);
+    });
+
+  }
+
+  template<typename ScoreMatrixVDType>
+  ScoreMatrixProfile RefScoreMatrixVDDB<ScoreMatrixVDType>::get_score_matrix_profile_rr_qr(const string& query) {
+
+    return get_score_matrix_profile_helper([&query](const ScoreMatrixVDType& sm) {
+      return sm.get_score_matrix_profile_rr_qr(query);
+    });
+
+  }
+
 
 }
 

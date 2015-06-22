@@ -80,6 +80,8 @@ namespace maligner_dp {
       static bool verbose = false;
       static bool reference_is_circular = false;
       static double min_mad = 1.0; // Minimum mad to use when computing mad scores.
+      static int min_query_frags = 3;
+      static int max_query_frags = 50;
 
   }
 }
@@ -257,7 +259,9 @@ std::ostream& print_args(std::ostream& os) {
      << "\tquery_rescaling: " << query_rescaling << "\n"
      << "\tquery_is_bounded: " << query_is_bounded << "\n"
      << "\tref_is_bounded: " << ref_is_bounded << "\n"
-     << "\treference_is_circular: " << reference_is_circular << "\n";
+     << "\treference_is_circular: " << reference_is_circular << "\n"
+     << "\tmin_query_frags: " << min_query_frags << "\n"
+     << "\tmax_query_frags: " << max_query_frags << "\n";
 
   return os;
 }

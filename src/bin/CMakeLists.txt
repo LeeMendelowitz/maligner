@@ -26,7 +26,7 @@ target_link_libraries(maligner_dp ix dp common)
 # build maligner_vd
 set(maligner_vd_SRCS "maligner_vd.cpp")
 add_executable(maligner_vd ${maligner_vd_SRCS})
-target_link_libraries(maligner_vd ix dp common)
+target_link_libraries(maligner_vd vd ix dp common)
 
 
 # install directory

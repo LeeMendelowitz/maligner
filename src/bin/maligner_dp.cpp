@@ -287,7 +287,17 @@ int main(int argc, char* argv[]) {
 
     const IntVec& query_frags_forward = query_map.frags_;
 
-    if(query_map.frags_.size() < 3) {
+    if(query_map.frags_.size() < maligner_dp::opt::min_query_frags) {
+
+      if(opt::verbose) {
+        std::cerr << "Skipping map " << query_map.name_ << " with " 
+                  << query_map.frags_.size() << " fragments.\n";
+      }
+
+      continue;
+    }
+
+    if(query_map.frags_.size() > maligner_dp::opt::max_query_frags) {
 
       if(opt::verbose) {
         std::cerr << "Skipping map " << query_map.name_ << " with " 

@@ -63,6 +63,7 @@ namespace maligner_dp {
         // Summary Functions
         size_t countFilledCells() const;
         size_t countFilledByRow(size_t row) const;
+        std::vector<double> percentFilledByRow() const;
         double percentFilled() const;
         double getMaxScore() const;
         double getMaxScoreByRow(size_t row) const;
@@ -265,6 +266,18 @@ namespace maligner_dp {
             }
         }
         return ((double) filled)/size*100.0;
+    }
+
+    template<class OrderTag>
+    std::vector<double> ScoreMatrix<OrderTag>::percentFilledByRow() const {
+        const size_t M = getNumRows();
+        const double N = double(getNumCols());
+        std::vector<double> ret(M);
+        for(size_t i = 0; i < M; i++) {
+            size_t num_filled = countFilledByRow(i);
+            ret[i] = double(num_filled)/N;
+        }
+        return ret;
     }
 
     template<class OrderTag>

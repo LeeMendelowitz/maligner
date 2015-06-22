@@ -14,6 +14,7 @@
 
 #include "safe_ptr_write.h"
 using lmm_utils::SAFE_WRITE;
+using std::cerr;
 
 namespace maligner_dp {
 /*
@@ -1443,6 +1444,7 @@ namespace maligner_dp {
 
   } // fill_score_matrix_using_partials_with_breaks_hardcode_penalty, row_order
 
+  // NOTE: This is the fill_score_matrix currently used by the software
   template<class ScoreMatrixType, class SizingPenaltyType>
   void fill_score_matrix_using_partials_with_breaks_hardcode_penalty_max_miss(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task, 
     row_order_tag) {
@@ -1450,8 +1452,10 @@ namespace maligner_dp {
     Fill score matrix using partial sums, with breaking, with hardcode penalty and max misses.
     */
 
+
+
     #if FILL_DEBUG > 0
-      cerr << "\n\n fill_score_matrix_using_partials_with_breaks_hardcode_penalty_max_miss row_order_tag" << "\n";
+      std::cerr << "\n\n fill_score_matrix_using_partials_with_breaks_hardcode_penalty_max_miss row_order_tag" << "\n";
     #endif
 
     // Unpack the alignment task
@@ -1565,18 +1569,20 @@ namespace maligner_dp {
 
             const bool is_ref_boundary = !align_opts.ref_is_bounded && (l == 0 || j == n - 1);
 
+            ScoreCell* pTarget = mat.getCell(k, l);
+
             #if FILL_DEBUG > 0
             cerr << "i: " << i
                  << " j: " << j
                  << " k: " << k
-                 << " l: " << l << "\n"
+                 << " l: " << l << " "
                  << "is_query_boundary: " << is_query_boundary << " "
-                 << "is_ref_boundary: " << is_ref_boundary << "\n";
-
+                 << "is_ref_boundary: " << is_ref_boundary << " "
+                 << SAFE_WRITE(pTarget) << "\n";
             #endif
 
             
-            ScoreCell* pTarget = mat.getCell(k, l);
+            
             if (pTarget->score_ == -INF) continue;
 
             int ref_miss = j - l - 1; // sites in reference unaligned to query
@@ -1591,13 +1597,13 @@ namespace maligner_dp {
             if (query_miss_total > align_task.query_max_total_misses ||
                 ref_miss_total > align_task.ref_max_total_misses) {
 
-              #if FILL_DEBUG > 0
-                cerr
+              // #if FILL_DEBUG > 0
+                std::cerr
                    << "query_miss_total: " << query_miss_total << " "
                    << "ref_miss_total: " << ref_miss_total << " "
                    << " MISS_CONTINUE"
                    << "\n";
-              #endif
+              // #endif
 
               continue;
 
@@ -1621,17 +1627,22 @@ namespace maligner_dp {
             #endif
             
             // Ref chunk only grows inside this loop.
-            // Break if the query chunk is already too big for the reference
+            // Break if the ref chunk is already too big for the query
             if (size_penalty > align_opts.max_chunk_sizing_error) {
 
               if (ref_size > query_size) {
 
+                 
                   #if FILL_DEBUG > 0
-                    std::cerr << "BREAK!\n";
+                    std::cerr << "size penalty too large, BREAK!\n";
                     num_breaks++;
                   #endif
                 break;
               }
+
+              #if FILL_DEBUG > 0
+              std::cerr << "size penalty too large, continue\n";
+              #endif
 
               continue;
 
@@ -1699,6 +1710,12 @@ namespace maligner_dp {
           #endif
 
         }
+
+        #if FILL_DEBUG > 0
+        if(!backPointer) {
+          std::cerr << "Not making assignment - backPointer is nullptr.\n";
+        }
+        #endif
 
       } // for int i
     } // for int j

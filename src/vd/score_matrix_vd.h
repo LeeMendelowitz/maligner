@@ -4,6 +4,7 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 #include "ScoreMatrix.h"
 #include "alignment.h"
@@ -11,6 +12,7 @@
 #include "align.h"
 #include "common_math.h"
 #include "globals.h"
+#include "score_matrix_profile.h"
 
 namespace maligner_vd {
 
@@ -23,6 +25,8 @@ namespace maligner_vd {
   using maligner_dp::Alignment;
   using maligner_dp::ScoreCell;
   using maligner_dp::Constants::INF;
+
+
 
   /////////////////////////////////////////////////////////
   // Define a class for storing ScoreMatrices
@@ -76,6 +80,11 @@ namespace maligner_vd {
     const ScoreMatrixType * get_score_matrix_rr_qf() const { return &sm_rr_qf_; }
     const ScoreMatrixType * get_score_matrix_rr_qr() const { return &sm_rr_qr_; }
 
+    ScoreMatrixProfile get_score_matrix_profile_rf_qf(const string& query) const;
+    ScoreMatrixProfile get_score_matrix_profile_rf_qr(const string& query) const;
+    ScoreMatrixProfile get_score_matrix_profile_rr_qf(const string& query) const;
+    ScoreMatrixProfile get_score_matrix_profile_rr_qr(const string& query) const;
+
     void reset();
 
     bool check_sane() const;
@@ -85,8 +94,12 @@ namespace maligner_vd {
     uint64_t get_memory_usage() const;
     uint64_t get_memory_capacity() const;
 
+    void print_filled_by_row() const;
+
 
   private:
+
+
 
     RefMapWrapper ref_;
 
@@ -104,6 +117,11 @@ namespace maligner_vd {
     AlignmentVec aln_rf_qr_;
     AlignmentVec aln_rr_qf_;
     AlignmentVec aln_rr_qr_;
+
+    ScoreMatrixProfile get_score_matrix_profile(
+      const ScoreMatrixType& sm,
+      const string& query,
+      AlignmentOrientation orientation) const;
 
   };
 
@@ -220,7 +238,7 @@ namespace maligner_vd {
       const size_t num_cols = sm_rf_qf_.getNumCols();
       for(size_t j = 0; j < num_cols; j++) {
         const ScoreCell * pCell = sm_rf_qf_.getCell(row_number, j);
-        if (pCell->score_ != -INF) {
+        if (pCell->is_valid()) {
           scores.push_back(pCell->score_);
         }
       }
@@ -231,7 +249,7 @@ namespace maligner_vd {
       const size_t num_cols = sm_rr_qf_.getNumCols();
       for(size_t j = 0; j < num_cols; j++) {
         const ScoreCell * pCell = sm_rr_qf_.getCell(row_number, j);
-        if (pCell->score_ != -INF) {
+        if (pCell->is_valid()) {
           scores.push_back(pCell->score_);
         }
       }
@@ -251,7 +269,7 @@ namespace maligner_vd {
       const size_t num_cols = sm_rf_qr_.getNumCols();
       for(size_t j = 0; j < num_cols; j++) {
         const ScoreCell * pCell = sm_rf_qr_.getCell(row_number, j);
-        if (pCell->score_ != -INF) {
+        if (pCell->is_valid()) {
           scores.push_back(pCell->score_);
         }
       }
@@ -262,7 +280,7 @@ namespace maligner_vd {
       const size_t num_cols = sm_rr_qr_.getNumCols();
       for(size_t j = 0; j < num_cols; j++) {
         const ScoreCell * pCell = sm_rr_qr_.getCell(row_number, j);
-        if (pCell->score_ != -INF) {
+        if (pCell->is_valid()) {
           scores.push_back(pCell->score_);
         }
       }
@@ -483,7 +501,91 @@ namespace maligner_vd {
 
   }
 
+  template<typename ScoreMatrixType>
+  void RefScoreMatrixVD<ScoreMatrixType>::print_filled_by_row() const {
+
+    std::vector<double> filled_by_row;
+
+    filled_by_row = sm_rf_qf_.percentFilledByRow();
+    std::cerr << ref_.get_name() << " " << std::fixed << std::setprecision(3);
+    for(auto v: filled_by_row) {
+      std::cerr << v << " ";
+    }
+    std::cerr << "\n";
+
+    // ScoreMatrixType sm_rf_qf_; // ref forward, query forward
+    // ScoreMatrixType sm_rf_qr_; // ref forward, query reverse
+    // ScoreMatrixType sm_rr_qf_; // ref reverse, query forward
+    // ScoreMatrixType sm_rr_qr_; // ref reverse, query reverse
+
+  }
+
+
+  template<typename ScoreMatrixType>
+  ScoreMatrixProfile RefScoreMatrixVD<ScoreMatrixType>::get_score_matrix_profile_rf_qf(const string& query) const {
+    return get_score_matrix_profile(sm_rf_qf_, query, AlignmentOrientation::RF_QF);
+  }
+
+  template<typename ScoreMatrixType>
+  ScoreMatrixProfile RefScoreMatrixVD<ScoreMatrixType>::get_score_matrix_profile_rf_qr(const string& query) const {
+    return get_score_matrix_profile(sm_rf_qr_, query, AlignmentOrientation::RF_QR);
+  }
+
+
+  template<typename ScoreMatrixType>
+  ScoreMatrixProfile RefScoreMatrixVD<ScoreMatrixType>::get_score_matrix_profile_rr_qf(const string& query) const {
+    return get_score_matrix_profile(sm_rr_qf_, query, AlignmentOrientation::RR_QF);
+  }
+
+  template<typename ScoreMatrixType>
+  ScoreMatrixProfile RefScoreMatrixVD<ScoreMatrixType>::get_score_matrix_profile_rr_qr(const string& query) const {
+    return get_score_matrix_profile(sm_rr_qr_, query, AlignmentOrientation::RR_QR);
+  }   
+
+
+  template<typename ScoreMatrixType>
+  ScoreMatrixProfile RefScoreMatrixVD<ScoreMatrixType>::get_score_matrix_profile(
+    const ScoreMatrixType& sm,
+    const string& query,
+    AlignmentOrientation orientation ) const {
+    
+    
+
+    const size_t num_rows = sm.getNumRows();
+    const size_t num_cols = sm.getNumCols();
+    const string ref = ref_.get_name();
+
+    ScoreMatrixProfile ret;
+    ret.reserve(num_rows);
+
+    for(size_t i = 0; i < num_rows; i++) {
+
+      ScoreMatrixRecord rec(query, ref, orientation);
+      rec.m_score_ = std::numeric_limits<double>::infinity();
+
+      for(size_t j = 0; j < num_cols; j++) {
+
+        const ScoreCell* p_cell = sm.getCell(i, j);
+
+        if (p_cell->m_score_ < rec.m_score_) {
+
+          rec.m_score_ = p_cell->m_score_;
+          rec.row_ = i;
+          rec.col_ = j;
+
+        }
+
+      }
+
+      ret.push_back(std::move(rec));
+
+    }
+
+    return ret;
+
+  }
 
 }
+
 
 #endif
