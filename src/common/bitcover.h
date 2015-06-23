@@ -29,7 +29,8 @@ public:
 
   // Return true if any part of the interval is covered
   bool is_covered(size_t begin, size_t end) {
-    for(size_t i = begin; i < end; i++) {
+    const size_t e = std::min(end, cover_.size());
+    for(size_t i = begin; i < e; i++) {
       if (cover_[i]) return true;
     }
     return false;
@@ -43,10 +44,11 @@ public:
     return cover_[ind];
   }
 
-  // A safer version of cover that checks bounds
+  // A safer version of cover that checks bounds and
+  // resizes the cover if necessary.
   void cover_safe(size_t start, size_t end) {
 
-    size_t e = (start < end) ? end : start;
+    size_t e = std::max(start, end);
 
     if (e > cover_.size()) {
       cover_.resize(e, false);

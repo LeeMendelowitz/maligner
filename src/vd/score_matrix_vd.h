@@ -85,6 +85,27 @@ namespace maligner_vd {
     ScoreMatrixProfile get_score_matrix_profile_rr_qf(const string& query) const;
     ScoreMatrixProfile get_score_matrix_profile_rr_qr(const string& query) const;
 
+    void get_prefix_score_matrix_row_profile(size_t row_number, 
+      const string& query,
+      bool allow_overlaps,
+      size_t max_records,
+      ScoreMatrixProfile& vec) const;
+
+    void get_suffix_score_matrix_row_profile(size_t row_number, 
+      const string& query,
+      bool allow_overlaps,
+      size_t max_records,      
+      ScoreMatrixProfile& vec) const;
+
+    void get_score_matrix_row_profile(
+      const ScoreMatrixType& sm,
+      const size_t row_number,
+      const string& query,
+      AlignmentOrientation orientation,
+      bool allow_overlaps,
+      size_t max_records,
+      ScoreMatrixProfile& recs) const;
+
     void reset();
 
     bool check_sane() const;
@@ -569,9 +590,11 @@ namespace maligner_vd {
 
         if (p_cell->m_score_ < rec.m_score_) {
 
+          rec.score_ = p_cell->score_;
           rec.m_score_ = p_cell->m_score_;
           rec.row_ = i;
           rec.col_ = j;
+          rec.col_start_ = p_cell->ref_start_;
 
         }
 
@@ -585,6 +608,110 @@ namespace maligner_vd {
 
   }
 
+
+  template<typename ScoreMatrixType>
+  void RefScoreMatrixVD<ScoreMatrixType>::get_score_matrix_row_profile(
+    const ScoreMatrixType& sm,
+    const size_t row_number,
+    const string& query,
+    AlignmentOrientation orientation,
+    bool allow_overlaps,
+    size_t max_records,
+    ScoreMatrixProfile& recs) const {
+    
+    using std::copy;
+    using std::make_move_iterator;
+    using std::back_inserter;
+
+
+    const size_t num_rows = sm.getNumRows();
+    const size_t num_cols = sm.getNumCols();
+
+    if(row_number >= num_rows) {
+      throw std::runtime_error("Invalid row number.");
+    }
+
+    const string ref = ref_.get_name();
+    const size_t num_ref_frags = ref_.num_frags();
+
+    ScoreMatrixProfile my_recs;
+    my_recs.reserve(max_records);
+
+    BitCover bit_cover(num_cols);
+
+    // Extract the score cells from the row of interest
+    std::vector<const ScoreCell*> score_cells;
+    score_cells.reserve(num_cols);
+    for(size_t j = 0; j < num_cols; j++) {
+
+      const ScoreCell* p_cell = sm.getCell(row_number, j);
+
+      if(!p_cell->is_valid()) {
+        continue;
+      }
+
+      score_cells.push_back(p_cell);
+
+    }
+
+    // Sort the score cells by score
+    std::sort(score_cells.begin(), score_cells.end(), maligner_dp::ScoreCellPointerCmp());
+
+    // Select the best scoring, non-overlapping records
+
+    const size_t N = score_cells.size();
+    for(size_t i = 0; i < N; i++) {
+
+      const ScoreCell * p_cell = score_cells[i];
+
+      ScoreMatrixRecord rec(query, ref, orientation,
+        row_number, p_cell->r_, p_cell->ref_start_, p_cell->score_, p_cell->m_score_);
+
+      if( !allow_overlaps ) {
+        int start = rec.get_ref_start(num_ref_frags);
+        int end = rec.get_ref_end(num_ref_frags);
+        if(bit_cover.is_covered(start, end))
+          continue;
+        bit_cover.cover_safe(start, end);
+      }
+
+      my_recs.push_back(std::move(rec));
+
+      if(my_recs.size() == max_records) break;
+
+    }
+
+    copy(make_move_iterator(my_recs.begin()),
+      make_move_iterator(my_recs.end()),
+      back_inserter(recs));
+
+    my_recs.clear();
+
+  }
+
+  template<typename ScoreMatrixType>
+  void RefScoreMatrixVD<ScoreMatrixType>::get_prefix_score_matrix_row_profile(size_t row_number, 
+      const string& query,
+      bool allow_overlaps,
+      size_t max_records,
+      ScoreMatrixProfile& vec) const {
+
+    get_score_matrix_row_profile(sm_rf_qf_, row_number, query, AlignmentOrientation::RF_QF, allow_overlaps, max_records, vec);
+    get_score_matrix_row_profile(sm_rr_qf_, row_number, query, AlignmentOrientation::RR_QF, allow_overlaps, max_records, vec);
+
+  }
+
+  template<typename ScoreMatrixType>
+  void RefScoreMatrixVD<ScoreMatrixType>::get_suffix_score_matrix_row_profile(size_t row_number, 
+      const string& query,
+      bool allow_overlaps,
+      size_t max_records,
+      ScoreMatrixProfile& vec) const {
+
+    get_score_matrix_row_profile(sm_rf_qf_, row_number, query, AlignmentOrientation::RF_QF, allow_overlaps, max_records, vec);
+    get_score_matrix_row_profile(sm_rr_qf_, row_number, query, AlignmentOrientation::RR_QF, allow_overlaps, max_records, vec);
+
+  }
 }
 
 

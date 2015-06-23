@@ -1499,6 +1499,7 @@ namespace maligner_dp {
       ScoreCell* pCell = mat.getCell(0,j);
       pCell->score_ = 0.0;
       pCell->backPointer_ = nullptr;
+      pCell->ref_start_ = j;
     }
 
     // Do not allow alignments to start past right of the circularization point,
@@ -1702,6 +1703,7 @@ namespace maligner_dp {
           pCell->score_ = best_score;
           pCell->qm_ = best_query_miss_total;
           pCell->rm_ = best_ref_miss_total;
+          pCell->ref_start_ = backPointer->ref_start_;
           last_row_in_play = i;
 
           #if FILL_DEBUG > 0
@@ -3265,7 +3267,7 @@ namespace maligner_dp {
     }
 
     // Sort the alignment seeds in descending order of score
-    std::sort(alignment_seeds.begin(), alignment_seeds.end(), ScoreCellPointerCmp);
+    std::sort(alignment_seeds.begin(), alignment_seeds.end(), ScoreCellPointerCmp());
 
     /////////////////////////////////////////////////////////////////////////////////
     // For each alignment seed, build the Alignment.

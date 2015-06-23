@@ -165,8 +165,8 @@ int main(int argc, char* argv[]) {
     ref_score_matrix_db.aln_to_reverse_refs(qmw, align_opts);
 
 
-    ref_score_matrix_db.compute_query_prefix_mscores(maligner_dp::opt::min_mad);
-    ref_score_matrix_db.compute_query_suffix_mscores(maligner_dp::opt::min_mad);
+    ref_score_matrix_db.compute_query_prefix_mscores(maligner_dp::opt::max_alignments_mad, maligner_dp::opt::min_mad, qmw.get_name());
+    ref_score_matrix_db.compute_query_suffix_mscores(maligner_dp::opt::max_alignments_mad, maligner_dp::opt::min_mad, qmw.get_name());
 
     // std::cerr << "-------------------------------\n";
     // std::cerr << "FORWARD PROFILE:\n";

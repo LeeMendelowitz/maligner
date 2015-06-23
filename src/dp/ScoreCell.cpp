@@ -14,6 +14,6 @@ std::ostream& maligner_dp::operator<<(std::ostream& os, const ScoreCell& cell)
     return os;
 }
 
-bool maligner_dp::ScoreCellPointerCmp(const ScoreCell* p1, const ScoreCell* p2) {
-  return (p1->score_ > p2->score_);
-}
+// bool maligner_dp::ScoreCellPointerCmp(const ScoreCell* p1, const ScoreCell* p2) {
+//   return (p1->score_ > p2->score_);
+// }

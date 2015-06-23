@@ -34,6 +34,7 @@ namespace maligner_dp {
             r_(-1),
             qm_(0),
             rm_(0),
+            ref_start_(-1),
             backPointer_(nullptr),
             color_(ScoreCellColor::WHITE)
         { };
@@ -43,6 +44,7 @@ namespace maligner_dp {
             r_(r),
             qm_(0),
             rm_(0),
+            ref_start_(-1),
             backPointer_(nullptr),
             color_(ScoreCellColor::WHITE)
         { };
@@ -52,6 +54,7 @@ namespace maligner_dp {
             r_(ip.second),
             qm_(0),
             rm_(0),
+            ref_start_(-1),
             backPointer_(nullptr),
             color_(ScoreCellColor::WHITE)
         { };
@@ -96,11 +99,11 @@ namespace maligner_dp {
             color_ = color;
         }
 
-
         int q_;
         int r_;
         int qm_; // cumulative query misses
         int rm_; // cumulative reference misses
+        int ref_start_; // starting location in the reference of the trail that passes through.
         double score_;
         double m_score_;
         ScoreCell * backPointer_; // back pointer for DP solution path
@@ -116,6 +119,7 @@ namespace maligner_dp {
         r_ = -1;
         qm_ = 0;
         rm_ = 0;
+        ref_start_ = -1;
         backPointer_ = nullptr;
         score_ = -INF;
         m_score_ = INF;
@@ -136,7 +140,12 @@ namespace maligner_dp {
     }
     */
 
-    bool ScoreCellPointerCmp(const ScoreCell* p1, const ScoreCell* p2);
+    struct ScoreCellPointerCmp {
+        bool operator()(const ScoreCell* p1, const ScoreCell* p2) {
+            return p1->score_ > p2->score_;
+        }
+    };
+
 
     typedef std::vector<ScoreCell> ScoreCellVec;
     std::ostream& operator<<(std::ostream&, const ScoreCell& cell);
