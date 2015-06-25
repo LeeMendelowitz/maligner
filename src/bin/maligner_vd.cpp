@@ -178,40 +178,15 @@ int main(int argc, char* argv[]) {
     //   }
     // }
 
-    std::cerr << ref_score_matrix_db.get_score_matrix_profile_rf_qf(qmw.get_name())
+    // COMMENTING OUT FOR NOW
+    std::cerr << maligner_vd::ScoreMatrixRecordHeader() << "\n"
+              << ref_score_matrix_db.get_score_matrix_profile_rf_qf(qmw.get_name())
               << ref_score_matrix_db.get_score_matrix_profile_rf_qr(qmw.get_name())
               << ref_score_matrix_db.get_score_matrix_profile_rr_qf(qmw.get_name())
               << ref_score_matrix_db.get_score_matrix_profile_rr_qr(qmw.get_name());
 
+
     std::cerr << "-------------------------------\n";
-
-    // Write the best alignments
-    auto sms = ref_score_matrix_db.get_score_matrix_vec();
-    for(auto& sm: sms) {
-
-      sm.print_filled_by_row();
-      // maligner_vd::ScoreMatrixProfile profile = sm.get_score_matrix_profile_rf_qf(qmw.get_name());
-      // std::cerr << "RF QF PROFILE:\n";
-      // for (auto& rec : profile) {
-      //   std::cerr << rec << "\n";
-      // }
-
-    //   print_alignment(fout_rf_qf, sm.best_aln_rf_qf());
-    //   print_alignment(fout_rf_qr, sm.best_aln_rf_qr());
-    //   print_alignment(fout_rr_qf, sm.best_aln_rr_qf());
-    //   print_alignment(fout_rr_qr, sm.best_aln_rr_qr());
-
-    //   // Print the best score in last row.
-    //   // A little debugging action.
-    //   const ScoreMatrixType* p_sm;
-
-    //   p_sm = sm.get_score_matrix_rf_qf();
-    //   std::cerr << "RF_QF Best Score Last Row: " << p_sm->getMaxScoreByRow(p_sm->getNumRows()-1) << "\n";
-
-    //   p_sm = sm.get_score_matrix_rr_qr();
-    //   std::cerr << "RR_QR Best Score Last Row: " << p_sm->getMaxScoreByRow(p_sm->getNumRows()-1) << "\n";
-
-    }
 
     query_timer.end();    
 

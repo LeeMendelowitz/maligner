@@ -1480,8 +1480,8 @@ namespace maligner_dp {
     // Note: Number of rows may be different from m if matrix is padded with extra rows.
     const int num_rows = mat.getNumRows();
 
-    assert((int) mat.getNumCols() >= n);
-    assert((int) mat.getNumRows() >= m);
+    assert((int) mat.getNumCols() == n);
+    assert((int) mat.getNumRows() == m);
 
     #if FILL_DEBUG > 0
     cerr << "m: " << m
@@ -1671,9 +1671,9 @@ namespace maligner_dp {
             }
 
             #if FILL_DEBUG > 0
-             std::cerr << this_is_better << "\n"
-                       << "\t" << SAFE_WRITE(backPointer) << " " << best_score << " " << best_ref_miss << " " << best_query_miss << " " << "\n"
-                       << "\t" << SAFE_WRITE(pTarget) << " " << this_score << " " << ref_miss << " " << query_miss << "\n";
+             std::cerr << "this is better: " << this_is_better << "\n"
+                       << "\tcurrent backpointer: " << ScoreCellFullOutput(backPointer) << " " << best_score << " " << best_ref_miss << " " << best_query_miss << " " << "\n"
+                       << "\tthis target: " << ScoreCellFullOutput(pTarget) << " " << this_score << " " << ref_miss << " " << query_miss << "\n";
             #endif
 
 

@@ -37,10 +37,14 @@ namespace maligner_vd {
     void aln_to_forward_refs(const QueryMapWrapper& query, const AlignOpts& align_opts);
     void aln_to_reverse_refs(const QueryMapWrapper& q, const AlignOpts& ao);
 
-    void compute_mscores(size_t max_samples, double min_mad);
+    // Compute mscores for prefix alignment and assign the m_score to the ScoreCell's in the ScoreMatrixes.
     void compute_query_prefix_mscores(size_t max_samples, double min_mad, const std::string& query);
+
+    // Compute mscores for suffix alignment and assign the m_score to the ScoreCell's in the ScoreMatrixes.
     void compute_query_suffix_mscores(size_t max_samples, double min_mad, const std::string& query);
-    // void compute_query_prefix_mscores_verbose(size_t max_samples, double min_mad, const std::string& query);
+    
+    // Compute and assign MScores for prefix and suffix alignment.
+    void compute_mscores(size_t max_samples, double min_mad, const std::string& query);
    
     size_t num_maps() const { return sm_vec_.size(); }
     size_t size() const { return sm_vec_.size(); }
@@ -48,7 +52,6 @@ namespace maligner_vd {
     const ScoreMatrixVDVec& get_score_matrix_vec() const { return sm_vec_; }
 
     ScoreMatrixProfile get_score_matrix_profile_rf_qf(const string& query);
-    ScoreMatrixProfile get_score_matrix_profile_rf_qf2(const string& query);
     ScoreMatrixProfile get_score_matrix_profile_rf_qr(const string& query);
     ScoreMatrixProfile get_score_matrix_profile_rr_qf(const string& query);
     ScoreMatrixProfile get_score_matrix_profile_rr_qr(const string& query);
@@ -58,9 +61,6 @@ namespace maligner_vd {
 
   private:
 
-    void _reset_scores() {
-      for (auto& v : scores_) v.clear();
-    }
 
     // Compute the number of scores we may need to store in the forward + reverse reference.
     // For computing m-scores.
@@ -73,18 +73,7 @@ namespace maligner_vd {
       _max_num_scores = 2*_max_num_scores; 
     }
 
-    void _reset_scores(size_t num_rows) {
 
-      if(scores_.size() < num_rows) {
-        scores_.resize(num_rows);
-      }
-
-      for(auto& v : scores_) {
-        v.clear();
-        v.reserve(_max_num_scores);
-      }
-
-    }
 
     // Check that all score matrices for query suffix the same number of rows.
     bool check_query_suffix_sane() const;
@@ -96,8 +85,6 @@ namespace maligner_vd {
     size_t num_rows_query_suffix() const;
 
     ScoreMatrixVDVec sm_vec_;
-    DoubleVecVec scores_;
-    DoubleVec row_scores_;  
     size_t  _max_num_scores;
 
   };
@@ -134,94 +121,32 @@ namespace maligner_vd {
 
   }
 
-  // template<typename ScoreMatrixVDType>
-  // void RefScoreMatrixVDDB<ScoreMatrixVDType>::compute_query_prefix_mscores(size_t max_samples, double min_mad) {
-   
-  //   // Compute m_scores for prefix alignment of the query.
-  //   // This corresponds to sm_rf_qf_ and sm_rr_qf_ score matrixes, as
-  //   // these align query in forward direction, so DP extending prefix alignments
-  //   // of query.
-
-  //   // We must gather scores all all alignments by row.
-  //   if (sm_vec_.size() == 0) return;
-
-  //   // row_scores_.clear();
-  //   // row_scores_.reserve(_max_num_scores);
-
-  //   const size_t num_rows = num_rows_query_prefix();
-
-  //   // _reset_scores(num_rows);
-
-  //   for(size_t row_num = 0; row_num < num_rows; row_num++) {
-
-  //     row_scores_.clear();
-  //     row_scores_.reserve(_max_num_scores);
-
-
-  //     // Compute mad & median of scores for this row.
-  //     for(auto& sm: sm_vec_) {
-  //       sm.get_prefix_scores(row_num, row_scores_);
-  //     }
-
-  //     std::sort(row_scores_.begin(), row_scores_.end(), std::greater<double>());
-
-  //     // For information purposes summarize all of the row scores.
-  //     double med = median_sorted(row_scores_);
-  //     double md = mad(row_scores_, med);
-  //     double min_value = row_scores_.front();
-  //     double max_value = row_scores_.back();
-
-  //     if(row_scores_.size() > max_samples)
-  //       row_scores_.resize(max_samples);
-
-  //     double med_top = median_sorted(row_scores_);
-  //     double md_top = std::max(mad(row_scores_, med_top), min_mad);
-
-  //     std::cerr << "prefix row: " << row_num << " "
-  //               << "n: " << row_scores_.size() << " "
-  //               << "min: " << min_value << " "
-  //               << "max: " << max_value << " "
-  //               << "median: " << med << " "
-  //               << "mad: " << md << " "
-  //               << "median (top): " << med_top << " "
-  //               << "mad (top): " << md_top << "\n";
-
-  //     // Assign m-scores for this row.
-  //     for(auto& sm: sm_vec_) {
-  //       sm.assign_prefix_mscores(row_num, med_top, md_top);
-  //     }
-
-  //   } 
-  // }
-
+  /////////////////////////////////////////////////////////////////////////////
+  // Compute m_scores for prefix alignment of the query.
+  // This corresponds to sm_rf_qf_ and sm_rr_qf_ score matrixes, as
+  // these align query in forward direction, so DP extending prefix alignments
+  // of query.
   template<typename ScoreMatrixVDType>
   void RefScoreMatrixVDDB<ScoreMatrixVDType>::compute_query_prefix_mscores(size_t max_samples, double min_mad, const std::string& query) {
    
-    // Compute m_scores for prefix alignment of the query.
-    // This corresponds to sm_rf_qf_ and sm_rr_qf_ score matrixes, as
-    // these align query in forward direction, so DP extending prefix alignments
-    // of query.
-
     // We must gather scores all all alignments by row.
     if (sm_vec_.size() == 0) return;
-
-    // row_scores_.clear();
-    // row_scores_.reserve(_max_num_scores);
 
     std::vector<ScoreMatrixRecord> recs;
     recs.reserve(_max_num_scores);
 
     const size_t num_rows = num_rows_query_prefix();
 
-    // _reset_scores(num_rows);
+    const bool allow_overlaps = false;
     for(size_t row_num = 0; row_num < num_rows; row_num++) {
 
       recs.clear();
       recs.reserve(_max_num_scores);
 
       // Compute mad & median of scores for this row.
+
       for(auto& sm: sm_vec_) {
-        sm.get_prefix_score_matrix_row_profile(row_num, query, false, max_samples, recs);
+        sm.get_prefix_score_matrix_row_profile(row_num, query, allow_overlaps, max_samples, recs);
       }
 
       std::sort(recs.begin(), recs.end(), ScoreMatrixRecordScoreCmp());
@@ -232,10 +157,10 @@ namespace maligner_vd {
           [](const ScoreMatrixRecord& rec) {return rec.score_; });
 
       // For information purposes summarize all of the row scores.
-      double med = median_sorted(scores);
-      double md = mad(scores, med);
-      double min_value = scores.front();
-      double max_value = scores.back();
+      // double med = median_sorted(scores);
+      // double md = mad(scores, med);
+      // double min_value = scores.front();
+      // double max_value = scores.back();
 
       if(recs.size() > max_samples) {
         recs.resize(max_samples);
@@ -245,14 +170,14 @@ namespace maligner_vd {
       double med_top = median_sorted(scores);
       double md_top = std::max(mad(scores, med_top), min_mad);
 
-      std::cerr << "prefix row: " << row_num << " "
-                << "n: " << recs.size() << " "
-                << "min: " << min_value << " "
-                << "max: " << max_value << " "
-                << "median: " << med << " "
-                << "mad: " << md << " "
-                << "median (top): " << med_top << " "
-                << "mad (top): " << md_top << "\n";
+      // std::cerr << "prefix row: " << row_num << " "
+      //           << "n: " << recs.size() << " "
+      //           << "min: " << min_value << " "
+      //           << "max: " << max_value << " "
+      //           << "median: " << med << " "
+      //           << "mad: " << md << " "
+      //           << "median (top): " << med_top << " "
+      //           << "mad (top): " << md_top << "\n";
 
       // Print out the records
       // for(auto& rec: recs) {
@@ -267,6 +192,11 @@ namespace maligner_vd {
     } 
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  // Compute m_scores for suffix alignment of the query.
+  // This corresponds to sm_rf_qr_ and sm_rr_qr_ score matrixes, as
+  // these align query in reverse direction, so DP extending suffix alignments
+  // of query.
   template<typename ScoreMatrixVDType>
   void RefScoreMatrixVDDB<ScoreMatrixVDType>::compute_query_suffix_mscores(size_t max_samples,
     double min_mad, const std::string& query) {
@@ -279,24 +209,20 @@ namespace maligner_vd {
     // We must gather scores all all alignments by row.
     if (sm_vec_.size() == 0) return;
 
-    // row_scores_.clear();
-    // row_scores_.reserve(_max_num_scores);
-
     std::vector<ScoreMatrixRecord> recs;
     recs.reserve(_max_num_scores);
 
     const size_t num_rows = num_rows_query_suffix();
+    const bool allow_overlaps = false;
 
-    // _reset_scores(num_rows);
     for(size_t row_num = 0; row_num < num_rows; row_num++) {
 
+      // Compute mad & median of scores for this row.
       recs.clear();
       recs.reserve(_max_num_scores);
-
-
-      // Compute mad & median of scores for this row.
+      
       for(auto& sm: sm_vec_) {
-        sm.get_suffix_score_matrix_row_profile(row_num, query, false, max_samples, recs);
+        sm.get_suffix_score_matrix_row_profile(row_num, query, allow_overlaps, max_samples, recs);
       }
 
       std::sort(recs.begin(), recs.end(), ScoreMatrixRecordScoreCmp());
@@ -307,10 +233,10 @@ namespace maligner_vd {
           [](const ScoreMatrixRecord& rec) {return rec.score_; });
 
       // For information purposes summarize all of the row scores.
-      double med = median_sorted(scores);
-      double md = mad(scores, med);
-      double min_value = scores.front();
-      double max_value = scores.back();
+      // double med = median_sorted(scores);
+      // double md = mad(scores, med);
+      // double min_value = scores.front();
+      // double max_value = scores.back();
 
       if(recs.size() > max_samples) {
         recs.resize(max_samples);
@@ -320,14 +246,14 @@ namespace maligner_vd {
       double med_top = median_sorted(scores);
       double md_top = std::max(mad(scores, med_top), min_mad);
 
-      std::cerr << "prefix row: " << row_num << " "
-                << "n: " << recs.size() << " "
-                << "min: " << min_value << " "
-                << "max: " << max_value << " "
-                << "median: " << med << " "
-                << "mad: " << md << " "
-                << "median (top): " << med_top << " "
-                << "mad (top): " << md_top << "\n";
+      // std::cerr << "prefix row: " << row_num << " "
+      //           << "n: " << recs.size() << " "
+      //           << "min: " << min_value << " "
+      //           << "max: " << max_value << " "
+      //           << "median: " << med << " "
+      //           << "mad: " << md << " "
+      //           << "median (top): " << med_top << " "
+      //           << "mad (top): " << md_top << "\n";
 
       // Print out the records
       // for(auto& rec: recs) {
@@ -342,58 +268,14 @@ namespace maligner_vd {
     } 
   }
 
-  // template<typename ScoreMatrixVDType>
-  // void RefScoreMatrixVDDB<ScoreMatrixVDType>::compute_query_suffix_mscores(size_t max_samples, double min_mad) {
+  template<typename ScoreMatrixVDType>
+  void RefScoreMatrixVDDB<ScoreMatrixVDType>::compute_mscores(size_t max_samples,
+    double min_mad, const std::string& query) {
+
+    compute_query_suffix_mscores(max_samples, min_mad, query);
+    compute_query_suffix_mscores(max_samples, min_mad, query);
    
-  //   // Compute m_scores for suffix alignment of the query.
-  //   // This corresponds to sm_rf_qr_ and sm_rr_qr_ score matrixes, as
-  //   // these align query in forward direction, so DP extending suffix alignments
-  //   // of query.
-
-  //   // We must gather scores all all alignments by row.
-  //   if (sm_vec_.size() == 0) return;
-
-  //   const size_t num_rows = num_rows_query_suffix();
-
-  //   for(size_t row_num = 0; row_num < num_rows; row_num++) {
-
-  //     row_scores_.clear();
-  //     row_scores_.reserve(_max_num_scores);
-
-  //     for(auto& sm: sm_vec_) {
-  //       sm.get_suffix_scores(row_num, row_scores_);
-  //     }
-
-  //     std::sort(row_scores_.begin(), row_scores_.end(), std::greater<double>());
-
-  //     // For information purposes summarize all of the row scores.
-  //     double med = median_sorted(row_scores_);
-  //     double md = mad(row_scores_, med);
-  //     double min_value = row_scores_.front();
-  //     double max_value = row_scores_.back();
-
-  //     if(row_scores_.size() > max_samples)
-  //       row_scores_.resize(max_samples);
-
-  //     double med_top = median_sorted(row_scores_);
-  //     double md_top = std::max(mad(row_scores_, med_top), min_mad);
-
-  //     std::cerr << "suffix row: " << row_num << " "
-  //               << "n: " << row_scores_.size() << " "
-  //               << "min: " << min_value << " "
-  //               << "max: " << max_value << " "
-  //               << "median: " << med << " "
-  //               << "mad: " << md << " "
-  //               << "median (top): " << med_top << " "
-  //               << "mad (top): " << md_top << "\n";
-
-  //     // Assign m-scores for this row.
-  //     for(auto& sm: sm_vec_) {
-  //       sm.assign_suffix_mscores(row_num, med_top, md_top);
-  //     }
-
-  //   } 
-  // }
+  }
 
   template<typename ScoreMatrixVDType>
   bool RefScoreMatrixVDDB<ScoreMatrixVDType>::check_query_suffix_sane() const {
@@ -445,20 +327,6 @@ namespace maligner_vd {
     
   }
 
-  // template<typename ScoreMatrixVDType>
-  // ScoreMatrixProfile RefScoreMatrixVDDB<ScoreMatrixVDType>::get_score_matrix_profile_rf_qf(const string& query) {
-
-  //   // Get the profile for each underlying matix
-  //   ScoreMatrixProfileVec profiles(sm_vec_.size());
-  //   std::transform(sm_vec_.begin(), sm_vec_.end(), profiles.begin(), [](const ScoreMatrixVDType& sm) {
-  //     return sm.get_score_matrix_profile_rf_qf();
-  //   });
-
-  //   // Merge the profiles
-  //   return merge_profiles(profiles);
-
-  // }
-
   template<typename ScoreMatrixVDType>
   template<typename MatrixGetter>
   ScoreMatrixProfile RefScoreMatrixVDDB<ScoreMatrixVDType>::get_score_matrix_profile_helper(MatrixGetter g) {
@@ -478,22 +346,6 @@ namespace maligner_vd {
     return get_score_matrix_profile_helper([&query](const ScoreMatrixVDType& sm) {
       return sm.get_score_matrix_profile_rf_qf(query);
     });
-
-  }
-
-  template<typename ScoreMatrixVDType>
-  ScoreMatrixProfile RefScoreMatrixVDDB<ScoreMatrixVDType>::get_score_matrix_profile_rf_qf2(const string& query) {
-
-      // Get the profile for each underlying matix
-    ScoreMatrixProfileVec profiles;
-    profiles.reserve(sm_vec_.size());
-
-    for(auto& sm: sm_vec_) {
-      profiles.push_back(sm.get_score_matrix_profile_rf_qf(query));
-    }
-
-    // Merge the profiles
-    return merge_profiles(profiles);
 
   }
 

@@ -27,6 +27,87 @@ namespace maligner_vd {
   using maligner_dp::Constants::INF;
 
 
+  /////////////////////////////////////////////////////////////////
+  // Return the best scoring entry in each row of a ScoreMatrix.
+  template<typename ScoreMatrixType>
+  ScoreMatrixProfile get_score_matrix_profile(
+    const ScoreMatrixType& sm,
+    const string& query,
+    const string& ref,
+    AlignmentOrientation orientation ) {
+    
+    using maligner_dp::ScoreCell;
+
+    const size_t num_rows = sm.getNumRows();
+    const size_t num_cols = sm.getNumCols();
+
+    ScoreMatrixProfile ret;
+    ret.reserve(num_rows);
+
+    for(size_t i = 0; i < num_rows; i++) {
+
+      ScoreMatrixRecord rec(query, ref, orientation);
+      rec.m_score_ = std::numeric_limits<double>::infinity();
+
+      for(size_t j = 0; j < num_cols; j++) {
+
+        const ScoreCell* p_cell = sm.getCell(i, j);
+
+        // if (p_cell->m_score_ < rec.m_score_) {
+        if (p_cell->score_ > rec.score_) {
+          rec.update_from_score_cell(p_cell);
+        }
+
+      }
+
+      ret.push_back(std::move(rec));
+
+    }
+
+    return ret;
+
+  }
+  
+  /////////////////////////////////////////////////////////////////
+  // Get all of the valid ScoreMatrixRecords for the given row.
+  // This allows for overlaps.
+  template<typename ScoreMatrixType>
+  ScoreMatrixProfile get_score_matrix_row_profile(
+    const ScoreMatrixType& sm,
+    size_t row_number,
+    const string& query,
+    const string& ref,
+    AlignmentOrientation orientation ) {
+    
+    using maligner_dp::ScoreCell;
+    
+    const size_t num_rows = sm.getNumRows();
+    const size_t num_cols = sm.getNumCols();
+
+    if(row_number >= num_rows) {
+      std::ostringstream oss;
+      oss << "Invalid row number. Row_number: " << row_number << " num_rows: " << num_rows;
+      throw std::runtime_error(oss.str());
+    }
+
+    ScoreMatrixProfile ret;
+    ret.reserve(num_cols);
+
+    for(size_t j = 0; j < num_cols; j++) {
+
+      const ScoreCell* p_cell = sm.getCell(row_number, j);
+
+      if(!p_cell->is_valid()) continue;
+
+      ScoreMatrixRecord rec(query, ref, orientation, p_cell);
+      ret.push_back(std::move(rec));
+
+    }
+
+    return ret;
+
+  }
+
 
   /////////////////////////////////////////////////////////
   // Define a class for storing ScoreMatrices
@@ -52,10 +133,16 @@ namespace maligner_vd {
 
     const RefMapWrapper& get_ref_map() const { return ref_; }
 
+    // These functions will fill the score matrix but don't
+    // construct full Alignment objects.
     void aln_to_forward_ref(const QueryMapWrapper& q, const AlignOpts& ao);
     void aln_to_reverse_ref(const QueryMapWrapper& q, const AlignOpts& ao);
+
+    // Get the scores from the given row by appending to the vector.
     void get_prefix_scores(size_t row_number, std::vector<double>& scores);
     void get_suffix_scores(size_t row_number, std::vector<double>& scores);
+
+    // Asign m_scores to the ScoreCell's of the given row using the median and mad.
     void assign_prefix_mscores(size_t row_number, double median, double mad);
     void assign_suffix_mscores(size_t row_number, double median, double mad);
 
@@ -80,11 +167,16 @@ namespace maligner_vd {
     const ScoreMatrixType * get_score_matrix_rr_qf() const { return &sm_rr_qf_; }
     const ScoreMatrixType * get_score_matrix_rr_qr() const { return &sm_rr_qr_; }
 
+    //////////////////////////////////////////////////////////////////////////////
+    // Return the best scoring record for each row of the ScoreMatrix
     ScoreMatrixProfile get_score_matrix_profile_rf_qf(const string& query) const;
     ScoreMatrixProfile get_score_matrix_profile_rf_qr(const string& query) const;
     ScoreMatrixProfile get_score_matrix_profile_rr_qf(const string& query) const;
     ScoreMatrixProfile get_score_matrix_profile_rr_qr(const string& query) const;
 
+    //////////////////////////////////////////////////////////////////////////////
+    // Get records corresponding to the best non-overlapping alignments which end
+    // at the given row.
     void get_prefix_score_matrix_row_profile(size_t row_number, 
       const string& query,
       bool allow_overlaps,
@@ -97,7 +189,7 @@ namespace maligner_vd {
       size_t max_records,      
       ScoreMatrixProfile& vec) const;
 
-    void get_score_matrix_row_profile(
+    void _get_score_matrix_row_profile(
       const ScoreMatrixType& sm,
       const size_t row_number,
       const string& query,
@@ -105,9 +197,11 @@ namespace maligner_vd {
       bool allow_overlaps,
       size_t max_records,
       ScoreMatrixProfile& recs) const;
+    //////////////////////////////////////////////////////////////////////////////
 
     void reset();
 
+    // Check that Matrix dimensions make sense
     bool check_sane() const;
     bool check_sane_query_prefix() const;
     bool check_sane_query_suffix() const;
@@ -115,12 +209,10 @@ namespace maligner_vd {
     uint64_t get_memory_usage() const;
     uint64_t get_memory_capacity() const;
 
+    // Print the percentage of the row that have cells that are filled out.
     void print_filled_by_row() const;
 
-
   private:
-
-
 
     RefMapWrapper ref_;
 
@@ -139,12 +231,11 @@ namespace maligner_vd {
     AlignmentVec aln_rr_qf_;
     AlignmentVec aln_rr_qr_;
 
-    ScoreMatrixProfile get_score_matrix_profile(
-      const ScoreMatrixType& sm,
-      const string& query,
-      AlignmentOrientation orientation) const;
+
 
   };
+
+
 
   template<typename ScoreMatrixType>
   void RefScoreMatrixVD<ScoreMatrixType>::aln_to_forward_ref(const QueryMapWrapper& query, const AlignOpts& align_opts) {
@@ -187,8 +278,114 @@ namespace maligner_vd {
     );
 
 
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // DEBUG!
+    // ALIGN TO FORWARD/REVERSE USING SAME CALL THAT MALIGNER_DP USES.
+    // CHECK THAT THE SCOREMATRICES MATCH
+    ScoreMatrixType sm_forward;
+    AlignmentVec aln_forward;
+
+    AlignTaskType task_forward = AlignTaskType(
+      const_cast<MapData*>(&query.map_data_),
+      const_cast<MapData*>(&ref_.map_data_),
+      &query.get_frags(),
+      &ref_.get_frags(), 
+      &query.get_partial_sums_forward(),
+      &ref_.get_partial_sums(),
+      &ref_.sd_inv_,
+      &query.ix_to_locs_,
+      &ref_.ix_to_locs_,
+      0, // ref_offset
+      &sm_forward,
+      &aln_forward,
+      true, // query_is_forward
+      true, // ref_is_forward
+      align_opts
+    );
+
+    ScoreMatrixType sm_reverse;
+    AlignmentVec aln_reverse;
+    AlignTaskType task_reverse = AlignTaskType(
+      const_cast<MapData*>(&query.map_data_),
+      const_cast<MapData*>(&ref_.map_data_),
+      &query.get_frags_reverse(),
+      &ref_.get_frags(), 
+      &query.get_partial_sums_reverse(),
+      &ref_.get_partial_sums(),
+      &ref_.sd_inv_,
+      &query.ix_to_locs_,
+      &ref_.ix_to_locs_,
+      0, // ref_offset
+      &sm_reverse,
+      &aln_reverse,
+      false, // query_is_forward
+      true, // ref_is_forward
+      align_opts
+    );
+
+    // const size_t num_rows = query.get_frags().size() + 1;
+    // const size_t num_cols = ref_.get_frags().size() + 1;
+    // sm_rf_qf_.resize(num_rows, num_cols);
+    // sm_forward.resize(num_rows, num_cols);
+    // if(sm_forward != sm_rf_qf_) {
+    //   throw std::runtime_error("Forward matrices do not match even after initialization!");
+    // } else {
+    //   std::cerr << "Matrices match after initialization!\n";
+    // }
+
+
+    // std::cerr << "ALIGN_VD_DEBUG:\n";
+    // typename ScoreMatrixType::order_tag order;
+    // fill_score_matrix_using_partials_with_breaks_hardcode_penalty_max_miss(aln_task_rf_qf_, order);
+
     fill_score_matrix_using_partials_with_breaks_hardcode_penalty_max_miss(aln_task_rf_qf_);
     fill_score_matrix_using_partials_with_breaks_hardcode_penalty_max_miss(aln_task_rf_qr_);
+
+    ////////////////////////////////////////////////
+    // DEBUG
+    // {
+    //   ScoreMatrixProfile prof_forward = get_score_matrix_row_profile(sm_rf_qf_, sm_rf_qf_.getNumRows()-1, query.get_name(),
+    //     ref_.get_name(),
+    //     AlignmentOrientation::RF_QF);
+    //   std::sort(prof_forward.begin(), prof_forward.end(), ScoreMatrixRecordScoreCmp());
+    //   if(prof_forward.size() > 100) {
+    //     prof_forward.resize(100);
+    //   }
+    //   std::cerr << maligner_vd::ScoreMatrixRecordHeader() << "\n";
+    //   for(auto& rec: prof_forward) {
+    //     std::cerr << rec << "\n";
+    //   }
+    //   ScoreMatrixProfile prof_reverse = get_score_matrix_row_profile(sm_rf_qr_, sm_rf_qf_.getNumRows()-1, query.get_name(),
+    //     ref_.get_name(),
+    //     AlignmentOrientation::RF_QF);
+    //   std::sort(prof_reverse.begin(), prof_reverse.end(), ScoreMatrixRecordScoreCmp());
+    //   if(prof_reverse.size() > 100) {
+    //     prof_reverse.resize(100);
+    //   }
+    //   std::cerr << maligner_vd::ScoreMatrixRecordHeader() << "\n";
+    //   for(auto& rec: prof_reverse) {
+    //     std::cerr << rec << "\n";
+    //   }
+    // }
+    //////////////////////////////////////////////////
+
+      // // std::cerr << "ALIGN__DEBUG:\n";
+      // int num_alignments_forward = make_best_alignments_using_partials(task_forward);
+      // int num_alignments_reverse = make_best_alignments_using_partials(task_reverse);
+
+      // // Compare the forward matrices
+      // if(sm_forward != sm_rf_qf_) {
+      //   throw std::runtime_error("Forward matrices do not match.");
+      // }
+
+      // // Compare the reverse matrices
+      // if(sm_reverse != sm_rf_qr_) {
+      //   throw std::runtime_error("Reverse matrices do not match.");
+      // }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////
+
 
 
   }
@@ -534,83 +731,35 @@ namespace maligner_vd {
     }
     std::cerr << "\n";
 
-    // ScoreMatrixType sm_rf_qf_; // ref forward, query forward
-    // ScoreMatrixType sm_rf_qr_; // ref forward, query reverse
-    // ScoreMatrixType sm_rr_qf_; // ref reverse, query forward
-    // ScoreMatrixType sm_rr_qr_; // ref reverse, query reverse
-
   }
 
 
   template<typename ScoreMatrixType>
   ScoreMatrixProfile RefScoreMatrixVD<ScoreMatrixType>::get_score_matrix_profile_rf_qf(const string& query) const {
-    return get_score_matrix_profile(sm_rf_qf_, query, AlignmentOrientation::RF_QF);
+    return get_score_matrix_profile(sm_rf_qf_, query, ref_.get_name(), AlignmentOrientation::RF_QF);
   }
 
   template<typename ScoreMatrixType>
   ScoreMatrixProfile RefScoreMatrixVD<ScoreMatrixType>::get_score_matrix_profile_rf_qr(const string& query) const {
-    return get_score_matrix_profile(sm_rf_qr_, query, AlignmentOrientation::RF_QR);
+    return get_score_matrix_profile(sm_rf_qr_, query, ref_.get_name(), AlignmentOrientation::RF_QR);
   }
 
 
   template<typename ScoreMatrixType>
   ScoreMatrixProfile RefScoreMatrixVD<ScoreMatrixType>::get_score_matrix_profile_rr_qf(const string& query) const {
-    return get_score_matrix_profile(sm_rr_qf_, query, AlignmentOrientation::RR_QF);
+    return get_score_matrix_profile(sm_rr_qf_, query, ref_.get_name(), AlignmentOrientation::RR_QF);
   }
 
   template<typename ScoreMatrixType>
   ScoreMatrixProfile RefScoreMatrixVD<ScoreMatrixType>::get_score_matrix_profile_rr_qr(const string& query) const {
-    return get_score_matrix_profile(sm_rr_qr_, query, AlignmentOrientation::RR_QR);
+    return get_score_matrix_profile(sm_rr_qr_, query, ref_.get_name(), AlignmentOrientation::RR_QR);
   }   
 
 
+  ///////////////////////////////////////////////////////////////////
+  // Get non-overlapping ScoreMatrixRecords for the given row.
   template<typename ScoreMatrixType>
-  ScoreMatrixProfile RefScoreMatrixVD<ScoreMatrixType>::get_score_matrix_profile(
-    const ScoreMatrixType& sm,
-    const string& query,
-    AlignmentOrientation orientation ) const {
-    
-    
-
-    const size_t num_rows = sm.getNumRows();
-    const size_t num_cols = sm.getNumCols();
-    const string ref = ref_.get_name();
-
-    ScoreMatrixProfile ret;
-    ret.reserve(num_rows);
-
-    for(size_t i = 0; i < num_rows; i++) {
-
-      ScoreMatrixRecord rec(query, ref, orientation);
-      rec.m_score_ = std::numeric_limits<double>::infinity();
-
-      for(size_t j = 0; j < num_cols; j++) {
-
-        const ScoreCell* p_cell = sm.getCell(i, j);
-
-        if (p_cell->m_score_ < rec.m_score_) {
-
-          rec.score_ = p_cell->score_;
-          rec.m_score_ = p_cell->m_score_;
-          rec.row_ = i;
-          rec.col_ = j;
-          rec.col_start_ = p_cell->ref_start_;
-
-        }
-
-      }
-
-      ret.push_back(std::move(rec));
-
-    }
-
-    return ret;
-
-  }
-
-
-  template<typename ScoreMatrixType>
-  void RefScoreMatrixVD<ScoreMatrixType>::get_score_matrix_row_profile(
+  void RefScoreMatrixVD<ScoreMatrixType>::_get_score_matrix_row_profile(
     const ScoreMatrixType& sm,
     const size_t row_number,
     const string& query,
@@ -664,8 +813,7 @@ namespace maligner_vd {
 
       const ScoreCell * p_cell = score_cells[i];
 
-      ScoreMatrixRecord rec(query, ref, orientation,
-        row_number, p_cell->r_, p_cell->ref_start_, p_cell->score_, p_cell->m_score_);
+      ScoreMatrixRecord rec(query, ref, orientation, p_cell);
 
       if( !allow_overlaps ) {
         int start = rec.get_ref_start(num_ref_frags);
@@ -696,8 +844,8 @@ namespace maligner_vd {
       size_t max_records,
       ScoreMatrixProfile& vec) const {
 
-    get_score_matrix_row_profile(sm_rf_qf_, row_number, query, AlignmentOrientation::RF_QF, allow_overlaps, max_records, vec);
-    get_score_matrix_row_profile(sm_rr_qf_, row_number, query, AlignmentOrientation::RR_QF, allow_overlaps, max_records, vec);
+    _get_score_matrix_row_profile(sm_rf_qf_, row_number, query, AlignmentOrientation::RF_QF, allow_overlaps, max_records, vec);
+    _get_score_matrix_row_profile(sm_rr_qf_, row_number, query, AlignmentOrientation::RR_QF, allow_overlaps, max_records, vec);
 
   }
 
@@ -708,10 +856,11 @@ namespace maligner_vd {
       size_t max_records,
       ScoreMatrixProfile& vec) const {
 
-    get_score_matrix_row_profile(sm_rf_qf_, row_number, query, AlignmentOrientation::RF_QF, allow_overlaps, max_records, vec);
-    get_score_matrix_row_profile(sm_rr_qf_, row_number, query, AlignmentOrientation::RR_QF, allow_overlaps, max_records, vec);
+    _get_score_matrix_row_profile(sm_rf_qf_, row_number, query, AlignmentOrientation::RF_QF, allow_overlaps, max_records, vec);
+    _get_score_matrix_row_profile(sm_rr_qf_, row_number, query, AlignmentOrientation::RR_QF, allow_overlaps, max_records, vec);
 
   }
+
 }
 
 

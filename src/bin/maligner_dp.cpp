@@ -25,6 +25,9 @@
 #include "utils.h"
 #include "ScoreMatrix.h"
 
+// vd includes
+#include "score_matrix_vd.h"
+
 // common includes
 #include "timer.h"
 #include "common_defs.h"
@@ -39,7 +42,6 @@ using std::cout;
 
 #define PACKAGE_NAME "maligner dp"
 #include "maligner_dp_includes.h"
-
 
 
 // Wrapper around all of the Map structures we need to store
@@ -318,9 +320,9 @@ int main(int argc, char* argv[]) {
         ref_map_iter != ref_map_db.end();
         ref_map_iter++) {
 
+      using maligner_vd::ScoreMatrixProfile;
 
       const RefMapWrapper& rmw = ref_map_iter->second;
-
 
       // const IntVec* p_frags_forward = &query_frags_forward;
       // const IntVec* p_frags_reverse = &query_frags_reverse;
@@ -361,6 +363,7 @@ int main(int argc, char* argv[]) {
         align_opts
       );
 
+      ScoreMatrixProfile profile_forward, profile_rev;
 
       // std::cerr << "Align task forward: "; print_align_task(std::cerr, task_forward);
       // std::cerr << "Align task reverse: "; print_align_task(std::cerr, task_reverse);
@@ -370,6 +373,7 @@ int main(int argc, char* argv[]) {
 
       // Align Forward
       {
+
         timer.start();
         // Alignment aln_forward = make_best_alignment_using_partials(task_forward);
         int num_alignments = make_best_alignments_using_partials(task_forward);
@@ -380,10 +384,27 @@ int main(int argc, char* argv[]) {
                     << " " << timer << "\n";
         }
 
+        ////////////////////////////////////////////////
+        // DEBUG      
+        std::cerr << sm.getNumRows() << " x " << sm.getNumCols() << "\n";    
+        std::cerr << "last_row: " << sm.countFilledByRow(sm.getNumRows() - 1) << "\n";
+        profile_forward = get_score_matrix_row_profile(sm,
+          sm.getNumRows()-1,
+          qmw.get_name(),
+          rmw.get_name(), maligner_vd::AlignmentOrientation::RF_QF);
+        
+        std::sort(profile_forward.begin(), profile_forward.end(), maligner_vd::ScoreMatrixRecordScoreCmp());
+        
+        if(profile_forward.size() > 100) {
+          profile_forward.resize(100);
+        }
+        //////////////////////////////////////////////
+
       }
 
       // Align Reverse
       {
+
         timer.start();
         int num_alignments = make_best_alignments_using_partials(task_reverse);
         timer.end();
@@ -393,8 +414,35 @@ int main(int argc, char* argv[]) {
                     << " " << timer << "\n";
         }
 
+        ////////////////////////////////////////////////////////////////////
+        // DEBUG
+        std::cerr << sm.getNumRows() << " x " << sm.getNumCols() << "\n";
+        std::cerr << "last_row: " << sm.countFilledByRow(sm.getNumRows() - 1) << "\n";
+        profile_rev = get_score_matrix_row_profile(sm,
+          sm.getNumRows()-1,
+          qmw.get_name(),
+          rmw.get_name(), maligner_vd::AlignmentOrientation::RF_QR);
+        
+        std::sort(profile_rev.begin(), profile_rev.end(), maligner_vd::ScoreMatrixRecordScoreCmp());
+
+        if(profile_rev.size() > 100) {
+          profile_rev.resize(100);
+        }
+        ////////////////////////////////////////////////////////////////////
+
       }
 
+
+      ////////////////////////////////////////////////////////////////////
+      // DEBUG WRITE OUT!
+      std::cerr << maligner_vd::ScoreMatrixRecordHeader() << "\n";
+      for(auto& rec : profile_forward) {
+        std::cerr << rec << "\n";
+      }
+      for(auto& rec : profile_rev) {
+        std::cerr << rec << "\n";
+      }
+      ////////////////////////////////////////////////////////////////////
 
     }
 
@@ -456,7 +504,6 @@ int main(int argc, char* argv[]) {
     std::cerr << "*****************************************\n";
 
  }
-
 
 
   std::cerr << "maligner_dp done.\n";

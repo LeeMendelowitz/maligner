@@ -72,6 +72,9 @@ namespace maligner_dp {
         template<class OtherOrderTag>
         bool operator==(const ScoreMatrix<OtherOrderTag>& sm_o);
 
+        template<class OtherOrderTag>
+        bool operator!=(const ScoreMatrix<OtherOrderTag>& sm_o);
+
     private:
         size_t numRows_;
         size_t numCols_;
@@ -227,7 +230,7 @@ namespace maligner_dp {
         for (int j = 0; j < getNumCols(); j++) {
             for (int i = 0; i < getNumRows(); i++) {
                 const ScoreCell* pCell = getCell(i, j);
-                if (pCell->score_ > -INF) {
+                if (pCell->is_valid()) {
                     filled++;
                 }
             }
@@ -246,7 +249,7 @@ namespace maligner_dp {
 
         for (size_t j = 0; j < numCols_; j++) {
             const ScoreCell * pCell = getCell(row, j);
-            if ( pCell->score_ > -INF) {
+            if ( pCell->is_valid()) {
                 count++;
             }
         }
@@ -260,7 +263,7 @@ namespace maligner_dp {
         for (int j = 0; j < getNumCols(); j++) {
             for (int i = 0; i < getNumRows(); i++) {
                 const ScoreCell* pCell = getCell(i, j);
-                if (pCell->score_ > -INF) {
+                if (pCell->is_valid()) {
                     filled++;
                 }
             }
@@ -333,10 +336,23 @@ namespace maligner_dp {
             for(size_t j = 0; j < n; j++) {
                 const ScoreCell* p1 = getCell(i, j);
                 const ScoreCell* p2 = sm_o.getCell(i, j);
-                if ( !(*p1 == *p2) ) { std::cout << "Cells don't match! 1: " << *p1 << ", 2: " << *p2 << "\n"; return false; }
+
+                if ( !(*p1 == *p2) ) {
+                    std::cerr << "Cells don't match! 1: " << *p1 << ", 2: " << *p2 << std::endl;
+                    std::cerr << "Cells don't match!"
+                              << "\n\t1: " << ScoreCellFullOutput(p1)
+                              << "\n\t2: " << ScoreCellFullOutput(p2) << std::endl;
+                    return false;
+                }
             }
         }
         return true;
+    }
+
+    template<class OrderTag>
+    template<class OtherOrderTag>
+    bool ScoreMatrix<OrderTag>::operator!=(const ScoreMatrix<OtherOrderTag>& sm_o) {
+        return !this->operator==(sm_o);
     }
 
     template<class OrderTag>

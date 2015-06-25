@@ -6,6 +6,8 @@
 #include <vector>
 #include <limits>
 
+#include "ScoreCell.h"
+
 namespace maligner_vd {
 
   using std::string;
@@ -16,6 +18,11 @@ namespace maligner_vd {
   // A record for summarizing a score matrix.
   // Used for collecting diagnostic information about the
   // ScoreMatrix contents.
+  // It essentially holds the same information about the ScoreCell,
+  // but more (such as the query name, reference name, and orientation)
+  // A ScoreMatrixRecord can also be viewed as a lightweight form of an Alignment:
+  // It doesn't have the alignment, but an alignment could be produced from the
+  // corresponding ScoreCell *.
   struct ScoreMatrixRecord {
 
     ScoreMatrixRecord() = default;
@@ -49,11 +56,28 @@ namespace maligner_vd {
       score_(score),
       m_score_(m_score) { }
 
+    ScoreMatrixRecord(const string& query,
+                      const string& ref,
+                      AlignmentOrientation orientation,
+                      const maligner_dp::ScoreCell* p_cell) :
+      query_(query),
+      ref_(ref),
+      orientation_(orientation),
+      row_(p_cell->q_),
+      col_(p_cell->r_),
+      col_start_(p_cell->ref_start_),
+      score_(p_cell->score_),
+      m_score_(p_cell->m_score_) {};
+
     ScoreMatrixRecord(const ScoreMatrixRecord& o) = default;
     ScoreMatrixRecord& operator=(const ScoreMatrixRecord& o) = default;
 
-    bool operator<(const ScoreMatrixRecord& other) const { 
-      return m_score_ < other.m_score_;
+    void update_from_score_cell(const maligner_dp::ScoreCell* p_cell) {
+          score_ = p_cell->score_;
+          m_score_ = p_cell->m_score_;
+          row_ = p_cell->q_;
+          col_ = p_cell->r_;
+          col_start_ = p_cell->ref_start_;
     }
 
     bool ref_is_forward() const {
@@ -98,6 +122,10 @@ namespace maligner_vd {
       return ret;
     }
 
+
+    //////////////////////////
+    // Members
+
     string query_;
     string ref_;
     AlignmentOrientation orientation_;
@@ -110,13 +138,13 @@ namespace maligner_vd {
   };
 
   struct ScoreMatrixRecordScoreCmp {
-    bool operator()(const ScoreMatrixRecord r1, const ScoreMatrixRecord r2) {
+    bool operator()(const ScoreMatrixRecord& r1, const ScoreMatrixRecord& r2) {
       return r1.score_ > r2.score_;
     }
   };
 
   struct ScoreMatrixRecordMScoreCmp {
-    bool operator()(const ScoreMatrixRecord r1, const ScoreMatrixRecord r2) {
+    bool operator()(const ScoreMatrixRecord& r1, const ScoreMatrixRecord& r2) {
       return r1.m_score_ > r2.m_score_;
     }
   };
@@ -125,6 +153,10 @@ namespace maligner_vd {
   typedef std::vector<ScoreMatrixRecord> ScoreMatrixProfile;
   typedef std::vector<ScoreMatrixProfile> ScoreMatrixProfileVec;
 
+  // Given a vector of k profiles of equal length n,
+  // for each position i in [0, n) select the best record as position i
+  // among the k profiles.
+  // Return a profile of length n.
   ScoreMatrixProfile merge_profiles(const ScoreMatrixProfileVec& profiles);
 
   // Remove overlapping records in a profile.
@@ -136,7 +168,6 @@ namespace maligner_vd {
   std::ostream& operator<<(std::ostream& os, ScoreMatrixRecordHeader);
   std::ostream& operator<<(std::ostream& os, const ScoreMatrixProfile& p);
   std::ostream& operator<<(std::ostream& os, const AlignmentOrientation& o);
-
 
 }
 

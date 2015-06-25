@@ -66,6 +66,10 @@ namespace maligner_vd {
     return os;
   }
 
+  // Given a vector of k profiles of equal length n,
+  // for each position i in [0, n) select the best record as position i
+  // among the k profiles.
+  // Return a profile of length n.
   ScoreMatrixProfile merge_profiles(const ScoreMatrixProfileVec& profiles) {
     
     if(profiles.empty()) {
@@ -88,13 +92,15 @@ namespace maligner_vd {
       const ScoreMatrixRecord * p_best = &profiles.front()[i];
 
       const ScoreMatrixProfileVec::const_iterator E = profiles.end();
+
+      ScoreMatrixRecordMScoreCmp cmp;
       for(ScoreMatrixProfileVec::const_iterator p_iter = profiles.begin() + 1;
           p_iter < E;
           p_iter++) {
         
         const ScoreMatrixProfile& profile = *p_iter;
         const ScoreMatrixRecord * p_rec = &profile[i];
-        if (p_rec->m_score_ < p_best->m_score_) {
+        if (cmp(*p_rec, *p_best)) {
           p_best = p_rec;
         }
         
@@ -131,11 +137,6 @@ namespace maligner_vd {
       int start = rec.get_ref_start(num_ref_frags);
       int end = rec.get_ref_end(num_ref_frags);
       
-      // std::cerr << ScoreMatrixRecordHeader() << "\n" << rec << "\n";
-      // std::cerr << "start: " << start << " "
-      //           << "end: " << end << " "
-      //           << "is_covered: " << bitcover.is_covered(start, end) << "\n";
-
       if(bitcover.is_covered(start, end)) {
         continue;
       }

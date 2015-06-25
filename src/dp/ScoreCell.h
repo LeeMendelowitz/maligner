@@ -35,6 +35,8 @@ namespace maligner_dp {
             qm_(0),
             rm_(0),
             ref_start_(-1),
+            score_(-INF),
+            m_score_(-INF),
             backPointer_(nullptr),
             color_(ScoreCellColor::WHITE)
         { };
@@ -45,6 +47,8 @@ namespace maligner_dp {
             qm_(0),
             rm_(0),
             ref_start_(-1),
+            score_(-INF),
+            m_score_(-INF),
             backPointer_(nullptr),
             color_(ScoreCellColor::WHITE)
         { };
@@ -55,6 +59,8 @@ namespace maligner_dp {
             qm_(0),
             rm_(0),
             ref_start_(-1),
+            score_(-INF),
+            m_score_(-INF),            
             backPointer_(nullptr),
             color_(ScoreCellColor::WHITE)
         { };
@@ -74,15 +80,15 @@ namespace maligner_dp {
                                      (r_ == o.r_) &&
                                      (qm_ == o.qm_) &&
                                      (rm_ == o.rm_) &&
-                                     (std::abs(score_ - o.score_) < TOL) &&
-                                     (std::abs(m_score_ - o.m_score_) < TOL) &&
-                                     (b1 == nullptr) == (b2 == nullptr);
+                                     ((score_ == o.score_) || (std::abs(score_ - o.score_) < TOL)) &&
+                                     ((score_ == o.score_) || (std::abs(m_score_ - o.m_score_) < TOL)) &&
+                                     ((b1 == nullptr) == (b2 == nullptr));
             
             if (!coord_score_match) return false;
 
             // Check that the cells pointed to match in coordinates.
             if (b1 != nullptr) {
-                if (b1->q_ != b2->q_ || b1->r_ != b2->r_) return false;
+                if ((b1->q_ != b2->q_) || (b1->r_ != b2->r_)) return false;
             }
 
             return true;
@@ -147,8 +153,19 @@ namespace maligner_dp {
     };
 
 
+    struct ScoreCellFullOutput {
+        
+        ScoreCellFullOutput(const ScoreCell * p_cell_in) :
+            p_cell(p_cell_in) {};
+        const ScoreCell * get_cell() const { return p_cell; }
+        const ScoreCell * p_cell;
+
+    };
+
+
     typedef std::vector<ScoreCell> ScoreCellVec;
     std::ostream& operator<<(std::ostream&, const ScoreCell& cell);
+    std::ostream& operator<<(std::ostream&, const ScoreCellFullOutput& cell);
 
 }
 
