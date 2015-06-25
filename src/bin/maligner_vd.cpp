@@ -42,17 +42,20 @@ using std::cout;
 
 
 #define PACKAGE_NAME "maligner vd"
-#include "maligner_dp_includes.h"
+#include "maligner_vd_includes.h"
 
 
 
 // Wrapper around all of the Map structures we need to store
 // in order to perform DP alignments.
 // using namespace kmer_match;
+using namespace maligner_vd;
 using namespace maligner_dp;
 using namespace maligner_maps;
 using maligner_dp::Alignment;
-
+using maligner_dp::AlignmentHeader;
+using maligner_dp::ScoreMatrix;
+using maligner_dp::row_order_tag;
 
 using lmm_utils::Timer;
 
@@ -67,41 +70,41 @@ typedef std::vector<RefScoreMatrixVDType> RefScoreMatrixVDVec;
 int main(int argc, char* argv[]) {
 
   using maligner_dp::Alignment;
-  maligner_dp::opt::program_name = argv[0];
+  maligner_vd::opt::program_name = argv[0];
   parse_args(argc, argv);
 
   print_args(std::cerr);
 
   Timer timer;
 
-  AlignOpts align_opts(maligner_dp::opt::query_miss_penalty,
-                       maligner_dp::opt::ref_miss_penalty,
-                       maligner_dp::opt::query_max_misses,
-                       maligner_dp::opt::ref_max_misses,
-                       maligner_dp::opt::sd_rate,
-                       maligner_dp::opt::min_sd,
-                       maligner_dp::opt::max_chunk_sizing_error,
-                       maligner_dp::opt::ref_max_miss_rate,
-                       maligner_dp::opt::query_max_miss_rate,
-                       maligner_dp::opt::alignments_per_reference,
-                       maligner_dp::opt::min_alignment_spacing,
-                       maligner_dp::opt::neighbor_delta,
-                       maligner_dp::opt::query_is_bounded, // Perhaps this should be part of the MapData instead of AlignOpts
-                       maligner_dp::opt::ref_is_bounded, // Perhaps this should be part of the MapData instead of AlignOpts
-                       maligner_dp::opt::query_rescaling);
+  AlignOpts align_opts(maligner_vd::opt::query_miss_penalty,
+                       maligner_vd::opt::ref_miss_penalty,
+                       maligner_vd::opt::query_max_misses,
+                       maligner_vd::opt::ref_max_misses,
+                       maligner_vd::opt::sd_rate,
+                       maligner_vd::opt::min_sd,
+                       maligner_vd::opt::max_chunk_sizing_error,
+                       maligner_vd::opt::ref_max_miss_rate,
+                       maligner_vd::opt::query_max_miss_rate,
+                       maligner_vd::opt::alignments_per_reference,
+                       maligner_vd::opt::min_alignment_spacing,
+                       maligner_vd::opt::neighbor_delta,
+                       maligner_vd::opt::query_is_bounded, // Perhaps this should be part of the MapData instead of AlignOpts
+                       maligner_vd::opt::ref_is_bounded, // Perhaps this should be part of the MapData instead of AlignOpts
+                       maligner_vd::opt::query_rescaling);
 
   // Build a database of reference maps. 
-  MapVec ref_maps(read_maps(maligner_dp::opt::ref_maps_file));
+  MapVec ref_maps(read_maps(maligner_vd::opt::ref_maps_file));
   cerr << "Read " << ref_maps.size() << " reference maps.\n";
 
   RefScoreMatrixVDVec ref_score_matrix_vd_vec;
   RefScoreMatrixDB ref_score_matrix_db;
   for(auto& rm : ref_maps ) {
 
-    RefMapWrapper rmw(rm, maligner_dp::opt::reference_is_circular, 
-                          maligner_dp::opt::ref_max_misses,
-                          maligner_dp::opt::sd_rate,
-                          maligner_dp::opt::min_sd);
+    RefMapWrapper rmw(rm, maligner_vd::opt::reference_is_circular, 
+                          maligner_vd::opt::ref_max_misses,
+                          maligner_vd::opt::sd_rate,
+                          maligner_vd::opt::min_sd);
 
     ref_score_matrix_db.add_ref_map(std::move(rmw));
 
@@ -109,23 +112,23 @@ int main(int argc, char* argv[]) {
 
   cerr << "Wrapped " << ref_score_matrix_db.size() << " reference maps.\n";
 
-  MapReader query_map_reader(maligner_dp::opt::query_maps_file);
+  MapReader query_map_reader(maligner_vd::opt::query_maps_file);
   Map query_map;
   AlignmentVec alns_forward, alns_reverse, all_alignments;
 
   ////////////////////////////////////////////////////////
   // Open output files for the different alignment types.
-  auto fout_rf_qf = std::ofstream("rf_qf.aln");
-  auto fout_rf_qr = std::ofstream("rf_qr.aln");
-  auto fout_rr_qf = std::ofstream("rr_qf.aln");
-  auto fout_rr_qr = std::ofstream("rr_qr.aln");
+  // auto fout_rf_qf = std::ofstream("rf_qf.aln");
+  // auto fout_rf_qr = std::ofstream("rf_qr.aln");
+  // auto fout_rr_qf = std::ofstream("rr_qf.aln");
+  // auto fout_rr_qr = std::ofstream("rr_qr.aln");
 
-  fout_rf_qf << AlignmentHeader();
-  fout_rf_qr << AlignmentHeader();
-  fout_rr_qf << AlignmentHeader();
-  fout_rr_qr << AlignmentHeader();
+  // fout_rf_qf << AlignmentHeader();
+  // fout_rf_qr << AlignmentHeader();
+  // fout_rr_qf << AlignmentHeader();
+  // fout_rr_qr << AlignmentHeader();
 
-  std::cout << AlignmentHeader();
+  std::cout << maligner_vd::ScoreMatrixRecordHeader() << "\n";
 
   while(query_map_reader.next(query_map)) {
 
@@ -135,9 +138,9 @@ int main(int argc, char* argv[]) {
 
     const IntVec& query_frags_forward = query_map.frags_;
 
-    if(query_map.frags_.size() < maligner_dp::opt::min_query_frags) {
+    if(query_map.frags_.size() < maligner_vd::opt::min_query_frags) {
 
-      if(opt::verbose) {
+      if(maligner_vd::opt::verbose) {
         std::cerr << "Skipping map " << query_map.name_ << " with " 
                   << query_map.frags_.size() << " fragments.\n";
       }
@@ -145,9 +148,9 @@ int main(int argc, char* argv[]) {
       continue;
     }
 
-    if(query_map.frags_.size() > maligner_dp::opt::max_query_frags) {
+    if(query_map.frags_.size() > maligner_vd::opt::max_query_frags) {
 
-      if(opt::verbose) {
+      if(maligner_vd::opt::verbose) {
         std::cerr << "Skipping map " << query_map.name_ << " with " 
                   << query_map.frags_.size() << " fragments.\n";
       }
@@ -165,8 +168,8 @@ int main(int argc, char* argv[]) {
     ref_score_matrix_db.aln_to_reverse_refs(qmw, align_opts);
 
 
-    ref_score_matrix_db.compute_query_prefix_mscores(maligner_dp::opt::max_alignments_mad, maligner_dp::opt::min_mad, qmw.get_name());
-    ref_score_matrix_db.compute_query_suffix_mscores(maligner_dp::opt::max_alignments_mad, maligner_dp::opt::min_mad, qmw.get_name());
+    ref_score_matrix_db.compute_query_prefix_mscores(maligner_vd::opt::max_alignments_mad, maligner_vd::opt::min_mad, qmw.get_name());
+    ref_score_matrix_db.compute_query_suffix_mscores(maligner_vd::opt::max_alignments_mad, maligner_vd::opt::min_mad, qmw.get_name());
 
     // std::cerr << "-------------------------------\n";
     // std::cerr << "FORWARD PROFILE:\n";
@@ -178,9 +181,7 @@ int main(int argc, char* argv[]) {
     //   }
     // }
 
-    // COMMENTING OUT FOR NOW
-    std::cerr << maligner_vd::ScoreMatrixRecordHeader() << "\n"
-              << ref_score_matrix_db.get_score_matrix_profile_rf_qf(qmw.get_name())
+    std::cout << ref_score_matrix_db.get_score_matrix_profile_rf_qf(qmw.get_name())
               << ref_score_matrix_db.get_score_matrix_profile_rf_qr(qmw.get_name())
               << ref_score_matrix_db.get_score_matrix_profile_rr_qf(qmw.get_name())
               << ref_score_matrix_db.get_score_matrix_profile_rr_qr(qmw.get_name());
@@ -199,10 +200,10 @@ int main(int argc, char* argv[]) {
 
   std::cerr << "maligner_vd done.\n";
 
-  fout_rf_qf.close();
-  fout_rf_qr.close();
-  fout_rr_qf.close();
-  fout_rr_qr.close();
+  // fout_rf_qf.close();
+  // fout_rf_qr.close();
+  // fout_rr_qf.close();
+  // fout_rr_qr.close();
 
   return EXIT_SUCCESS;
 
