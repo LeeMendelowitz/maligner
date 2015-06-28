@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <ostream>
+#include <algorithm>
 
 #include "globals.h"
 #include "common_types.h"
