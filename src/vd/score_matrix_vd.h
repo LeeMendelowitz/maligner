@@ -60,6 +60,9 @@ namespace maligner_vd {
 
       }
 
+      // If there was no valid cell in the row we must explictly set the row number here.
+      rec.row_ = i;
+
       ret.push_back(std::move(rec));
 
     }

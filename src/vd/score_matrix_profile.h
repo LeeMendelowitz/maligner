@@ -37,7 +37,7 @@ namespace maligner_vd {
       col_(-1),
       col_start_(-1),
       score_(-std::numeric_limits<double>::infinity()),
-      m_score_(std::numeric_limits<double>::infinity()) { }
+      m_score_(-std::numeric_limits<double>::infinity()) { }
 
     ScoreMatrixRecord(const string& query,
                       const string& ref,
