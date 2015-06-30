@@ -213,6 +213,14 @@ namespace maligner_dp {
       }
   };
 
+  // Sort an AlignmentVec in ascending order of score.
+  class AlignmentMScoreComp {
+  public:
+      bool operator()(const Alignment& a1, const Alignment& a2) {
+        return a1.m_score < a2.m_score;
+      }
+  };
+
   extern const Alignment INVALID_ALIGNMENT;
 
 

@@ -20,7 +20,7 @@ namespace maligner_dp {
     using maligner_dp::Constants::INF;
 
     class ScoreCell;
-    typedef std::vector<ScoreCell *> ScoreCellPVec;
+    typedef std::vector<const ScoreCell *> ScoreCellPVec;
     typedef std::unordered_set<ScoreCell *> ScoreCellSet;
     typedef std::pair<int, int> IntPair;
 
@@ -152,6 +152,11 @@ namespace maligner_dp {
         }
     };
 
+    struct ScoreCellPointerMScoreCmp {
+        bool operator()(const ScoreCell* p1, const ScoreCell* p2) {
+            return p1->m_score_ > p2->m_score_;
+        }
+    };
 
     struct ScoreCellFullOutput {
         

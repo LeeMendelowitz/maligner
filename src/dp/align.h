@@ -161,6 +161,9 @@ namespace maligner_dp {
 
   public:
 
+    typedef ScoreMatrixType score_matrix_type;
+    typedef SizingPenaltyType sizing_penalty_type;
+
     AlignTask(const MapData* qmd,
               const MapData* rmd,
               const std::vector<int>* q,
@@ -275,8 +278,8 @@ namespace maligner_dp {
   };
 
 
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  std::ostream& print_align_task(std::ostream& os, const AlignTask<ScoreMatrixType, SizingPenaltyType>& task);
+  template<typename AlignTaskType>
+  std::ostream& print_align_task(std::ostream& os, const AlignTaskType& task);
 
 
   ////////////////////////////////
@@ -290,69 +293,69 @@ namespace maligner_dp {
     The ScoreMatrix should already have the same number of columns as the reference,
     and should have enough rows to accomodate the query.
   */
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  void fill_score_matrix(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task);
+  template<typename AlignTaskType>
+  void fill_score_matrix(const AlignTaskType& task);
 
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  void fill_score_matrix_using_partials(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task);
+  template<typename AlignTaskType>
+  void fill_score_matrix_using_partials(const AlignTaskType& align_task);
 
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  void fill_score_matrix_using_partials(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task, row_order_tag);
+  template<typename AlignTaskType>
+  void fill_score_matrix_using_partials(const AlignTaskType& align_task, row_order_tag);
 
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  void fill_score_matrix_using_partials(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task, column_order_tag);
+  template<typename AlignTaskType>
+  void fill_score_matrix_using_partials(const AlignTaskType& align_task, column_order_tag);
 
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  void fill_score_matrix_using_partials_with_cell_queue(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task);
+  template<typename AlignTaskType>
+  void fill_score_matrix_using_partials_with_cell_queue(const AlignTaskType& align_task);
 
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  void fill_score_matrix_using_partials_with_cell_mark(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task);
+  template<typename AlignTaskType>
+  void fill_score_matrix_using_partials_with_cell_mark(const AlignTaskType& align_task);
 
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  void fill_score_matrix_using_partials_no_size_penalty(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task);
+  template<typename AlignTaskType>
+  void fill_score_matrix_using_partials_no_size_penalty(const AlignTaskType& align_task);
 
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  void fill_score_matrix_using_partials_with_size_penalty_class(const AlignTask<ScoreMatrixType, SizingPenaltyType>& align_task);
+  template<typename AlignTaskType>
+  void fill_score_matrix_using_partials_with_size_penalty_class(const AlignTaskType& align_task);
 
 
 
 
 
   // Build the trail which starts at pCell by following its backpointers.
-  void build_trail(ScoreCell* pCell, ScoreCellPVec& trail);
+  void build_trail(const ScoreCell* pCell, ScoreCellPVec& trail);
 
   // Create a vector of query chunks and reference chunks for the given trail.
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  void build_chunk_trail(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task, ScoreCellPVec& trail, ChunkVec& query_chunks, ChunkVec& ref_chunks);
+  template<typename AlignTaskType>
+  void build_chunk_trail(const AlignTaskType& task, ScoreCellPVec& trail, ChunkVec& query_chunks, ChunkVec& ref_chunks);
 
   // Print the vector of query chunks and reference chunks.
   void print_chunk_trail(const ChunkVec& query_chunks, const ChunkVec& ref_chunks);
 
   // Build the trail for the best alignment.
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  bool get_best_alignment_trail(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task, ScoreCellPVec& trail);
+  template<typename AlignTaskType>
+  bool get_best_alignment_trail(const AlignTaskType& task, ScoreCellPVec& trail);
 
   // Get the best alignments and store them in the task.
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  int get_best_alignments(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task);
+  template<typename AlignTaskType>
+  int get_best_alignments(const AlignTaskType& task);
 
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  int get_best_alignments_try_all(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task);
+  template<typename AlignTaskType>
+  int get_best_alignments_try_all(const AlignTaskType& task);
 
   // Make and return an alignment from the trail through the
   // score matrix.
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  Alignment alignment_from_trail(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task, ScoreCellPVec& trail);
+  template<typename AlignTaskType>
+  Alignment alignment_from_trail(const AlignTaskType& task, ScoreCellPVec& trail);
 
   // Build an alignment by tracing back from ScoreCell.
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  Alignment alignment_from_cell(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task, ScoreCell* p_cell);
+  template<typename AlignTaskType>
+  Alignment alignment_from_cell(const AlignTaskType& task, ScoreCell* p_cell);
 
   PartialSums make_partial_sums(const IntVec& frags, const int missed_sites);
   PartialSums* make_partial_sums_new(const IntVec& frags, const int missed_sites);
 
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  Alignment get_best_alignment_from_filled_scorematrix(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task);
+  template<typename AlignTaskType>
+  Alignment get_best_alignment_from_filled_scorematrix(const AlignTaskType& task);
 
 
   /////////////////////////////////////////
@@ -360,14 +363,14 @@ namespace maligner_dp {
   /////////////////////////////////////////
 
   // Fill score matrix, find best alignment, and return it.
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  Alignment make_best_alignment(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task);
+  template<typename AlignTaskType>
+  Alignment make_best_alignment(const AlignTaskType& task);
 
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  Alignment make_best_alignment_using_partials(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task);
+  template<typename AlignTaskType>
+  Alignment make_best_alignment_using_partials(const AlignTaskType& task);
 
-  template<class ScoreMatrixType, class SizingPenaltyType>
-  int make_best_alignments_using_partials(const AlignTask<ScoreMatrixType, SizingPenaltyType>& task);
+  template<typename AlignTaskType>
+  int make_best_alignments_using_partials(const AlignTaskType& task);
 
   // Assigns mad scores to the alignments, and returns the mad.
   double compute_mad_scores(AlignmentVec& alignments, const int max_alignments_mad, double min_mad);

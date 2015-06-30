@@ -64,13 +64,13 @@ namespace maligner_dp {
 
   }
 
-  void build_trail(ScoreCell* pCell, ScoreCellPVec& trail) {
+  void build_trail(const ScoreCell* pCell, ScoreCellPVec& trail) {
 
     #if BUILD_TRAIL_DEBUG > 0
     std::cerr << "Building trail from " << pCell << std::endl;
     #endif
 
-    ScoreCell* pCur = pCell;
+    const ScoreCell* pCur = pCell;
     while (pCur != nullptr) {
       #if BUILD_TRAIL_DEBUG > 0
       std::cerr << "pushing back: " << pCur << std::endl;
