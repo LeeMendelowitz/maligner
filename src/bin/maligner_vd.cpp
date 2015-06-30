@@ -118,10 +118,10 @@ int main(int argc, char* argv[]) {
 
   ////////////////////////////////////////////////////////
   // Open output files for the different alignment types.
-  auto fout_rf_qf = std::ofstream("rf_qf.aln");
-  auto fout_rf_qr = std::ofstream("rf_qr.aln");
-  auto fout_rr_qf = std::ofstream("rr_qf.aln");
-  auto fout_rr_qr = std::ofstream("rr_qr.aln");
+  std::ofstream fout_rf_qf("rf_qf.aln");
+  std::ofstream fout_rf_qr("rf_qr.aln");
+  std::ofstream fout_rr_qf("rr_qf.aln");
+  std::ofstream fout_rr_qr("rr_qr.aln");
 
   fout_rf_qf << AlignmentHeader();
   fout_rf_qr << AlignmentHeader();
