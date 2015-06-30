@@ -118,10 +118,10 @@ int main(int argc, char* argv[]) {
 
   ////////////////////////////////////////////////////////
   // Open output files for the different alignment types.
-  std::ofstream fout_rf_qf("rf_qf.aln");
-  std::ofstream fout_rf_qr("rf_qr.aln");
-  std::ofstream fout_rr_qf("rr_qf.aln");
-  std::ofstream fout_rr_qr("rr_qr.aln");
+  std::ofstream fout_rf_qf(maligner_vd::opt::output_pfx + ".rf_qf.aln");
+  std::ofstream fout_rf_qr(maligner_vd::opt::output_pfx + ".rf_qr.aln");
+  std::ofstream fout_rr_qf(maligner_vd::opt::output_pfx + ".rr_qf.aln");
+  std::ofstream fout_rr_qr(maligner_vd::opt::output_pfx + ".rr_qr.aln");
 
   fout_rf_qf << AlignmentHeader();
   fout_rf_qr << AlignmentHeader();

@@ -17,6 +17,9 @@ static const char *USAGE_MESSAGE =
 " Align the maps in the QUERY_MAPS_FILE to the maps in the REFERENCE_MAPS_FILE\n"
 " using dynamic programming.\n"
 "\n"
+" Output options:\n"
+"      -o, --output-pfx PFX             Output prefix.\n"
+"\n"
 " Alignment options:\n"
 "      --reference-is-circular          Treat reference maps as circular. Default: false\n"
 "      --num-permutation-trials         Number of trials for the permutation test.\n"
@@ -58,6 +61,8 @@ namespace maligner_vd {
       static string ref_maps_file;
       string program_name;
 
+      static string output_pfx("output");
+
       static double query_miss_penalty = 18.0;
       static double ref_miss_penalty = 3.0;
       static int query_max_misses = 2;
@@ -88,7 +93,7 @@ namespace maligner_vd {
   }
 }
 
-static const char* shortopts = "q:r:hv";
+static const char* shortopts = "q:r:hvo:";
 enum {
   OPT_QUERY_MAX_MISSES = 1,
   OPT_REF_MAX_MISSES,
@@ -109,7 +114,7 @@ enum {
 };
 
 static const struct option longopts[] = {
-
+    { "output-pfx", required_argument, NULL, 'o'},
     { "query-miss-penalty", required_argument, NULL, 'q'},
     { "ref-miss-penalty", required_argument, NULL, 'r'},
     { "query-max-misses", required_argument, NULL, OPT_QUERY_MAX_MISSES},
@@ -143,7 +148,8 @@ void parse_args(int argc, char** argv)
     {
         std::istringstream arg(optarg != NULL ? optarg : "");
         switch (c) 
-        {
+        { 
+            case 'o': arg >> opt::output_pfx; break;
             case 'q': arg >> opt::query_miss_penalty; break;
             case 'r': arg >> opt::ref_miss_penalty; break;
             case OPT_QUERY_MAX_MISSES: arg >> opt::query_max_misses; break;
@@ -245,6 +251,7 @@ std::ostream& print_args(std::ostream& os) {
 
   os << VERSION_MESSAGE << "\n"
      << "Settings:\n"
+     << "\toutput_pfx: " << output_pfx << "\n"
      << "\tquery_maps_file: " << query_maps_file << "\n"
      << "\tref_maps_file: " << ref_maps_file << "\n"
      << "\tverbose: " << verbose << "\n"
