@@ -122,6 +122,7 @@ namespace maligner_vd {
     
     using maligner_dp::ScoreCell;
     using maligner_dp::ScoreCellPointerMScoreCmp;
+    using maligner_dp::ScoreCellFullOutput;
     using maligner_dp::alignment_from_cell;
     using std::vector;
 
@@ -132,6 +133,12 @@ namespace maligner_vd {
     const size_t num_cols = sm.getNumCols();
 
     std::vector<const ScoreCell*> cells;
+
+    // DEBUG
+    // std::cerr << "GET BEST ALIGNMENTS: "
+    //           << task.ref_map_data->get_name() << " "
+    //           << task.query_is_forward << ":" << task.ref_is_forward << "\n";
+
 
     // Extract all valid cells from the ScoreMatrix.
     for(size_t i = 1; i < num_rows; i++) {
@@ -153,7 +160,7 @@ namespace maligner_vd {
 
     // Extract alignments
     BitCover bit_cover(num_cols);
-    vector<const ScoreCell*>::const_iterator E = cells.end();
+    const vector<const ScoreCell*>::const_iterator E = cells.end();
     for(vector<const ScoreCell*>::const_iterator i = cells.begin();
         i != E;
         i++) {
@@ -161,21 +168,38 @@ namespace maligner_vd {
       const ScoreCell * p_cell = *i;
 
       int ref_start = p_cell->ref_start_;
-      int ref_end = p_cell->q_;
+      int ref_end = p_cell->r_;
       
-      if( bit_cover.is_covered(ref_start , ref_end) )
+
+      // DEBUG
+      // std::cerr << "DEBUG: Attempting cell:\n\t" 
+      //           << ScoreCellFullOutput(p_cell) << "\n\t"
+      //           << "refstart: " << ref_start << "\n\t"
+      //           << "refend: " << ref_end << "\n";
+
+
+      if( bit_cover.is_covered(ref_start , ref_end) ) {
+        // std::cerr << "SKIPPING: cell is covered\n";
         continue;
 
-      if (ref_end - ref_start < min_aln_chunks)
+      }
+
+      if (ref_end - ref_start < min_aln_chunks) {
+        // std::cerr << "SKIPPING: min_aln_chunks\n";
         continue;
+      }
 
       Alignment aln = alignment_from_cell(task, p_cell);
 
       if (aln.matched_chunks.size() < min_aln_chunks) {
+        // std::cerr << "SKIPPING: min_aln_chunk check 2\n";
         continue;
       }
 
       bit_cover.cover_safe(ref_start, ref_end);
+
+      // std::cerr << "PUSHING\n";
+
       alns.push_back(std::move(aln));
 
       if (alns.size() == max_alignments) break;

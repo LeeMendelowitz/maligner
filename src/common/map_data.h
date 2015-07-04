@@ -56,6 +56,8 @@ namespace maligner_maps {
       //            << "\tnum_copies: " << num_copies << "\n";
       // }
 
+      std::string get_name() const { return map_name_; }
+
       std::string map_name_;
       size_t num_frags_; // The number of fragments in the original (non-circularized) map.
       int length_; // number of bp

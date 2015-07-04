@@ -88,7 +88,7 @@ namespace maligner_vd {
       static int min_query_frags = 3;
       static int max_query_frags = 50;
       static int min_aln_chunks = 5; // Minimum number of chunks to report a prefix/suffix alignment.
-      static double min_m_score = 5.0; // Maximum m_score to report an alignment.
+      static double max_m_score = -5.0; // Maximum m_score to report an alignment.
 
   }
 }
@@ -110,7 +110,7 @@ enum {
   OPT_NO_QUERY_RESCALING,
   OPT_REFERENCE_IS_CIRCULAR,
   OPT_MIN_ALN_CHUNKS,
-  OPT_MIN_M_SCORE
+  OPT_MAX_M_SCORE
 };
 
 static const struct option longopts[] = {
@@ -128,7 +128,7 @@ static const struct option longopts[] = {
     { "max-alignments", required_argument, NULL, OPT_MAX_ALIGNMENTS},
     { "max-score-per-inner-chunk", required_argument, NULL, OPT_MAX_SCORE_PER_INNER_CHUNK},
     { "min-aln-chunks", required_argument, NULL, OPT_MIN_ALN_CHUNKS},
-    { "min-m-score", required_argument, NULL, OPT_MIN_M_SCORE},
+    { "max-m-score", required_argument, NULL, OPT_MAX_M_SCORE},
     { "num-permutation-trials", required_argument, NULL, OPT_NUM_PERMUTATION_TRIALS},
     { "no-query-rescaling", no_argument, NULL, OPT_NO_QUERY_RESCALING},
     { "reference-is-circular", no_argument, NULL, OPT_REFERENCE_IS_CIRCULAR},
@@ -163,7 +163,7 @@ void parse_args(int argc, char** argv)
             case OPT_ALIGNMENTS_PER_REFERENCE: arg >> opt::alignments_per_reference; break;
             case OPT_MAX_ALIGNMENTS: arg >> opt::max_alignments; break;
             case OPT_MIN_ALN_CHUNKS: arg >> opt::min_aln_chunks; break;
-            case OPT_MIN_M_SCORE: arg >> opt::min_m_score; break;
+            case OPT_MAX_M_SCORE: arg >> opt::max_m_score; break;
             case OPT_NUM_PERMUTATION_TRIALS: arg >> opt::num_permutation_trials; break;
             case OPT_VERBOSE: opt::verbose = true; break;
             case OPT_NO_QUERY_RESCALING: opt::query_rescaling = false; break;
@@ -267,7 +267,7 @@ std::ostream& print_args(std::ostream& os) {
      << "\tmax_score_per_inner_chunk: " << max_score_per_inner_chunk << "\n"
      << "\talignments_per_reference: " << alignments_per_reference << "\n"
      << "\tmax_alignments: " << max_alignments << "\n"
-     << "\tmin_m_score: " << min_m_score << "\n"
+     << "\tmax_m_score: " << max_m_score << "\n"
      << "\tmin_aln_chunks: " << min_aln_chunks << "\n"
      << "\tmin_alignment_spacing: " << min_alignment_spacing << "\n"
      << "\tnum_permutation_trials: " << num_permutation_trials << "\n"

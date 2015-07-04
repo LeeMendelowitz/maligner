@@ -78,7 +78,7 @@ namespace maligner_vd {
     void _compute_max_scores() {
 
       _max_num_scores = 0;
-      for(auto& sm : sm_vec_) _max_num_scores += sm.get_ref_map().num_frags_total() + 1;
+      for(const auto& sm : sm_vec_) _max_num_scores += sm.get_ref_map().num_frags_total() + 1;
 
       // Need to handle scores for forward and reverse alignments, hence double.
       _max_num_scores = 2*_max_num_scores; 
@@ -156,7 +156,7 @@ namespace maligner_vd {
 
       // Compute mad & median of scores for this row.
 
-      for(auto& sm: sm_vec_) {
+      for(const auto& sm: sm_vec_) {
         sm.get_prefix_score_matrix_row_profile(row_num, query, allow_overlaps, max_samples, recs);
       }
 
@@ -232,7 +232,7 @@ namespace maligner_vd {
       recs.clear();
       recs.reserve(_max_num_scores);
       
-      for(auto& sm: sm_vec_) {
+      for(const auto& sm: sm_vec_) {
         sm.get_suffix_score_matrix_row_profile(row_num, query, allow_overlaps, max_samples, recs);
       }
 
@@ -294,7 +294,7 @@ namespace maligner_vd {
     if (sm_vec_.empty()) return true;
 
     const size_t num_rows = sm_vec_.front().num_rows_query_suffix();
-    for(auto& sm : sm_vec_) {
+    for(const auto& sm : sm_vec_) {
       if(num_rows != sm.num_rows_query_suffix()) {
         throw std::runtime_error("Num rows do not match for suffix alignment.");
       }
@@ -310,7 +310,7 @@ namespace maligner_vd {
     if (sm_vec_.empty()) return true;
 
     const size_t num_rows = sm_vec_.front().num_rows_query_prefix();
-    for(auto& sm : sm_vec_) {
+    for(const auto& sm : sm_vec_) {
       if(num_rows != sm.num_rows_query_prefix()) {
         throw std::runtime_error("Num rows do not match for prefix alignment.");
       }
@@ -361,7 +361,7 @@ namespace maligner_vd {
     // Get the profile for each underlying matix
     AlignmentVec alns;
 
-    for(auto& sm: sm_vec_) {
+    for(const auto& sm: sm_vec_) {
 
       // Get alignments for this score matrix.
       AlignmentVec alns_m = g(sm);

@@ -177,9 +177,12 @@ int main(int argc, char* argv[]) {
     {
       AlignmentVec alns = ref_score_matrix_db.get_best_alignments_rf_qf(maligner_vd::opt::max_alignments, maligner_vd::opt::min_aln_chunks);
       // std::cerr << "RFQF: " << alns.size() << " alns.\n";
+      // std::cerr << "max_m_score: " << maligner_vd::opt::max_m_score << "\n";
       for(auto& a : alns) {
-        // std::cerr << "aln m_score: " << a.m_score << "\n";
-        if(a.m_score >=  maligner_vd::opt::min_m_score) {
+        // std::cerr << "aln m_score: " << a.m_score 
+        //           << " total_score: " << a.total_score << "\n";
+
+        if(a.m_score <= maligner_vd::opt::max_m_score) {
           print_alignment(fout_rf_qf, a);
           print_alignment(std::cerr, a);
           wrote_count++;
@@ -192,7 +195,7 @@ int main(int argc, char* argv[]) {
       // std::cerr << "RFQR: " << alns.size() << " alns.\n";
       for(auto& a : alns) {
         // std::cerr << "aln m_score: " << a.m_score << "\n";
-        if(a.m_score >=  maligner_vd::opt::min_m_score) {
+        if(a.m_score <= maligner_vd::opt::max_m_score) {
           print_alignment(fout_rf_qr, a);
           print_alignment(std::cerr, a);
           wrote_count++;
@@ -205,7 +208,7 @@ int main(int argc, char* argv[]) {
       // std::cerr << "RRQF: " << alns.size() << " alns.\n";
       for(auto& a : alns) {
         // std::cerr << "aln m_score: " << a.m_score << "\n";
-        if(a.m_score >= maligner_vd::opt::min_m_score) {
+        if(a.m_score >= maligner_vd::opt::max_m_score) {
           print_alignment(fout_rr_qf, a);
           print_alignment(std::cerr, a);
           wrote_count++;
@@ -218,7 +221,7 @@ int main(int argc, char* argv[]) {
       // std::cerr << "RRQR: " << alns.size() << " alns.\n";
       for(auto& a : alns) {
         // std::cerr << "aln m_score: " << a.m_score << "\n";
-        if(a.m_score >=  maligner_vd::opt::min_m_score) {
+        if(a.m_score <= maligner_vd::opt::max_m_score) {
           print_alignment(fout_rr_qr, a);
           print_alignment(std::cerr, a);
           wrote_count++;
