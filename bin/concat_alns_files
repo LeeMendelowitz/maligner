@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+#
+# Concatenate alignment files
+#
+#####################################
+
+import argparse, sys, os
+from malignpy.common import wrap_file_function
+
+def run(alns_files, fout):
+
+  must_close = False
+  if isinstance(fout, basestring):
+    fout = open(fout)
+    must_close = True
+
+  if not alns_files:
+    return
+
+  f0 = open(alns_files[0])
+  fout.write(f0.next())
+  f0.close
+
+  for f in alns_files:
+    f = open(f)
+    h = f.next()
+    for l in f:
+      fout.write(l)
+    f.close()
+
+  if must_close:
+    fout.close()
+
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description="""Concat alignment files""")
+  parser.add_argument('alns_files', metavar='ALIGNMENT_FILE', type=str,
+                    nargs='+',
+                   help='Alignment file')
+  parser.add_argument('-o', '--output', metavar='OUTPUT FILE',
+    help = "Output file. (Default: STDOUT)", default = sys.stdout)
+  args = parser.parse_args()
+  run(args.alns_files, args.output)

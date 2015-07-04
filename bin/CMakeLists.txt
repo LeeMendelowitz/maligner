@@ -6,6 +6,7 @@ set( FILES_TO_INSTALL
   alignments_maligner_to_malign_viz  
   alignments_maligner_to_soma
   alignments_soma_to_maligner
+  concat_alns_files
   convert_maps
   filter_alignments
   get_maps_by_id
