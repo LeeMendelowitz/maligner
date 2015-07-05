@@ -210,6 +210,76 @@ namespace maligner_vd {
 
   }
 
+  ///////////////////////////////////////////////////////////////////////////////
+  // Get the best m-scoring non-overlapping alignments from the filled ScoreMatrix.
+  // Get full alignments.
+  template<typename AlignTaskType>
+  AlignmentVec get_best_full_alignments(
+    const AlignTaskType& task,
+    size_t max_alignments) {
+    
+    using maligner_dp::ScoreCell;
+    using maligner_dp::ScoreCellPointerMScoreCmp;
+    using maligner_dp::ScoreCellFullOutput;
+    using maligner_dp::alignment_from_cell;
+    using std::vector;
+
+    AlignmentVec alns;
+    const auto& sm = *task.mat;
+
+    const size_t num_rows = sm.getNumRows();
+    const size_t last_row = num_rows - 1;
+    const size_t num_cols = sm.getNumCols();
+
+    std::vector<const ScoreCell*> cells;
+
+    // Extract all valid cells from the last row of the ScoreMatrix.
+    for(size_t j = 0; j < num_cols; j++) {
+
+      const ScoreCell* p_cell = sm.getCell(last_row, j);
+
+      if(!p_cell->is_valid()) {
+        continue;
+      }
+
+      cells.push_back(p_cell);
+
+    }
+
+    // Sort cells by m score.
+    std::sort(cells.begin(), cells.end(), ScoreCellPointerMScoreCmp());
+
+    // Extract alignments
+    BitCover bit_cover(num_cols);
+    const vector<const ScoreCell*>::const_iterator E = cells.end();
+    for(vector<const ScoreCell*>::const_iterator i = cells.begin();
+        i != E;
+        i++) {
+
+      const ScoreCell * p_cell = *i;
+
+      int ref_start = p_cell->ref_start_;
+      int ref_end = p_cell->r_;
+      
+      if( bit_cover.is_covered(ref_start , ref_end) ) {
+        continue;
+
+      }
+
+      Alignment aln = alignment_from_cell(task, p_cell);
+
+      bit_cover.cover_safe(ref_start, ref_end);
+
+      alns.push_back(std::move(aln));
+
+      if (alns.size() == max_alignments)
+        break;
+
+    }
+
+    return alns;
+
+  }
 
   /////////////////////////////////////////////////////////
   // Define a class for storing ScoreMatrices
@@ -255,8 +325,12 @@ namespace maligner_vd {
     Alignment best_aln_rr_qf() const { return get_best_alignment_from_filled_scorematrix(aln_task_rr_qf_);}
     
 
-    void get_best_prefix_alignments(AlignmentVec& alns, size_t max_alignments);
-    void get_best_suffix_alignments(AlignmentVec& alns, size_t max_alignments);
+    // void get_best_prefix_alignments(AlignmentVec& alns, size_t max_alignments);
+    // void get_best_suffix_alignments(AlignmentVec& alns, size_t max_alignments);
+
+    // Get best full (query global) alignments in forward and reverse direction
+    AlignmentVec get_best_full_alignments_forward(size_t max_alignments) const;
+    AlignmentVec get_best_full_alignments_reverse(size_t max_alignments) const;
 
     AlignmentVec get_best_alignments_rf_qf(size_t max_alignments, int min_aln_chunks) const;
     AlignmentVec get_best_alignments_rf_qr(size_t max_alignments, int min_aln_chunks) const;
@@ -503,7 +577,7 @@ namespace maligner_vd {
   }
 
   template<typename ScoreMatrixType>
-  void RefScoreMatrixVD<ScoreMatrixType>::aln_to_reverse_ref(const QueryMapWrapper& query, const AlignOpts& align_opts) {
+  void RefScoreMatrixVD<ScoreMatrixType>::aln_to_reverse_ref  (const QueryMapWrapper& query, const AlignOpts& align_opts) {
 
 
     aln_task_rr_qf_ = AlignTaskType(
@@ -993,6 +1067,15 @@ namespace maligner_vd {
     return get_best_alignments(aln_task_rr_qr_, max_alignments, min_aln_chunks);
   }
 
+  template<typename ScoreMatrixType>
+  AlignmentVec RefScoreMatrixVD<ScoreMatrixType>::get_best_full_alignments_forward(size_t max_alignments) const {
+    return maligner_vd::get_best_full_alignments(aln_task_rf_qf_, max_alignments);
+  }
+
+  template<typename ScoreMatrixType>
+  AlignmentVec RefScoreMatrixVD<ScoreMatrixType>::get_best_full_alignments_reverse(size_t max_alignments) const {
+    return maligner_vd::get_best_full_alignments(aln_task_rf_qr_, max_alignments);
+  }  
 
 }
 

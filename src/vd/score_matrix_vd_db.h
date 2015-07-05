@@ -61,10 +61,12 @@ namespace maligner_vd {
     AlignmentVec get_best_alignments_rr_qf(size_t max_alignments, int min_aln_chunks) const;
     AlignmentVec get_best_alignments_rr_qr(size_t max_alignments, int min_aln_chunks) const;
 
+    AlignmentVec get_best_full_alignments_forward(size_t max_alignments) const;
+    AlignmentVec get_best_full_alignments_reverse(size_t max_alignments) const;
+    AlignmentVec get_best_full_alignments(size_t max_alignments) const;
+
     template<typename MatrixGetter>
     ScoreMatrixProfile get_score_matrix_profile_helper(MatrixGetter g);
-
-
 
     template<typename AlignmentGetter>
     AlignmentVec get_alignments_helper(AlignmentGetter g,
@@ -455,6 +457,49 @@ namespace maligner_vd {
 
       return get_alignments_helper(aln_getter, max_alignments);
   }
+
+  template<typename ScoreMatrixVDType>
+  AlignmentVec RefScoreMatrixVDDB<ScoreMatrixVDType>::get_best_full_alignments_forward(size_t max_alignments) const {
+
+      auto aln_getter = [max_alignments](const ScoreMatrixVDType& sm) {
+        return sm.get_best_full_alignments_forward(max_alignments);
+      };
+
+      return get_alignments_helper(aln_getter, max_alignments);
+  }
+
+  template<typename ScoreMatrixVDType>
+  AlignmentVec RefScoreMatrixVDDB<ScoreMatrixVDType>::get_best_full_alignments_reverse(size_t max_alignments) const {
+
+      auto aln_getter = [max_alignments](const ScoreMatrixVDType& sm) {
+        return sm.get_best_full_alignments_reverse(max_alignments);
+      };
+
+      return get_alignments_helper(aln_getter, max_alignments);
+  }  
+
+  template<typename ScoreMatrixVDType>
+  AlignmentVec RefScoreMatrixVDDB<ScoreMatrixVDType>::get_best_full_alignments(size_t max_alignments) const {
+
+      auto aln_getter = [max_alignments](const ScoreMatrixVDType& sm) {
+
+        // Get both the forward and reverse alignments
+        auto aln_vec_forward = sm.get_best_full_alignments_forward(max_alignments);
+        auto aln_vec_reverse = sm.get_best_full_alignments_reverse(max_alignments);
+
+        aln_vec_forward.insert(
+           aln_vec_forward.end(),
+           make_move_iterator(aln_vec_reverse.begin()),
+           make_move_iterator(aln_vec_reverse.end())
+        );
+
+        return aln_vec_forward;
+
+      };
+
+      return get_alignments_helper(aln_getter, max_alignments);
+  }  
+
 
 }
 

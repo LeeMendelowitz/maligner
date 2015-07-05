@@ -122,11 +122,13 @@ int main(int argc, char* argv[]) {
   std::ofstream fout_rf_qr(maligner_vd::opt::output_pfx + ".rf_qr.aln");
   std::ofstream fout_rr_qf(maligner_vd::opt::output_pfx + ".rr_qf.aln");
   std::ofstream fout_rr_qr(maligner_vd::opt::output_pfx + ".rr_qr.aln");
+  std::ofstream fout_full_aln(maligner_vd::opt::output_pfx + ".full.aln");
 
   fout_rf_qf << AlignmentHeader();
   fout_rf_qr << AlignmentHeader();
   fout_rr_qf << AlignmentHeader();
   fout_rr_qr << AlignmentHeader();
+  fout_full_aln << AlignmentHeader();
 
   std::cout << maligner_vd::ScoreMatrixRecordHeader() << "\n";
 
@@ -178,7 +180,7 @@ int main(int argc, char* argv[]) {
       AlignmentVec alns = ref_score_matrix_db.get_best_alignments_rf_qf(maligner_vd::opt::max_alignments, maligner_vd::opt::min_aln_chunks);
       // std::cerr << "RFQF: " << alns.size() << " alns.\n";
       // std::cerr << "max_m_score: " << maligner_vd::opt::max_m_score << "\n";
-      for(auto& a : alns) {
+      for(const auto& a : alns) {
         // std::cerr << "aln m_score: " << a.m_score 
         //           << " total_score: " << a.total_score << "\n";
 
@@ -193,7 +195,7 @@ int main(int argc, char* argv[]) {
     {
       AlignmentVec alns = ref_score_matrix_db.get_best_alignments_rf_qr(maligner_vd::opt::max_alignments, maligner_vd::opt::min_aln_chunks);
       // std::cerr << "RFQR: " << alns.size() << " alns.\n";
-      for(auto& a : alns) {
+      for(const auto& a : alns) {
         // std::cerr << "aln m_score: " << a.m_score << "\n";
         if(a.m_score <= maligner_vd::opt::max_m_score) {
           print_alignment(fout_rf_qr, a);
@@ -206,7 +208,7 @@ int main(int argc, char* argv[]) {
     {
       AlignmentVec alns = ref_score_matrix_db.get_best_alignments_rr_qf(maligner_vd::opt::max_alignments, maligner_vd::opt::min_aln_chunks);
       // std::cerr << "RRQF: " << alns.size() << " alns.\n";
-      for(auto& a : alns) {
+      for(const auto& a : alns) {
         // std::cerr << "aln m_score: " << a.m_score << "\n";
         if(a.m_score >= maligner_vd::opt::max_m_score) {
           print_alignment(fout_rr_qf, a);
@@ -219,7 +221,7 @@ int main(int argc, char* argv[]) {
     {
       AlignmentVec alns = ref_score_matrix_db.get_best_alignments_rr_qr(maligner_vd::opt::max_alignments, maligner_vd::opt::min_aln_chunks);
       // std::cerr << "RRQR: " << alns.size() << " alns.\n";
-      for(auto& a : alns) {
+      for(const auto& a : alns) {
         // std::cerr << "aln m_score: " << a.m_score << "\n";
         if(a.m_score <= maligner_vd::opt::max_m_score) {
           print_alignment(fout_rr_qr, a);
@@ -227,7 +229,20 @@ int main(int argc, char* argv[]) {
           wrote_count++;
         }
       }
-    }    
+    }
+
+    {
+      AlignmentVec alns = ref_score_matrix_db.get_best_full_alignments(maligner_vd::opt::max_alignments);
+      // std::cerr << "RRQR: " << alns.size() << " alns.\n";
+      for(const auto& a : alns) {
+        // std::cerr << "aln m_score: " << a.m_score << "\n";
+        if(a.m_score <= maligner_vd::opt::max_m_score) {
+          print_alignment(fout_full_aln, a);
+          print_alignment(std::cerr, a);
+          wrote_count++;
+        }
+      }
+    }     
     ///////////////////////////////////////////////////////////////////////////////////////
 
     std::cout << ref_score_matrix_db.get_score_matrix_profile_rf_qf(qmw.get_name())
@@ -252,6 +267,7 @@ int main(int argc, char* argv[]) {
   fout_rf_qr.close();
   fout_rr_qf.close();
   fout_rr_qr.close();
+  fout_full_aln.close();
 
   return EXIT_SUCCESS;
 
