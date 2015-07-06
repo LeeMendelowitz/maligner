@@ -363,7 +363,7 @@ int main(int argc, char* argv[]) {
         align_opts
       );
 
-      ScoreMatrixProfile profile_forward, profile_rev;
+      // ScoreMatrixProfile profile_forward, profile_rev;
 
       // std::cerr << "Align task forward: "; print_align_task(std::cerr, task_forward);
       // std::cerr << "Align task reverse: "; print_align_task(std::cerr, task_reverse);
@@ -386,18 +386,18 @@ int main(int argc, char* argv[]) {
 
         ////////////////////////////////////////////////
         // DEBUG      
-        std::cerr << sm.getNumRows() << " x " << sm.getNumCols() << "\n";    
-        std::cerr << "last_row: " << sm.countFilledByRow(sm.getNumRows() - 1) << "\n";
-        profile_forward = get_score_matrix_row_profile(sm,
-          sm.getNumRows()-1,
-          qmw.get_name(),
-          rmw.get_name(), maligner_vd::AlignmentOrientation::RF_QF);
+        // std::cerr << sm.getNumRows() << " x " << sm.getNumCols() << "\n";    
+        // std::cerr << "last_row: " << sm.countFilledByRow(sm.getNumRows() - 1) << "\n";
+        // profile_forward = get_score_matrix_row_profile(sm,
+        //   sm.getNumRows()-1,
+        //   qmw.get_name(),
+        //   rmw.get_name(), maligner_vd::AlignmentOrientation::RF_QF);
         
-        std::sort(profile_forward.begin(), profile_forward.end(), maligner_vd::ScoreMatrixRecordScoreCmp());
+        // std::sort(profile_forward.begin(), profile_forward.end(), maligner_vd::ScoreMatrixRecordScoreCmp());
         
-        if(profile_forward.size() > 100) {
-          profile_forward.resize(100);
-        }
+        // if(profile_forward.size() > 100) {
+        //   profile_forward.resize(100);
+        // }
         //////////////////////////////////////////////
 
       }
@@ -416,18 +416,18 @@ int main(int argc, char* argv[]) {
 
         ////////////////////////////////////////////////////////////////////
         // DEBUG
-        std::cerr << sm.getNumRows() << " x " << sm.getNumCols() << "\n";
-        std::cerr << "last_row: " << sm.countFilledByRow(sm.getNumRows() - 1) << "\n";
-        profile_rev = get_score_matrix_row_profile(sm,
-          sm.getNumRows()-1,
-          qmw.get_name(),
-          rmw.get_name(), maligner_vd::AlignmentOrientation::RF_QR);
+        // std::cerr << sm.getNumRows() << " x " << sm.getNumCols() << "\n";
+        // std::cerr << "last_row: " << sm.countFilledByRow(sm.getNumRows() - 1) << "\n";
+        // profile_rev = get_score_matrix_row_profile(sm,
+        //   sm.getNumRows()-1,
+        //   qmw.get_name(),
+        //   rmw.get_name(), maligner_vd::AlignmentOrientation::RF_QR);
         
-        std::sort(profile_rev.begin(), profile_rev.end(), maligner_vd::ScoreMatrixRecordScoreCmp());
+        // std::sort(profile_rev.begin(), profile_rev.end(), maligner_vd::ScoreMatrixRecordScoreCmp());
 
-        if(profile_rev.size() > 100) {
-          profile_rev.resize(100);
-        }
+        // if(profile_rev.size() > 100) {
+        //   profile_rev.resize(100);
+        // }
         ////////////////////////////////////////////////////////////////////
 
       }
@@ -435,13 +435,13 @@ int main(int argc, char* argv[]) {
 
       ////////////////////////////////////////////////////////////////////
       // DEBUG WRITE OUT!
-      std::cerr << maligner_vd::ScoreMatrixRecordHeader() << "\n";
-      for(auto& rec : profile_forward) {
-        std::cerr << rec << "\n";
-      }
-      for(auto& rec : profile_rev) {
-        std::cerr << rec << "\n";
-      }
+      // std::cerr << maligner_vd::ScoreMatrixRecordHeader() << "\n";
+      // for(auto& rec : profile_forward) {
+      //   std::cerr << rec << "\n";
+      // }
+      // for(auto& rec : profile_rev) {
+      //   std::cerr << rec << "\n";
+      // }
       ////////////////////////////////////////////////////////////////////
 
     }
