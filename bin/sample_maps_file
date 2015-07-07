@@ -11,7 +11,7 @@ import numpy as np
 import malignpy
 from malignpy.common import wrap_file_function
 
-parser = argparse.ArgumentParser(description='Split a maps file into N chunks')
+parser = argparse.ArgumentParser(description='Randomly sample from a maps file')
 parser.add_argument('maps_file', metavar='MAPS_FILE', type=str,
                    help='SOMA MAPS FILE')
 parser.add_argument('-n', '--num_maps', metavar='N', type=int, help='Number of maps to sample.')

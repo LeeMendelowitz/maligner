@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+"""
+Filter maps by min/max num frags and min/max length
+"""
+
+import argparse, sys, os
+from malignpy.maps.MalignerMap import MalignerMap, smooth_left_right
+from malignpy.maps.utils import gen_maps
+from malignpy.common import wrap_file_function
+
+@wrap_file_function('r', 'w')
+def run(input_maps_file, fout, min_frag, max_frag, min_length, max_length):
+
+  map_gen = gen_maps(input_maps_file)
+
+  for m in map_gen:
+
+    nf = m.numFrags
+    l = m.length
+
+    if nf < min_frag:
+      continue
+    if nf > max_frag:
+      continue
+    if l < min_length:
+      continue
+    if l > max_length:
+      continue
+
+    m.write(fout)
+
+
+if __name__ == '__main__':
+
+  parser = argparse.ArgumentParser(description="""Filter a maps file.""")
+  parser.add_argument('maps_file', metavar='MAPS_FILE', type=str,
+                   help='Input maps file in the maligner maps format.')
+
+  parser.add_argument('--min-frag', metavar='N',
+    help = "Minimum number of fragments", default = 0, type = int)
+  parser.add_argument('--max-frag', metavar='N',
+    help = "Maximum number of fragments", default = float("inf"), type = int)
+  parser.add_argument('--min-length', metavar='N',
+    help = "Minimum map length", default = 0, type = int)
+  parser.add_argument('--max-length', metavar='N',
+    help = "Maximum map length", default = 2**64, type = int)
+  parser.add_argument('-o', '--output', metavar='OUTPUT_FILE',
+      help = "Output file name. (Default: STDOUT)", default = sys.stdout)
+
+  args = parser.parse_args()
+
+  if args.output is None:
+    args.output = sys.stdout
+
+  run(args.maps_file, args.output, args.min_frag, args.max_frag, args.min_length, args.max_length)
