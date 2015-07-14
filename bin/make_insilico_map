@@ -34,34 +34,26 @@ def gen_sites(seq, forward_rec_seq):
     # we only mark the site once. Therefore, we search for just the forward recognition sequence
     # in these cases.
     forward_rec_seq = forward_rec_seq.upper()
-    complement_rec_seq = complement(forward_rec_seq)
     rev_complement_rec_seq = reverse_complement(forward_rec_seq)
 
-    if complement_rec_seq == forward_rec_seq or \
-       rev_complement_rec_seq == forward_rec_seq:
-        complement_rec_seq = None # Don't need to search for it.
-
     char_set = set('ACTG')
-    for rec_seq in (forward_rec_seq, complement_rec_seq):
+    for rec_seq in (forward_rec_seq, rev_complement_rec_seq):
         if rec_seq is None:
             continue
         for c in rec_seq:
             if c not in char_set:
                 raise RuntimeError('Recognition sequences must only have alphabet ACTG')
 
-    if complement_rec_seq is not None and complement_rec_seq == forward_rec_seq:
-        raise RuntimeError('forward_rec_seq and complement_rec_seq should not match.')
-
     L = len(seq)
-    if complement_rec_seq:
-        # Check every position for a cut site.
+    if forward_rec_seq != rev_complement_rec_seq:
+        # Check every position for a cut site using both forward and reverse complement of recognition sequence
         lf = len(forward_rec_seq)
-        lr = len(complement_rec_seq)
+        lr = len(rev_complement_rec_seq)
         yield (0, 's')
         for i in xrange(L):
             if seq[i:i+lf] == forward_rec_seq:
                 yield (i, 'f')
-            if seq[i:i+lr] == complement_rec_seq:
+            if seq[i:i+lr] == rev_complement_rec_seq:
                 yield (i, 'r')
         yield (L, 'e')
     else:
@@ -110,7 +102,7 @@ def run_fasta(fasta_file, forward_rec_seq, output_pfx):
 
     map_handle = open('%s.maps'%output_pfx, 'w')
     site_handle = None
-    #site_handle = open('%s.sites'%output_pfx, 'w')
+    # site_handle = open('%s.sites'%output_pfx, 'w')
 
     
     seq_gen = SeqIO.parse(fasta_file, 'fasta')
@@ -122,7 +114,7 @@ def run_fasta(fasta_file, forward_rec_seq, output_pfx):
         make_insilico_map(seq, forward_rec_seq, map_handle, site_handle, map_name = rec.id)
 
     map_handle.close()
-    site_handle.close()
+    # site_handle.close()
 
     end_time = time.clock()
     sys.stderr.write('Run time: %.3f seconds.\n'%(end_time - start_time))
