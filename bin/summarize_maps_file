@@ -6,6 +6,7 @@ Produce summary statistics for a maps file.
 import argparse, sys, os
 import numpy as np
 from numpy import empty, array, concatenate, mean, percentile, min, max, sum
+from scipy.stats import trim_mean
 from malignpy.maps.MalignerMap import MalignerMap
 from malignpy.maps.utils import gen_maps
 from malignpy.common import wrap_file_function
@@ -51,6 +52,9 @@ def run(input_maps_file, include_terminal):
       print '{}\t{:,.2f}'.format(row_name, p[i])
 
     print '{}_mean\t{:,.2f}'.format(pfx, mean(vals))
+    print '{}_trimmed_mean_(10%%-90%)\t{:,.2f}'.format(pfx, trim_mean(vals, 0.1))
+    print '{}_trimmed_mean_(5%%-95%)\t{:,.2f}'.format(pfx, trim_mean(vals, 0.05))
+    print '{}_trimmed_mean_(1%%-99%)\t{:,.2f}'.format(pfx, trim_mean(vals, 0.01))
     print '{}_min\t{:,.2f}'.format(pfx, min(vals))
     print '{}_max\t{:,.2f}'.format(pfx, max(vals))
 
