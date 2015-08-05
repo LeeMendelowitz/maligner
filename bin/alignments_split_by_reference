@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+"""Split an alignments file by reference"""
+
+import argparse
+from itertools import islice
+import os, sys
+
+from malignpy.common import wrap_file_function, logging_utils
+from malignpy.maps.utils import read_maps
+from malignpy.core.maligner_dp_alignments import Alignment, OUTPUT_FIELDS
+
+logger = logging_utils.create_logger('alignment_locs')
+
+parser = argparse.ArgumentParser(description="""Split an alignments file by reference""")
+parser.add_argument('alns_file', metavar='ALIGNMENTS_FILE', type=str,
+                   help='Alignments file. Use "-" for STDIN')
+parser.add_argument('-o', '--output', metavar='PFX', help = "Output pfx.", default='out')
+
+@wrap_file_function('r')
+def split_by_ref(aln_file, output_pfx):
+  
+  # Write Header
+  header = aln_file.next()
+
+  ref_to_f = {}
+
+
+  for line_num, l in enumerate(aln_file):
+
+    if not l.strip():
+      continue
+
+    try:
+      aln = Alignment(l)
+    except Exception as e:
+      sys.stderr.write("Caught Exception: %s\n"%str(e))
+      sys.stderr.write("Line: %i\n"%line_num)
+      sys.stderr.write(l + "\n")
+
+
+    # Get the output file handle for this reference.
+    # If no handle exists, transfer the header and store in ref_to_f dict.
+    fout = ref_to_f.get(aln.ref_map, None)
+    if fout is None:
+      fname = '{0}.{1}.aln'.format(output_pfx, aln.ref_map)
+      fout = open(fname, 'w')
+      fout.write(header)
+      ref_to_f[aln.ref_map] = fout
+
+    fout.write(l)
+
+  for v in ref_to_f.itervalues():
+    v.close()
+
+
+if __name__ == '__main__':
+
+  args = parser.parse_args()
+
+  output_pfx = args.output
+  input_file = args.alns_file if (args.alns_file is not None and args.alns_file != '-') else sys.stdin
+
+  logger.info('Alignment file: %s', "STDIN" if input_file == sys.stdin else args.alns_file)
+  logger.info('Output file: %s', 'STDOUT' if args.output is None else args.output)  
+  logger.info('Splitting alignments by reference... (patience)')
+
+  split_by_ref(input_file, output_pfx)

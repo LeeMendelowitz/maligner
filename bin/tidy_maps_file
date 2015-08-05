@@ -1,0 +1,50 @@
+#!/usr/bin/env python
+"""
+Produce a tidy version of a maps file.
+Output is a tab delimited file:
+<MAP> <FRAG_INDEX> <FRAG_LENGTH>
+"""
+
+import argparse, sys, os
+from malignpy.maps.MalignerMap import MalignerMap, smooth
+from malignpy.maps.utils import gen_maps
+from malignpy.common import wrap_file_function
+
+@wrap_file_function('r')
+def run(input_maps_file, output_pfx):
+
+  maps_out = open('%s.maps.tidy'%output_pfx, 'w')
+  index_out = open('%s.maps.tidy.index'%output_pfx, 'w')
+
+  map_gen = gen_maps(input_maps_file)
+
+  header_fields = ['map_index', 'index', 'length']
+  maps_out.write('\t'.join(header_fields) + '\n')
+
+  header_fields = ['map', 'map_index']
+  index_out.write('\t'.join(header_fields) + '\n')
+
+  for map_num, m in enumerate(map_gen):
+
+    map_id = m.mapId
+
+    index_out.write('%i\t%s\n'%(map_num, map_id))
+
+    for i,f in enumerate(m.frags):
+      fields = [map_num, i, f]
+      maps_out.write('\t'.join(str(f) for f in fields) + '\n')
+
+  maps_out.close()
+  index_out.close()
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description="""Create tidy form of maps file""")
+  parser.add_argument('maps_file', metavar='MAPS_FILE', type=str,
+                   help='Input maps file in the maligner maps format.')
+  parser.add_argument('-o', '--output', metavar='OUTPUT_PFX',
+      help = "Output pfx. Default: out", default = 'out')
+
+  args = parser.parse_args()
+
+
+  run(args.maps_file, args.output)

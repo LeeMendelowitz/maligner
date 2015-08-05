@@ -23,10 +23,16 @@ def run(alns_files, fout):
 
   for f in alns_files:
     f = open(f)
-    h = f.next()
-    for l in f:
-      fout.write(l)
-    f.close()
+    try:
+
+      h = f.next()
+      for l in f:
+        fout.write(l)
+      f.close()
+
+    except StopIteration:
+      sys.stderr.write("Error processing file %s, skipping.\n"%f)
+
 
   if must_close:
     fout.close()

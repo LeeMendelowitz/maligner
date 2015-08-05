@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+"""Get best n alignments for each query. This assumes that the alignments for each query
+are already sorted from best to worst."""
+
+import argparse
+from itertools import islice
+import os, sys
+import numpy as np
+import pandas
+from pandas import DataFrame
+
+from malignpy.common import wrap_file_function, logging_utils
+from malignpy.maps.utils import read_maps
+from malignpy.core.maligner_dp_alignments import Alignment, OUTPUT_FIELDS
+
+logger = logging_utils.create_logger('alignment_locs')
+
+parser = argparse.ArgumentParser(description="""Get best N alignments for each query.""")
+parser.add_argument('alns_file', metavar='ALIGNMENTS_FILE', type=str,
+                   help='Alignments file. Use "-" for STDIN')
+parser.add_argument('max_alns', metavar='N', type=int)
+parser.add_argument('-o', '--output', metavar='OUTPUT_FILE', help = "Output file name. (Default: STDOUT)")
+
+@wrap_file_function('r', 'w')
+def get_best_n(aln_file, fout, N):
+  
+  # Write Header
+  fout.write(aln_file.next())
+
+  last_query_map = None
+  cur_count = 0
+  
+  for aln_num,l in enumerate(aln_file):
+
+    aln = Alignment(l)
+
+    if aln.query_map == last_query_map:
+      cur_count += 1
+    else:
+      cur_count = 1
+      last_query_map = aln.query_map
+
+    if cur_count > N:
+      continue
+
+    fout.write(l)
+
+if __name__ == '__main__':
+
+  args = parser.parse_args()
+
+  if args.max_alns < 1:
+    raise RuntimeError("Must select at least 1 alignment per query.")
+
+  output_file = args.output if args.output is not None else sys.stdout
+  input_file = args.alns_file if (args.alns_file is not None and args.alns_file != '-') else sys.stdin
+
+  logger.info('Alignment file: %s', "STDIN" if input_file == sys.stdin else args.alns_file)
+  logger.info('Output file: %s', 'STDOUT' if args.output is None else args.output)  
+
+  logger.info('Filtering alignments... (patience)')
+
+  get_best_n(input_file, output_file, args.max_alns)

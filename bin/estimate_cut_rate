@@ -1,0 +1,133 @@
+#!/usr/bin/env python
+"""
+Given a set of query maps and reference maps,
+estimate the cut rate based on
+median fragment size.
+"""
+
+import argparse, sys, os
+from malignpy.maps.MalignerMap import MalignerMap
+from malignpy.maps.utils import gen_maps
+from malignpy.common import wrap_file_function
+from scipy.interpolate import interp1d
+import numpy as np
+import pandas as pd
+randint = np.random.randint
+geometric = np.random.geometric
+sum = np.sum
+
+class FragSimulator(object):
+
+  def __init__(self, maps):
+    self.maps = [m for m in maps if len(m.frags) >= 3]
+    for m in self.maps:
+      m.frags = np.array(m.frags)
+
+  def gen_frags(self, cut_rate, num_frags): 
+    """Generate num_frags fragments at given cut_rate from the maps"""
+    return np.array([self.gen_frag(cut_rate) for i in xrange(num_frags)])
+
+  def gen_frag(self, cut_rate):
+    """Generate a single fragment at the cut_rate from the maps"""
+    # Select a map at random
+    i = randint(0, len(self.maps))
+    m = self.maps[i]
+
+    # Exclude boundary fragments
+    frags = m.frags[1:-1]
+
+    # Generate a starting index
+    s = randint(0, len(frags))
+    assert(s) < len(frags)
+    
+
+    # Generate the number of fragments based on cut rate
+    n = geometric(cut_rate)
+    assert(n > 0)
+
+    return sum(frags[s:s+n])
+
+  def get_summary(self, cut_rate, n):
+    frags = self.gen_frags(cut_rate, n)
+    return {'median_frag' : np.median(frags),
+            'mean_frag' : np.mean(frags)}
+
+def run_simulation(maps, cut_rates, n = 100000):
+  sim = FragSimulator(maps)
+  data = []
+  for cut_rate in cut_rates:
+    d = sim.get_summary(cut_rate, n)
+    d['cut_rate'] = cut_rate
+    data.append(d)
+
+  d = pd.DataFrame(data)
+  return d
+
+def interpolate_median(data, median_frag_size):
+  x = data['median_frag']
+  y = data['cut_rate']
+  f = interp1d(x, y)
+  max_x = np.max(x)
+  min_x = np.min(x)
+  if median_frag_size < min_x:
+    sys.stderr.write("Warning: median_frag_size (%.2f) is less than the minimum: (%.2f)\n"%(median_frag_size, min_x))
+    return 1.0
+  if median_frag_size > max_x:
+    sys.stderr.write("Warning: median_frag_size (%.2f) is greater than the max: (%.2f)\n"%(median_frag_size, max_x))
+    return 0.0
+  return f(median_frag_size)
+
+@wrap_file_function('r')
+def get_maps_file_frag_median(maps_file):
+  """Get the median fragment size in a query maps file"""
+  frags = []
+  for m in gen_maps(maps_file):
+    # Ignore boundary frags
+    frags.extend(m.frags[1:-1])
+  return np.median(frags)
+
+def run(ref_maps_file, query_maps_file, output_pfx = 'out'):
+  min_cut_rate = 0.4
+  max_cut_rate = 1.0
+  cut_rate_step = 0.025
+
+  stderr = sys.stderr.write
+
+  stderr("Ref Map: %s\n"%os.path.abspath(ref_maps_file))
+  stderr("Query Map: %s\n"%os.path.abspath(query_maps_file))
+
+  # Compute median query interior fragment size
+  query_median = get_maps_file_frag_median(query_maps_file)
+  ref_median = get_maps_file_frag_median(ref_maps_file)
+  stderr("Query median frag size: %.2f\n"%(query_median))
+  stderr("Ref median frag size: %.2f\n"%(ref_median))
+
+  # Read in reference maps
+  ref_maps = list(gen_maps(open(ref_maps_file)))
+  stderr("Read %i reference maps\n"%len(ref_maps))
+
+  # Sample reference fragments
+  cut_rates = np.arange(min_cut_rate, max_cut_rate, cut_rate_step)
+  sim_data = run_simulation(ref_maps, cut_rates)
+
+  estimated_cut_rate = interpolate_median(sim_data, query_median)
+
+  stderr("Estimated cut rate: %.2f\n"%estimated_cut_rate)
+
+  output_sim_data = '{pfx}.simulation_table.tsv'.format(pfx = output_pfx)
+  sim_data.to_csv(output_sim_data, sep='\t', index=False)
+
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description="""Generate random maps by sampling interior fragments, with replacement.""")
+  
+  parser.add_argument('ref_maps_file', metavar='REF_MAPS_FILE', type=str,
+                   help='Input reference maps file in the maligner maps format.')
+  parser.add_argument('query_maps_file', metavar='QUERY_MAPS_FILE', type=str,
+                   help='Input query maps file in the maligner maps format.')
+  parser.add_argument("--output_pfx", metavar="PFX", type=str, help="Output Prefix",
+    default = "out")
+
+  args = parser.parse_args()
+
+  run(args.ref_maps_file, args.query_maps_file, args.output_pfx)
