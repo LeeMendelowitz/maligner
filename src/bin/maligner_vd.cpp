@@ -65,8 +65,6 @@ typedef maligner_vd::RefScoreMatrixVD<ScoreMatrixType> RefScoreMatrixVDType;
 typedef maligner_vd::RefScoreMatrixVDDB<RefScoreMatrixVDType> RefScoreMatrixDB;
 typedef std::vector<RefScoreMatrixVDType> RefScoreMatrixVDVec;
 
-
-
 int main(int argc, char* argv[]) {
 
   using maligner_dp::Alignment;
@@ -91,7 +89,9 @@ int main(int argc, char* argv[]) {
                        maligner_vd::opt::neighbor_delta,
                        maligner_vd::opt::query_is_bounded, // Perhaps this should be part of the MapData instead of AlignOpts
                        maligner_vd::opt::ref_is_bounded, // Perhaps this should be part of the MapData instead of AlignOpts
-                       maligner_vd::opt::query_rescaling);
+                       maligner_vd::opt::query_rescaling,
+                       maligner_vd::opt::min_query_scaling,
+                       maligner_vd::opt::max_query_scaling);
 
   // Build a database of reference maps. 
   MapVec ref_maps(read_maps(maligner_vd::opt::ref_maps_file));
@@ -118,16 +118,20 @@ int main(int argc, char* argv[]) {
 
   ////////////////////////////////////////////////////////
   // Open output files for the different alignment types.
-  std::ofstream fout_rf_qf(maligner_vd::opt::output_pfx + ".rf_qf.aln");
-  std::ofstream fout_rf_qr(maligner_vd::opt::output_pfx + ".rf_qr.aln");
-  std::ofstream fout_rr_qf(maligner_vd::opt::output_pfx + ".rr_qf.aln");
-  std::ofstream fout_rr_qr(maligner_vd::opt::output_pfx + ".rr_qr.aln");
+  // std::ofstream fout_rf_qf(maligner_vd::opt::output_pfx + ".rf_qf.aln");
+  // std::ofstream fout_rf_qr(maligner_vd::opt::output_pfx + ".rf_qr.aln");
+  // std::ofstream fout_rr_qf(maligner_vd::opt::output_pfx + ".rr_qf.aln");
+  // std::ofstream fout_rr_qr(maligner_vd::opt::output_pfx + ".rr_qr.aln");
+  std::ofstream fout_prefix(maligner_vd::opt::output_pfx + ".pfx.aln");
+  std::ofstream fout_suffix(maligner_vd::opt::output_pfx + ".sfx.aln");
   std::ofstream fout_full_aln(maligner_vd::opt::output_pfx + ".full.aln");
 
-  fout_rf_qf << AlignmentHeader();
-  fout_rf_qr << AlignmentHeader();
-  fout_rr_qf << AlignmentHeader();
-  fout_rr_qr << AlignmentHeader();
+  // fout_rf_qf << AlignmentHeader();
+  // fout_rf_qr << AlignmentHeader();
+  // fout_rr_qf << AlignmentHeader();
+  // fout_rr_qr << AlignmentHeader();
+  fout_prefix << AlignmentHeader();
+  fout_suffix << AlignmentHeader();
   fout_full_aln << AlignmentHeader();
 
   std::cout << maligner_vd::ScoreMatrixRecordHeader() << "\n";
@@ -176,58 +180,86 @@ int main(int argc, char* argv[]) {
     //////////////////////////////////////////////////////////////////////////////////////
     // Print alignments
     int wrote_count = 0;
-    {
-      AlignmentVec alns = ref_score_matrix_db.get_best_alignments_rf_qf(maligner_vd::opt::max_alignments, maligner_vd::opt::min_aln_chunks);
-      // std::cerr << "RFQF: " << alns.size() << " alns.\n";
-      // std::cerr << "max_m_score: " << maligner_vd::opt::max_m_score << "\n";
-      for(const auto& a : alns) {
-        // std::cerr << "aln m_score: " << a.m_score 
-        //           << " total_score: " << a.total_score << "\n";
 
-        if(a.m_score <= maligner_vd::opt::max_m_score) {
-          print_alignment(fout_rf_qf, a);
-          print_alignment(std::cerr, a);
-          wrote_count++;
-        }
-      }
-    }
+    // {
+    //   AlignmentVec alns = ref_score_matrix_db.get_best_alignments_rf_qf(maligner_vd::opt::max_alignments, maligner_vd::opt::min_aln_chunks);
+    //   // std::cerr << "RFQF: " << alns.size() << " alns.\n";
+    //   // std::cerr << "max_m_score: " << maligner_vd::opt::max_m_score << "\n";
+    //   for(const auto& a : alns) {
+    //     // std::cerr << "aln m_score: " << a.m_score 
+    //     //           << " total_score: " << a.total_score << "\n";
+
+    //     if(a.m_score <= maligner_vd::opt::max_m_score) {
+    //       print_alignment(fout_rf_qf, a);
+    //       // print_alignment(std::cerr, a);
+    //       wrote_count++;
+    //     }
+    //   }
+
+    // }
+
+    // {
+    //   AlignmentVec alns = ref_score_matrix_db.get_best_alignments_rf_qr(maligner_vd::opt::max_alignments, maligner_vd::opt::min_aln_chunks);
+    //   // std::cerr << "RFQR: " << alns.size() << " alns.\n";
+    //   for(const auto& a : alns) {
+    //     // std::cerr << "aln m_score: " << a.m_score << "\n";
+    //     if(a.m_score <= maligner_vd::opt::max_m_score) {
+    //       print_alignment(fout_rf_qr, a);
+    //       // print_alignment(std::cerr, a);
+    //       wrote_count++;
+    //     }
+    //   }
+    // }
+
+    // {
+    //   AlignmentVec alns = ref_score_matrix_db.get_best_alignments_rr_qf(maligner_vd::opt::max_alignments, maligner_vd::opt::min_aln_chunks);
+    //   // std::cerr << "RRQF: " << alns.size() << " alns.\n";
+    //   for(const auto& a : alns) {
+    //     // std::cerr << "aln m_score: " << a.m_score << "\n";
+    //     if(a.m_score >= maligner_vd::opt::max_m_score) {
+    //       print_alignment(fout_rr_qf, a);
+    //       // print_alignment(std::cerr, a);
+    //       wrote_count++;
+    //     }
+    //   }
+    // } 
+
+    // {
+    //   AlignmentVec alns = ref_score_matrix_db.get_best_alignments_rr_qr(maligner_vd::opt::max_alignments, maligner_vd::opt::min_aln_chunks);
+    //   // std::cerr << "RRQR: " << alns.size() << " alns.\n";
+    //   for(const auto& a : alns) {
+    //     // std::cerr << "aln m_score: " << a.m_score << "\n";
+    //     if(a.m_score <= maligner_vd::opt::max_m_score) {
+    //       print_alignment(fout_rr_qr, a);
+    //       // print_alignment(std::cerr, a);
+    //       wrote_count++;
+    //     }
+    //   }
+    // }
 
     {
-      AlignmentVec alns = ref_score_matrix_db.get_best_alignments_rf_qr(maligner_vd::opt::max_alignments, maligner_vd::opt::min_aln_chunks);
-      // std::cerr << "RFQR: " << alns.size() << " alns.\n";
-      for(const auto& a : alns) {
-        // std::cerr << "aln m_score: " << a.m_score << "\n";
-        if(a.m_score <= maligner_vd::opt::max_m_score) {
-          print_alignment(fout_rf_qr, a);
-          print_alignment(std::cerr, a);
-          wrote_count++;
-        }
-      }
-    }
-
-    {
-      AlignmentVec alns = ref_score_matrix_db.get_best_alignments_rr_qf(maligner_vd::opt::max_alignments, maligner_vd::opt::min_aln_chunks);
-      // std::cerr << "RRQF: " << alns.size() << " alns.\n";
-      for(const auto& a : alns) {
-        // std::cerr << "aln m_score: " << a.m_score << "\n";
-        if(a.m_score >= maligner_vd::opt::max_m_score) {
-          print_alignment(fout_rr_qf, a);
-          print_alignment(std::cerr, a);
-          wrote_count++;
-        }
-      }
-    } 
-
-    {
-      AlignmentVec alns = ref_score_matrix_db.get_best_alignments_rr_qr(maligner_vd::opt::max_alignments, maligner_vd::opt::min_aln_chunks);
+      AlignmentVec alns = ref_score_matrix_db.get_best_alignments_prefix(maligner_vd::opt::max_alignments, maligner_vd::opt::min_aln_chunks);
       // std::cerr << "RRQR: " << alns.size() << " alns.\n";
       for(const auto& a : alns) {
         // std::cerr << "aln m_score: " << a.m_score << "\n";
-        if(a.m_score <= maligner_vd::opt::max_m_score) {
-          print_alignment(fout_rr_qr, a);
-          print_alignment(std::cerr, a);
+        // if(a.m_score <= maligner_vd::opt::max_m_score) {
+          print_alignment(fout_prefix, a);
+          // print_alignment(std::cerr, a);
           wrote_count++;
-        }
+        // }
+      }
+    }
+
+    {
+      AlignmentVec alns = ref_score_matrix_db.get_best_alignments_suffix(maligner_vd::opt::max_alignments, maligner_vd::opt::min_aln_chunks);
+      // std::cerr << "RRQR: " << alns.size() << " alns.\n";
+      for(const auto& a : alns) {
+        // std::cerr << "aln m_score: " << a.m_score << "\n";
+        // if(a.m_score <= maligner_vd::opt::max_m_score) {
+          print_alignment(fout_suffix, a);
+          // print_alignment(std::cerr, a);
+          wrote_count++;
+        // }
       }
     }
 
@@ -238,13 +270,14 @@ int main(int argc, char* argv[]) {
         // std::cerr << "aln m_score: " << a.m_score << "\n";
         if(a.m_score <= maligner_vd::opt::max_m_score) {
           print_alignment(fout_full_aln, a);
-          print_alignment(std::cerr, a);
+          // print_alignment(std::cerr, a);
           wrote_count++;
         }
       }
     }     
-    ///////////////////////////////////////////////////////////////////////////////////////
 
+    // Output the best partial alignments.
+    ///////////////////////////////////////////////////////////////////////////////////////
     std::cout << ref_score_matrix_db.get_score_matrix_profile_rf_qf(qmw.get_name())
               << ref_score_matrix_db.get_score_matrix_profile_rf_qr(qmw.get_name())
               << ref_score_matrix_db.get_score_matrix_profile_rr_qf(qmw.get_name())
@@ -263,10 +296,12 @@ int main(int argc, char* argv[]) {
 
   std::cerr << "maligner_vd done.\n";
 
-  fout_rf_qf.close();
-  fout_rf_qr.close();
-  fout_rr_qf.close();
-  fout_rr_qr.close();
+  // fout_rf_qf.close();
+  // fout_rf_qr.close();
+  // fout_rr_qf.close();
+  // fout_rr_qr.close();
+  fout_prefix.close();
+  fout_suffix.close();
   fout_full_aln.close();
 
   return EXIT_SUCCESS;

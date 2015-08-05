@@ -61,6 +61,9 @@ namespace maligner_vd {
     AlignmentVec get_best_alignments_rr_qf(size_t max_alignments, int min_aln_chunks) const;
     AlignmentVec get_best_alignments_rr_qr(size_t max_alignments, int min_aln_chunks) const;
 
+    AlignmentVec get_best_alignments_prefix(size_t max_alignments, int min_aln_chunks) const;
+    AlignmentVec get_best_alignments_suffix(size_t max_alignments, int min_aln_chunks) const;
+
     AlignmentVec get_best_full_alignments_forward(size_t max_alignments) const;
     AlignmentVec get_best_full_alignments_reverse(size_t max_alignments) const;
     AlignmentVec get_best_full_alignments(size_t max_alignments) const;
@@ -457,6 +460,27 @@ namespace maligner_vd {
 
       return get_alignments_helper(aln_getter, max_alignments);
   }
+
+  template<typename ScoreMatrixVDType>
+  AlignmentVec RefScoreMatrixVDDB<ScoreMatrixVDType>::get_best_alignments_prefix(size_t max_alignments, int min_aln_chunks) const {
+
+      auto aln_getter = [max_alignments, min_aln_chunks](const ScoreMatrixVDType& sm) {
+        return sm.get_best_alignments_prefix(max_alignments, min_aln_chunks);
+      };
+
+      return get_alignments_helper(aln_getter, max_alignments);
+  }
+
+  template<typename ScoreMatrixVDType>
+  AlignmentVec RefScoreMatrixVDDB<ScoreMatrixVDType>::get_best_alignments_suffix(size_t max_alignments, int min_aln_chunks) const {
+
+      auto aln_getter = [max_alignments, min_aln_chunks](const ScoreMatrixVDType& sm) {
+        return sm.get_best_alignments_suffix(max_alignments, min_aln_chunks);
+      };
+
+      return get_alignments_helper(aln_getter, max_alignments);
+  }
+
 
   template<typename ScoreMatrixVDType>
   AlignmentVec RefScoreMatrixVDDB<ScoreMatrixVDType>::get_best_full_alignments_forward(size_t max_alignments) const {

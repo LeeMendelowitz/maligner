@@ -37,6 +37,7 @@ using std::unordered_map;
 using std::ostringstream;
 using std::cerr;
 using std::cout;
+using std::ofstream;
 // using namespace std;
 
 
@@ -232,6 +233,13 @@ int main(int argc, char* argv[]) {
 
   print_args(std::cerr);
 
+  ofstream score_file;
+
+  if(!maligner_dp::opt::score_file.empty()) {
+    score_file.open(maligner_dp::opt::score_file); 
+  }
+
+
   Timer timer;
 
   AlignOpts align_opts(maligner_dp::opt::query_miss_penalty,
@@ -248,7 +256,9 @@ int main(int argc, char* argv[]) {
                        maligner_dp::opt::neighbor_delta,
                        maligner_dp::opt::query_is_bounded, // Perhaps this should be part of the MapData instead of AlignOpts
                        maligner_dp::opt::ref_is_bounded, // Perhaps this should be part of the MapData instead of AlignOpts
-                       maligner_dp::opt::query_rescaling);
+                       maligner_dp::opt::query_rescaling,
+                       maligner_dp::opt::min_query_scaling,
+                       maligner_dp::opt::max_query_scaling);
 
   // Build a database of reference maps. 
   MapVec ref_maps(read_maps(maligner_dp::opt::ref_maps_file));
@@ -501,10 +511,20 @@ int main(int argc, char* argv[]) {
 
     }
 
+    if(score_file.is_open()) {
+
+      for(const auto& aln : all_alignments) {
+        score_file << AlignmentScoreInfo(aln) << "\n";
+      }
+
+    }
+
     std::cerr << "*****************************************\n";
 
  }
 
+  if(score_file.is_open())
+    score_file.close();
 
   std::cerr << "maligner_dp done.\n";
   return EXIT_SUCCESS;

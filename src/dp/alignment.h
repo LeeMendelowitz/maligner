@@ -25,6 +25,7 @@ namespace maligner_dp {
   std::ostream& operator<<(std::ostream& os, const AlignmentHeader& a);
 
 
+
   class Alignment {
   public:
 
@@ -220,6 +221,14 @@ namespace maligner_dp {
         return a1.m_score < a2.m_score;
       }
   };
+
+
+  struct AlignmentScoreInfo {
+    AlignmentScoreInfo(const Alignment& a) : a_(a) {}
+    const Alignment& a_;
+  };
+  std::ostream& operator<<(std::ostream& os, const AlignmentScoreInfo& a);
+
 
   extern const Alignment INVALID_ALIGNMENT;
 

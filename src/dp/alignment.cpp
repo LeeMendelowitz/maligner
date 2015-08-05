@@ -12,6 +12,17 @@ namespace maligner_dp {
 
     //summarize();
 
+    if(query_scaling_factor < align_opts.min_query_scaling ||
+       query_scaling_factor > align_opts.max_query_scaling) {
+
+      #if RESCALE_DEBUG > 0
+      std::cerr << "Skipping query rescaling. query_scaling_factor: " << query_scaling_factor << "\n";
+      #endif     
+      return;
+
+    }
+
+
     rescaled_score = score;
     rescaled_score.sizing_score = 0.0;
 
@@ -134,5 +145,11 @@ namespace maligner_dp {
 
 
   const Alignment INVALID_ALIGNMENT;
+
+  std::ostream& operator<<(std::ostream& os, const AlignmentScoreInfo& a) {
+    os << a.a_.query_map_data.map_name_ << "\t"
+       << a.a_.total_rescaled_score;
+    return os;
+  }
 
 }

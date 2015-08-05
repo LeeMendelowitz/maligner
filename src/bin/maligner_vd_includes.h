@@ -82,6 +82,8 @@ namespace maligner_vd {
       static double max_score_per_inner_chunk = std::numeric_limits<double>::infinity();
       static int num_permutation_trials = 0; // Number of trials for permutation test.
       static bool query_rescaling = true;
+      static double min_query_scaling = 0.85;
+      static double max_query_scaling = 1.15;
       static bool verbose = false;
       static bool reference_is_circular = false;
       static double min_mad = 1.0; // Minimum mad to use when computing mad scores.
@@ -265,6 +267,8 @@ std::ostream& print_args(std::ostream& os) {
      << "\tmin_sd: " << min_sd << "\n"
      << "\tmax_chunk_sizing_error: " << max_chunk_sizing_error << "\n"
      << "\tmax_score_per_inner_chunk: " << max_score_per_inner_chunk << "\n"
+    << "\tmin_query_scaling: " << min_query_scaling << "\n"
+     << "\tmax_query_scaling: " << max_query_scaling << "\n"
      << "\talignments_per_reference: " << alignments_per_reference << "\n"
      << "\tmax_alignments: " << max_alignments << "\n"
      << "\tmax_m_score: " << max_m_score << "\n"

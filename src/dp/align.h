@@ -50,7 +50,9 @@ namespace maligner_dp {
               int neighborhood_delta_in,
               bool query_is_bounded_in,
               bool ref_is_bounded_in,
-              bool rescale_query_in) : 
+              bool rescale_query_in,
+              double min_query_scaling_in,
+              double max_query_scaling_in) : 
       query_miss_penalty(query_miss_penality_in), // penalty for having a site in query unaligned to reference
       ref_miss_penalty(ref_miss_penalty_in), // penalty for having a site in reference unaligned to query
       query_max_misses(query_max_misses_in),
@@ -65,6 +67,8 @@ namespace maligner_dp {
       neighbor_delta(neighborhood_delta_in), // Return alignments within +/- neighbor_delta ref. fragments
                               // of each selected alignment.
       rescale_query(rescale_query_in), // Rescale the query chunks post-alignment & adjust sizing score.
+      min_query_scaling(min_query_scaling_in),
+      max_query_scaling(max_query_scaling_in),
       query_is_bounded(query_is_bounded_in),
       ref_is_bounded(ref_is_bounded_in),
       query_miss_penalties(query_max_misses + 1, 0.0),
@@ -100,6 +104,8 @@ namespace maligner_dp {
                               // alignments to the same reference.
     int neighbor_delta;
     bool rescale_query;
+    double min_query_scaling;
+    double max_query_scaling;
     bool query_is_bounded; // true if the first/last fragments in query map are bounded by restriction sites.
     bool ref_is_bounded; // true if the first/last fragments in reference map are bounded by restriction sites.
     

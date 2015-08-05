@@ -4,7 +4,6 @@
 #include <limits>
 
 
-
 static const char *VERSION_MESSAGE = "Version " PACKAGE_VERSION "\n"
 "Written by " AUTHOR "(" AUTHOR_EMAIL ") \n"
 "\n";
@@ -22,6 +21,8 @@ static const char *USAGE_MESSAGE =
 "      --num-permutation-trials         Number of trials for the permutation test.\n"
 "                                           Default: 0\n"
 "      --no-query-rescaling             Default: perform query rescaling\n"
+"      --min-query-rescaling            Do not perform query rescaling if scaling factor less than this. Default: 0.85\n"
+"      --max-query-rescaling            Do not perform query rescaling if scaling factor greater than this. Default: 1.15\n"
 "\n"
 " Scoring parameters:\n"
 "      -q,--query-miss-penalty          Query unmatched site penalty\n"
@@ -46,17 +47,20 @@ static const char *USAGE_MESSAGE =
 " General arguments:\n"
 "      -h, --help                       display this help and exit\n"
 "      -v, --version                    display the version and exit\n"
+"      --score-file                     score-file path. Default: none\n"
 "      --verbose                        Verbose output\n";
 
 
 
 namespace maligner_dp {
+
   namespace opt
   {
 
       static string query_maps_file;
       static string ref_maps_file;
       string program_name;
+      string score_file;
 
       static double query_miss_penalty = 18.0;
       static double ref_miss_penalty = 3.0;
@@ -75,6 +79,8 @@ namespace maligner_dp {
       static int max_alignments = 100;
       static int max_alignments_mad = 100; // Max alignments to use for mad computation
       static double max_score_per_inner_chunk = std::numeric_limits<double>::infinity();
+      static double min_query_scaling = 0.85;
+      static double max_query_scaling = 1.15;      
       static int num_permutation_trials = 0; // Number of trials for permutation test.
       static bool query_rescaling = true;
       static bool verbose = false;
@@ -82,8 +88,8 @@ namespace maligner_dp {
       static double min_mad = 1.0; // Minimum mad to use when computing mad scores.
       static int min_query_frags = 3;
       static int max_query_frags = 50;
-
   }
+
 }
 
 static const char* shortopts = "q:r:hv";
@@ -99,8 +105,11 @@ enum {
   OPT_REF_MAX_MISS_RATE,
   OPT_QUERY_MAX_MISS_RATE,
   OPT_MAX_SCORE_PER_INNER_CHUNK,
+  OPT_MIN_QUERY_SCALING,
+  OPT_MAX_QUERY_SCALING,
   OPT_VERBOSE,
   OPT_NO_QUERY_RESCALING,
+  OPT_SCORE_FILE,
   OPT_REFERENCE_IS_CIRCULAR
 };
 
@@ -118,12 +127,15 @@ static const struct option longopts[] = {
     { "max-alignments-per-reference", required_argument, NULL, OPT_ALIGNMENTS_PER_REFERENCE},
     { "max-alignments", required_argument, NULL, OPT_MAX_ALIGNMENTS},
     { "max-score-per-inner-chunk", required_argument, NULL, OPT_MAX_SCORE_PER_INNER_CHUNK},
+    { "min-query-rescaling", required_argument, NULL, OPT_MIN_QUERY_SCALING},
+    { "max-query-rescaling", required_argument, NULL, OPT_MAX_QUERY_SCALING},
     { "num-permutation-trials", required_argument, NULL, OPT_NUM_PERMUTATION_TRIALS},
     { "no-query-rescaling", no_argument, NULL, OPT_NO_QUERY_RESCALING},
     { "reference-is-circular", no_argument, NULL, OPT_REFERENCE_IS_CIRCULAR},
     { "verbose", no_argument, NULL, OPT_VERBOSE},
     { "help",     no_argument,       NULL, 'h' },
     { "version",  no_argument,       NULL, 'v'},
+    { "score-file", required_argument, NULL, OPT_SCORE_FILE},
     { NULL, 0, NULL, 0 }
 
 };
@@ -148,6 +160,8 @@ void parse_args(int argc, char** argv)
             case OPT_MIN_SD: arg >> opt::min_sd; break;
             case OPT_MAX_CHUNK_SIZING_ERROR: arg >> opt::max_chunk_sizing_error; break;
             case OPT_MAX_SCORE_PER_INNER_CHUNK: arg >> opt::max_score_per_inner_chunk; break;
+            case OPT_MIN_QUERY_SCALING: arg >> opt::min_query_scaling; break;
+            case OPT_MAX_QUERY_SCALING: arg >> opt::max_query_scaling; break;
             case OPT_ALIGNMENTS_PER_REFERENCE: arg >> opt::alignments_per_reference; break;
             case OPT_MAX_ALIGNMENTS: arg >> opt::max_alignments; break;
             case OPT_NUM_PERMUTATION_TRIALS: arg >> opt::num_permutation_trials; break;
@@ -157,6 +171,7 @@ void parse_args(int argc, char** argv)
               opt::reference_is_circular = true;
               opt::ref_is_bounded = true;
               break;
+            case OPT_SCORE_FILE: arg >> opt::score_file; break;
             case 'h':
             {
                 std::cout << USAGE_MESSAGE;
@@ -233,6 +248,7 @@ void parse_args(int argc, char** argv)
 
 
 std::ostream& print_args(std::ostream& os) {
+
   using namespace maligner_dp::opt;
 
   os << VERSION_MESSAGE << "\n"
@@ -250,6 +266,8 @@ std::ostream& print_args(std::ostream& os) {
      << "\tmin_sd: " << min_sd << "\n"
      << "\tmax_chunk_sizing_error: " << max_chunk_sizing_error << "\n"
      << "\tmax_score_per_inner_chunk: " << max_score_per_inner_chunk << "\n"
+     << "\tmin_query_scaling: " << min_query_scaling << "\n"
+     << "\tmax_query_scaling: " << max_query_scaling << "\n"
      << "\talignments_per_reference: " << alignments_per_reference << "\n"
      << "\tmax_alignments: " << max_alignments << "\n"
      << "\tmin_alignment_spacing: " << min_alignment_spacing << "\n"
@@ -264,4 +282,5 @@ std::ostream& print_args(std::ostream& os) {
      << "\tmax_query_frags: " << max_query_frags << "\n";
 
   return os;
+
 }
