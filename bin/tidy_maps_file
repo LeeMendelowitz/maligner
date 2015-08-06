@@ -18,10 +18,10 @@ def run(input_maps_file, output_pfx):
 
   map_gen = gen_maps(input_maps_file)
 
-  header_fields = ['map_index', 'index', 'length']
+  header_fields = ['map_key', 'index', 'length']
   maps_out.write('\t'.join(header_fields) + '\n')
 
-  header_fields = ['map', 'map_index']
+  header_fields = ['map_key', 'map']
   index_out.write('\t'.join(header_fields) + '\n')
 
   for map_num, m in enumerate(map_gen):
