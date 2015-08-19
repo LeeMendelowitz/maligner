@@ -1610,13 +1610,13 @@ namespace maligner_dp {
             if (query_miss_total > align_task.query_max_total_misses ||
                 ref_miss_total > align_task.ref_max_total_misses) {
 
-              // #if FILL_DEBUG > 0
+              #if FILL_DEBUG > 0
                 std::cerr
                    << "query_miss_total: " << query_miss_total << " "
                    << "ref_miss_total: " << ref_miss_total << " "
                    << " MISS_CONTINUE"
                    << "\n";
-              // #endif
+              #endif
 
               continue;
 
