@@ -41,7 +41,7 @@ tested with g++ 4.8.3 on Red Hat Linux and Apple LLVM 6.0 on Mac OS X.
 Maligner also comes with several python scripts for working
 with and converting alignment files. These scripts require the following python libraries: numpy, scipy, pandas, and BioPython.
 
-You can install these dependencies using `pip`:
+You can install these dependencies using [pip](https://pip.pypa.io/en/stable/):
 
 ```bash
 pip install -r requirements.txt
