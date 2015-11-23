@@ -14,8 +14,8 @@ static const int NUM_POSITION_ARGS = 2;
 static const char *USAGE_MESSAGE =
 "Usage: " PACKAGE_NAME " [OPTION] ... QUERY_MAPS_FILE REFERENCE_MAPS_FILE\n"
 "\n"
-" Align the maps in the QUERY_MAPS_FILE to the maps in the REFERENCE_MAPS_FILE\n"
-" using dynamic programming.\n"
+" Find partial prefix/suffix alignments of the maps in the QUERY_MAPS_FILE\n"
+" to the maps in the REFERENCE_MAPS_FILE using dynamic programming.\n"
 "\n"
 " Output options:\n"
 "      -o, --output-pfx PFX             Output prefix.\n"

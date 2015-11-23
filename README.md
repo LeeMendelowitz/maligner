@@ -27,7 +27,7 @@ make install
 
 This will install compiled binaries `maligner_dp`, `maligner_ix`, and `maligner_vd` and additional python utility scripts into the directory `build/bin`.
 
-The `malignpy` python package is installed to 'build/lib'. Many of the Maligner utility scripts for working with maps files and alignment files depend on `malignpy`. In order to use these scripts, you must symlink malignpy into your working directory or modify your `PYTHONPATH` environment variable:
+The `malignpy` python package is installed to `build/lib`. Many of the Maligner utility scripts for working with maps files and alignment files depend on `malignpy`. In order to use these scripts, you must symlink `malignpy` into your working directory or modify your `PYTHONPATH` environment variable:
 
 ```bash
 export PYTHONPATH=/path/to/build/lib:$PYTHONPATH

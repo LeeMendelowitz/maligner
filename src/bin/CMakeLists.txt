@@ -14,9 +14,9 @@ message(STATUS "MALIGNER_SOURCE_DIR : ${MALIGNER_SOURCE_DIR}")
 message(STATUS "INCLUDE_DIRECTORIES : ${INCLUDE_DIRECTORIES}")
 
 # build maligner
-set(maligner_SRCS "maligner.cpp")
-add_executable(maligner ${maligner_SRCS})
-target_link_libraries(maligner ix dp common)
+set(maligner_ix_SRCS "maligner_ix.cpp")
+add_executable(maligner_ix ${maligner_ix_SRCS})
+target_link_libraries(maligner_ix ix dp common)
 
 # build maligner_dp
 set(maligner_dp_SRCS "maligner_dp.cpp")
@@ -30,4 +30,4 @@ target_link_libraries(maligner_vd vd ix dp common)
 
 
 # install directory
-install(TARGETS maligner maligner_dp maligner_vd DESTINATION "${MALIGNER_BIN_DIR}")
+install(TARGETS maligner_ix maligner_dp maligner_vd DESTINATION "${MALIGNER_BIN_DIR}")

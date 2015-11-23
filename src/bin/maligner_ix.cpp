@@ -37,7 +37,7 @@ using maligner_common::Scorer;
 //
 // Getopt
 //
-#define PACKAGE_NAME "maligner"
+#define PACKAGE_NAME "maligner_ix"
 #define SUBPROGRAM ""
 
 
@@ -50,6 +50,7 @@ static const int NUM_POSITION_ARGS = 2;
 static const char *USAGE_MESSAGE =
 "Usage: " PACKAGE_NAME " " SUBPROGRAM " [OPTION] ... QUERY_MAPS_FILE REFERENCE_MAPS_FILE\n"
 "Align the maps in the QUERY_MAPS_FILE to the maps in the REFERENCE_MAPS_FILE\n"
+"using an index constructed on the reference.\n"
 "\n"
 "      -h, --help                       display this help and exit\n"
 "      -v, --version                    display the version and exit\n"

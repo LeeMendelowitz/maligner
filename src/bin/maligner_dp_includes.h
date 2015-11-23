@@ -17,38 +17,38 @@ static const char *USAGE_MESSAGE =
 " using dynamic programming.\n"
 "\n"
 " Alignment options:\n"
-"      --reference-is-circular          Treat reference maps as circular. Default: false\n"
-"      --num-permutation-trials         Number of trials for the permutation test.\n"
-"                                           Default: 0\n"
-"      --no-query-rescaling             Default: perform query rescaling\n"
-"      --min-query-rescaling            Do not perform query rescaling if scaling factor less than this. Default: 0.85\n"
-"      --max-query-rescaling            Do not perform query rescaling if scaling factor greater than this. Default: 1.15\n"
-"\n"
-" Scoring parameters:\n"
-"      -q,--query-miss-penalty          Query unmatched site penalty\n"
-"      -r,--ref-miss-penalty            Reference unmatched site penalty\n"
-"      --sd-rate                        Standard deviation rate.\n"
-"      --min-sd                         Minimum standard deviation (bp)\n"
+"      --reference-is-circular              Treat reference maps as circular. Default: false\n"
+"      --num-permutation-trials INT         Number of trials for the permutation test.\n"
+"                                               (Default: 0)\n"
+"      --no-query-rescaling                 Default: perform query rescaling\n"
+"      --min-query-rescaling                Do not perform query rescaling if scaling factor less than this. (Default: 0.85)\n"
+"      --max-query-rescaling                Do not perform query rescaling if scaling factor greater than this. (Default: 1.15)\n"
+"\n"    
+" Scoring parameters:\n"    
+"      -q,--query-miss-penalty FLOAT        Query unmatched site penalty (Default 18.0)\n"
+"      -r,--ref-miss-penalty FLOAT          Reference unmatched site penalty (Default 3.0)\n"
+"      --sd-rate FLOAT                      Standard deviation rate (Default 0.05)\n"
+"      --min-sd FLOAT                       Minimum standard deviation (bp) (Default 500 bp)n"
 "\n"
 " Search space parameters:\n"
-"      --query-max-misses               Query max. consecutive unmatched sites\n"
-"      --ref-max-misses                 Reference max. consecutive unmatched sites\n"
-"      --query-max-miss-rate            Max. rate of unmatched sites in the query\n"
-"      --ref-max-miss-rate              Max. rate of unmatched sites in the reference\n"
-"      --max-chunk-sizing-error         Max. chunk sizing error score for bounding search\n"
-"                                          space. Default: Inf\n"
-"      --max-alignments-per-reference   Max. alignments to report per reference\n"
-"      --max-alignments                 Max. number of alignments to output\n"
+"      --query-max-misses INT               Query max. consecutive unmatched sites (Default 2)\n"
+"      --ref-max-misses INT                 Reference max. consecutive unmatched sites (Default 5)\n"
+"      --query-max-miss-rate FLOAT          Max. rate of unmatched sites in the query (Default 0.25)\n"
+"      --ref-max-miss-rate FLOAT            Max. rate of unmatched sites in the reference (Default 0.50)\n"
+"      --max-chunk-sizing-error FLOAT       Max. chunk sizing error score for bounding search\n"
+"                                               space. (Default: Inf)\n"
+"      --max-alignments-per-reference INT   Max. alignments to report per reference (Default 100)\n"
+"      --max-alignments INT                 Max. number of alignments to output (Default 10)\n"
 "\n"
 " Alignment filters:\n"
-"      --max-score-per-inner-chunk      Report alignments with a score per inner chunk less than this\n"
-"                                           threshold. Default: Inf\n"
+"      --max-score-per-inner-chunk FLOAT    Report alignments with a score per inner chunk less than this\n"
+"                                               threshold. (Default: Inf)\n"
 "\n"
 " General arguments:\n"
-"      -h, --help                       display this help and exit\n"
-"      -v, --version                    display the version and exit\n"
-"      --score-file                     score-file path. Default: none\n"
-"      --verbose                        Verbose output\n";
+"      -h, --help                           display this help and exit\n"
+"      -v, --version                        display the version and exit\n"
+"      --score-file FILE                    score-file path. Default: none\n"
+"      --verbose                            Verbose output\n";
 
 
 
@@ -76,7 +76,7 @@ namespace maligner_dp {
       static int neighbor_delta = 0;
       static bool query_is_bounded = false;
       static bool ref_is_bounded = false;
-      static int max_alignments = 100;
+      static int max_alignments = 10;
       static int max_alignments_mad = 100; // Max alignments to use for mad computation
       static double max_score_per_inner_chunk = std::numeric_limits<double>::infinity();
       static double min_query_scaling = 0.85;
