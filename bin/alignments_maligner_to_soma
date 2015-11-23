@@ -9,7 +9,7 @@ import numpy as np
 import pandas
 from pandas import DataFrame
 import time
-from lxml.etree import Element, ElementTree
+from xml.etree.cElementTree import Element, ElementTree
 
 
 from malignpy.common import wrap_file_function, logging_utils
